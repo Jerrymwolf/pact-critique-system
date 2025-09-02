@@ -1762,6 +1762,23 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const file = event.target.files[0];
             if (!file) return;
 
+            // Validate file type
+            const validTypes = ['text/plain', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            const validExtensions = ['.txt', '.pdf', '.docx'];
+            const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+            
+            if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+                showMessage('Please upload a TXT, PDF, or DOCX file.', 'error');
+                clearFile();
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                showMessage('File size must be less than 10MB.', 'error');
+                clearFile();
+                return;
+            }
+
             const fileInfo = document.getElementById('file-info');
             const fileName = document.getElementById('file-name');
             const uploadArea = document.getElementById('upload-area');
@@ -1775,24 +1792,32 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                 const formData = new FormData();
                 formData.append('file', file);
 
-                const response = await fetch('/api/upload', {
+                const response = await fetch(`${API_BASE_URL}/api/upload`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
                 });
 
                 if (!response.ok) {
-                    const error = await response.json();
+                    const error = await response.json().catch(() => ({ detail: `HTTP ${response.status}: ${response.statusText}` }));
                     throw new Error(error.detail || 'Failed to process file');
                 }
 
                 const result = await response.json();
                 uploadedFileContent = result.content;
-                fileName.textContent = file.name; // Set the file name after successful processing
+                fileName.textContent = file.name;
+                
+                // Also populate the textarea with the content
+                document.getElementById('paper-content').value = result.content;
+                
                 showMessage(`File "${file.name}" processed successfully!`, 'success');
-                enableAnalysisButton(); // Enable analysis button after file processing
-                updateWordCount(); // Update word count to reflect file content
+                enableAnalysisButton();
+                updateWordCount();
 
             } catch (error) {
+                console.error('File upload error:', error);
                 showMessage(`Error processing file: ${error.message}`, 'error');
                 clearFile();
             }

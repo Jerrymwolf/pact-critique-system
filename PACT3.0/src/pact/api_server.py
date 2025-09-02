@@ -582,31 +582,57 @@ async def upload_file(file: UploadFile = File(...)):
     """
     Upload and extract text content from uploaded files (DOCX, PDF, TXT).
     """
+    logger.info(f"Processing uploaded file: {file.filename}, content-type: {file.content_type}, size: {file.size}")
+    
     try:
+        # Validate file size
+        if file.size and file.size > 10 * 1024 * 1024:  # 10MB limit
+            raise HTTPException(status_code=400, detail="File size exceeds 10MB limit.")
+        
         content = await file.read()
+        logger.info(f"Read {len(content)} bytes from file {file.filename}")
 
         if file.filename.lower().endswith('.docx'):
             # Extract text from DOCX
-            doc = Document(io.BytesIO(content))
-            text_content = []
-            for paragraph in doc.paragraphs:
-                if paragraph.text.strip():
-                    text_content.append(paragraph.text)
-            extracted_text = '\n'.join(text_content)
+            try:
+                doc = Document(io.BytesIO(content))
+                text_content = []
+                for paragraph in doc.paragraphs:
+                    if paragraph.text.strip():
+                        text_content.append(paragraph.text)
+                extracted_text = '\n'.join(text_content)
+                logger.info(f"Extracted {len(extracted_text)} characters from DOCX file")
+            except Exception as docx_error:
+                logger.error(f"Error processing DOCX file: {docx_error}")
+                raise HTTPException(status_code=400, detail="Failed to process DOCX file. Please ensure it's a valid Word document.")
 
         elif file.filename.lower().endswith('.pdf'):
             # Extract text from PDF
-            pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
-            text_content = []
-            for page in pdf_reader.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text_content.append(page_text)
-            extracted_text = '\n'.join(text_content)
+            try:
+                pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
+                text_content = []
+                for i, page in enumerate(pdf_reader.pages):
+                    page_text = page.extract_text()
+                    if page_text:
+                        text_content.append(page_text)
+                extracted_text = '\n'.join(text_content)
+                logger.info(f"Extracted {len(extracted_text)} characters from PDF file with {len(pdf_reader.pages)} pages")
+            except Exception as pdf_error:
+                logger.error(f"Error processing PDF file: {pdf_error}")
+                raise HTTPException(status_code=400, detail="Failed to process PDF file. Please ensure it's a valid PDF document.")
 
         elif file.filename.lower().endswith('.txt'):
             # Handle plain text
-            extracted_text = content.decode('utf-8')
+            try:
+                extracted_text = content.decode('utf-8')
+                logger.info(f"Processed TXT file with {len(extracted_text)} characters")
+            except UnicodeDecodeError:
+                try:
+                    extracted_text = content.decode('latin-1')
+                    logger.info(f"Processed TXT file with latin-1 encoding, {len(extracted_text)} characters")
+                except Exception as txt_error:
+                    logger.error(f"Error decoding TXT file: {txt_error}")
+                    raise HTTPException(status_code=400, detail="Failed to decode text file. Please ensure it's a valid text file.")
 
         else:
             raise HTTPException(status_code=400, detail="Unsupported file format. Please upload TXT, DOCX, or PDF files.")
@@ -614,14 +640,17 @@ async def upload_file(file: UploadFile = File(...)):
         if not extracted_text.strip():
             raise HTTPException(status_code=400, detail="No text content could be extracted from the file.")
 
+        logger.info(f"Successfully processed file {file.filename}")
         return {
             "content": extracted_text,
             "filename": file.filename,
             "message": "File processed successfully"
         }
 
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
     except Exception as e:
-        logger.error(f"Failed to process file {file.filename}: {e}")
+        logger.error(f"Unexpected error processing file {file.filename}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
 
 @app.post("/api/critique/start", response_model=CritiqueResponse)
