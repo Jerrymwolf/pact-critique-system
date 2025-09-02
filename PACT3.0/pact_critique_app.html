@@ -128,6 +128,20 @@
             max-width: 100%;
             overflow: hidden;
         }
+
+        /* Custom styles for form elements to match Tailwind */
+        .form-label {
+            @apply block text-sm font-medium text-gray-700 mb-2;
+        }
+        .form-control {
+            @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+        }
+        .form-select {
+            @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500;
+        }
+        .form-text {
+            @apply mt-2 text-sm text-gray-500;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -228,6 +242,23 @@
                             <option value="essay">Academic Essay</option>
                             <option value="proposal">Research Proposal</option>
                         </select>
+                    </div>
+
+                    <!-- Analysis Mode Selection -->
+                    <div class="mb-6">
+                        <label for="analysisMode" class="form-label">Analysis Mode</label>
+                        <select class="form-select" id="analysisMode">
+                            <option value="STANDARD" selected>Standard - Auto-select relevant PACT elements</option>
+                            <option value="COMPREHENSIVE">Comprehensive - Analyze all PACT elements thoroughly</option>
+                            <option value="APA7">APA7 - Focus only on APA Style compliance</option>
+                        </select>
+                        <div class="form-text">
+                            <small>
+                                <strong>Standard:</strong> Analyzes most relevant sections based on your paper's content<br>
+                                <strong>Comprehensive:</strong> Systematic analysis of all PACT dimensions<br>
+                                <strong>APA7:</strong> Focused analysis of APA Style formatting and citations only
+                            </small>
+                        </div>
                     </div>
 
                     <!-- Submit Button -->

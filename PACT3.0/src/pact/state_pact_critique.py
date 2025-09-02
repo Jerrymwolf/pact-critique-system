@@ -30,6 +30,9 @@ class PaperCritiqueState(MessagesState):
     # The student paper to critique
     paper_content: str
     
+    # Analysis mode (APA7, STANDARD, COMPREHENSIVE)
+    mode: Optional[str] = "STANDARD"
+    
     # Paper metadata
     paper_title: Optional[str] = None
     paper_type: Optional[str] = None  # thesis, dissertation, article, etc.
@@ -60,6 +63,10 @@ class DimensionCritique(BaseModel):
     )
     dimension_name: str = Field(
         description="The dimension name (e.g., 'Research Foundations')"
+    )
+    dimension_label: Optional[str] = Field(
+        description="Alternative dimension label for compatibility",
+        default=None
     )
     strengths: List[str] = Field(
         description="Specific strengths identified in this dimension",

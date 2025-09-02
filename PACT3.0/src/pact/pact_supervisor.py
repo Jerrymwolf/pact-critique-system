@@ -8,18 +8,18 @@ PACT dimension agents and synthesizes their feedback into a cohesive critique.
 import os
 from typing import Dict, Any, Literal
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage  # Import SystemMessage
 from langgraph.types import Command
 
 from .state_pact_critique import (
     PaperCritiqueState, CritiquePlan, FinalCritique
 )
 from .enhanced_schemas import (
-    ComprehensiveCritique, SubmissionReadiness, PACTChecklistItem, 
+    ComprehensiveCritique, SubmissionReadiness, PACTChecklistItem,
     PACT_DIMENSIONS, AssessmentLevel
 )
 
-# Initialize supervisor model with environment configuration  
+# Initialize supervisor model with environment configuration
 # ChatGPT 5 doesn't support custom temperature settings
 supervisor_model = ChatOpenAI(
     model=os.getenv("OPENAI_MODEL", "gpt-5"),
@@ -62,7 +62,9 @@ def create_synthesis_prompt(state: PaperCritiqueState) -> str:
     # Format dimension critiques
     critiques_text = ""
     for dim_id, critique in state['dimension_critiques'].items():
-        critiques_text += f"\n\n--- {critique['dimension_name']} ({dim_id}) ---\n"
+        # Ensure dimension_name exists, default to dim_id if not
+        dimension_name = critique.get('dimension_name', dim_id)
+        critiques_text += f"\n\n--- {dimension_name} ({dim_id}) ---\n"
         critiques_text += f"Score: {critique['dimension_score']}/100\n"
         critiques_text += f"Severity: {critique['severity']}\n"
 
@@ -159,7 +161,9 @@ async def synthesize_critique(state: PaperCritiqueState) -> Dict[str, Any]:
 """
 
     for dim_id, summary in final_critique.dimension_summaries.items():
-        critique_text += f"\n### {dim_id}\n{summary}\n"
+        # Ensure dimension_name exists, default to dim_id if not
+        dimension_name = dim_id # This is a placeholder, ideally fetch from state if available
+        critique_text += f"\n### {dimension_name} ({dim_id})\n{summary}\n"
 
     critique_text += f"""
 ## Key Strengths
@@ -185,3 +189,48 @@ async def synthesize_critique(state: PaperCritiqueState) -> Dict[str, Any]:
         "priority_improvements": final_critique.priority_improvements,
         "messages": [f"Critique complete. Overall score: {final_critique.overall_score}/100"]
     }
+
+# Placeholder for logging and constants that might be used in the added code
+import logging
+logger = logging.getLogger(__name__)
+
+SUPERVISOR_PROMPT = "You are a helpful assistant." # Placeholder
+
+def create_critique_supervisor():
+    """Create the supervisor agent workflow."""
+
+    def supervisor_node(state: PaperCritiqueState) -> PaperCritiqueState:
+        """Supervisor coordinates the critique process."""
+        try:
+            # Get mode from state (default to STANDARD)
+            mode = state.get('mode', 'STANDARD')
+
+            # Import mode-specific prompts
+            # Note: pact.mode_prompts and its functions need to be defined elsewhere
+            # For this example, we'll assume they exist and are importable.
+            # If they are not, this will raise an ImportError.
+            try:
+                from pact.mode_prompts import get_supervisor_prompt, SYSTEM_BASE
+            except ImportError:
+                # Fallback if mode_prompts are not available, or provide a default behavior
+                logger.warning("Could not import mode_prompts. Using default supervisor behavior.")
+                # Default behavior if mode-specific prompts are not found
+                mode_instruction = "" # Or some default instruction
+                SYSTEM_BASE = "You are a helpful assistant." # Default system base
+
+            mode_instruction = get_supervisor_prompt(mode)
+
+            # Create critique plan
+            plan_response = supervisor_model.invoke([
+                SystemMessage(content=f"{SYSTEM_BASE}\n{mode_instruction}"),
+                HumanMessage(content=f"Paper to critique:\n\n{state['paper_content'][:4000]}...")
+            ])
+
+            state['critique_plan'] = plan_response.content
+
+            return state
+
+        except Exception as e:
+            logger.error(f"Error in supervisor node: {e}")
+            state['critique_plan'] = f"Error creating critique plan: {str(e)}"
+            return state
