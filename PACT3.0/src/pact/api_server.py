@@ -670,11 +670,11 @@ async def download_critique_report(session_id: str, format: str = Query("pdf", d
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    status = session.get("status")
+    status = session.status.value if hasattr(session.status, 'value') else str(session.status)
     if status != "completed": # Use the mapped status 'completed'
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
-    report_filename = session.get("report_filename")
+    report_filename = getattr(session, 'report_filename', None)
     if not report_filename:
         raise HTTPException(status_code=500, detail="Report filename not found for completed session")
 
@@ -739,11 +739,11 @@ async def preview_critique_report(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    status = session.get("status")
+    status = session.status.value if hasattr(session.status, 'value') else str(session.status)
     if status != "completed": # Use the mapped status 'completed'
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
-    results_data = session.get("result")
+    results_data = getattr(session, 'result', None)
     if not results_data:
         raise HTTPException(status_code=500, detail="Results not found for completed session")
 
@@ -794,7 +794,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         # Store supervisor in session
         session = session_manager.get_session(session_id)
         if session:
-            session["agents"] = {"supervisor": supervisor}
+            session.agents = {"supervisor": supervisor}
 
         # Prepare initial state
         initial_state = {
@@ -921,17 +921,18 @@ async def notify_websocket_clients(session_id: str):
     """Send progress updates to WebSocket clients."""
     session = session_manager.get_session(session_id)
     if session:
+        status = session.status.value if hasattr(session.status, 'value') else str(session.status)
         progress_data = {
             "session_id": session_id,
-            "state": session.get("status", "unknown"),
+            "state": status,
             "progress": {
-                "overall_progress": session.get("progress", 0),
-                "current_stage": session.get("current_stage", "Initializing"),
+                "overall_progress": getattr(session, 'overall_progress', 0),
+                "current_stage": getattr(session, 'current_stage', "Initializing"),
             },
-            "agents": session.get("agents", {}),
-            "created_at": session.get("created_at"),
-            "updated_at": session.get("updated_at"),
-            "error_message": session.get("error")
+            "agents": getattr(session, 'agents', {}),
+            "created_at": session.created_at.isoformat() if session.created_at else None,
+            "updated_at": session.updated_at.isoformat() if session.updated_at else None,
+            "error_message": getattr(session, 'error_message', None)
         }
         await websocket_manager.send_message(session_id, progress_data)
 
