@@ -533,8 +533,21 @@ async def start_critique(request: CritiqueRequest):
             paper_type=getattr(request, 'paper_type', None)
         )
 
-        # Start critique process in background
-        # Pass the mode to the workflow
+        # Get session object for status updates
+        session = session_manager.get_session(session_id)
+        if not session:
+            raise Exception(f"Session {session_id} not found")
+
+        # Set initial status and broadcast
+        session_manager.update_session_status(session_id, "running", overall_progress=1)
+        await websocket_manager.send_message(session_id, {
+            "event": "status", 
+            "status": "running", 
+            "progress": 1
+        })
+
+        # IMPORTANT: Launch analysis as background task - do not await here
+        # This ensures the POST /start returns quickly while analysis runs in background
         asyncio.create_task(run_critique_analysis(session_id, request.content, request.title, mode))
 
         return CritiqueResponse(
@@ -754,28 +767,20 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
     """Background task to run the critique analysis."""
     try:
         logger.info(f"Starting critique analysis for session {session_id}")
-        session_manager.update_session_status(session_id, "running") # Use string status
-
-        # Send initial progress
-        await websocket_manager.send_message(session_id, {
-            "type": "progress",
-            "message": "Starting analysis...",
-            "progress": {"completed": 0, "total": 5}
-        })
-
-        # Create supervisor using single selection logic
-        supervisor = make_supervisor()
-
+        
         # Get session object for proper status updates
         session = session_manager.get_session(session_id)
         if not session:
             raise Exception(f"Session {session_id} not found")
 
-        # Set status to running and broadcast
+        # Create supervisor using single selection logic
+        supervisor = make_supervisor()
+
+        # Before launching analysis - set initial status
         session_manager.update_session_status(session_id, "running", overall_progress=1)
         await websocket_manager.send_message(session_id, {
-            "event": "status",
-            "status": "running",
+            "event": "status", 
+            "status": "running", 
             "progress": 1
         })
 
@@ -788,41 +793,49 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
 
         logger.info(f"Running supervisor analysis with mode: {mode}")
 
-        try:
-            # Run the analysis with session_id for progress tracking
-            result = await supervisor.ainvoke(initial_state, session_id=session_id)
-            
-            # Update session with results and broadcast completion
-            session_manager.update_session_status(
-                session_id,
-                "completed",
-                result=result,
-                overall_score=result.get("overall_score"),
-                final_critique=result.get("final_critique"),
-                overall_progress=100
-            )
+        # Define the analysis execution as a separate async function
+        async def run_analysis():
+            try:
+                # Run the analysis with session_id for progress tracking
+                result = await supervisor.ainvoke(initial_state, session_id=session_id)
+                
+                # Update session with results and broadcast completion
+                session_manager.update_session_status(
+                    session_id,
+                    "completed",
+                    result=result,
+                    overall_score=result.get("overall_score"),
+                    final_critique=result.get("final_critique"),
+                    overall_progress=100
+                )
 
-            await websocket_manager.send_message(session_id, {
-                "event": "status",
-                "status": "completed",
-                "progress": 100
-            })
-
-            # Send final summary
-            if result:
                 await websocket_manager.send_message(session_id, {
-                    "event": "summary",
-                    "payload": result
+                    "event": "status",
+                    "status": "completed",
+                    "progress": 100
                 })
 
-        except Exception as e:
-            logger.exception("Critique failed")
-            session_manager.update_session_status(session_id, "error", error_message=str(e))
-            await websocket_manager.send_message(session_id, {
-                "event": "status",
-                "status": "error",
-                "message": str(e)
-            })
+                # Send final summary
+                if result:
+                    await websocket_manager.send_message(session_id, {
+                        "event": "summary",
+                        "payload": result
+                    })
+
+                return result
+
+            except Exception as e:
+                logger.exception("Critique failed")
+                session_manager.update_session_status(session_id, "error", error_message=str(e))
+                await websocket_manager.send_message(session_id, {
+                    "event": "status",
+                    "status": "error",
+                    "message": str(e)
+                })
+                raise
+
+        # Execute the analysis
+        result = await run_analysis()
 
         # Generate PDF report
         use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
