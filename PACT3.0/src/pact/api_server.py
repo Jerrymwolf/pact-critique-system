@@ -556,7 +556,7 @@ async def start_critique(request: CritiqueRequest):
 
         # Set initial status and broadcast
         session_manager.update_session_status(session_id, "running", overall_progress=1)
-        await websocket_manager.broadcast(session_id, {
+        await manager.broadcast(session_id, {
             "event": "status", 
             "status": "running", 
             "progress": 1
@@ -641,7 +641,7 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
     """
     WebSocket endpoint for real-time progress updates.
     """
-    await websocket_manager.connect(session_id, websocket)
+    await manager.connect(session_id, websocket)
 
     try:
         # Send initial status
@@ -663,7 +663,7 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
                     "final_critique": session.final_critique,
                     "dimension_critiques": session.dimension_critiques
                 }
-            await websocket_manager.send_message(session_id, current_status)
+            await manager.send_message(session_id, current_status)
 
         # Keep connection alive and handle any messages
         while True:
@@ -680,7 +680,7 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
     except Exception as e:
         logger.error(f"WebSocket error for session {session_id}: {e}")
     finally:
-        websocket_manager.disconnect(session_id, None)
+        manager.disconnect(session_id, None)
 
 @app.get("/api/critique/download/{session_id}")
 async def download_critique_report(session_id: str, format: str = Query("pdf", description="Report format: pdf, html, md")):
@@ -782,7 +782,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
     """Background task to run the critique analysis."""
     try:
         logger.info("Launching supervisor task for session %s", session_id)
-        
+
         # Get session object
         session = session_manager.get_session(session_id)
         if not session:
@@ -790,10 +790,10 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
 
         # Create supervisor
         supervisor = make_supervisor()
-        
+
         # Set initial status and broadcast
         session_manager.update_session_status(session_id, "running", overall_progress=1)
-        await websocket_manager.broadcast(session_id, {
+        await manager.broadcast(session_id, {
             "event": "status", 
             "status": "running", 
             "progress": 1
@@ -804,7 +804,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             {"paper_content": paper_content, "paper_title": paper_title, "mode": mode},
             session_id=session_id
         )
-        
+
         # Update session with completion
         session_manager.update_session_status(
             session_id,
@@ -814,27 +814,27 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             final_critique=result.get("final_critique"),
             overall_progress=100
         )
-        
+
         # Broadcast completion
-        await websocket_manager.broadcast(session_id, {
+        await manager.broadcast(session_id, {
             "event": "status",
             "status": "completed", 
             "progress": 100
         })
-        
+
         # Optionally re-broadcast summary if supervisor didn't
         if result:
-            await websocket_manager.broadcast(session_id, {
+            await manager.broadcast(session_id, {
                 "event": "summary",
                 "payload": result
             })
-            
+
         logger.info(f"Critique analysis completed for session {session_id}")
 
     except Exception as e:
         logger.exception("Critique failed for session %s", session_id)
         session_manager.update_session_status(session_id, "error", error_message=str(e))
-        await websocket_manager.broadcast(session_id, {
+        await manager.broadcast(session_id, {
             "event": "status",
             "status": "error",
             "message": str(e)
@@ -911,7 +911,7 @@ async def notify_websocket_clients(session_id: str):
             "updated_at": session.updated_at.isoformat() if session.updated_at else None,
             "error_message": getattr(session, 'error_message', None)
         }
-        await websocket_manager.broadcast(session_id, progress_data)
+        await manager.broadcast(session_id, progress_data)
 
 # ===== HEALTH CHECK =====
 
