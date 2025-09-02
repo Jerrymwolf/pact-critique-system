@@ -231,7 +231,7 @@
                     </div>
 
                     <!-- Submit Button -->
-                    <button id="analyze-btn" onclick="startAnalysis()" class="w-full gradient-bg text-white font-semibold py-4 px-6 rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <button id="analyze-btn" onclick="startAnalysis()" class="w-full gradient-bg text-white font-semibold py-4 px-6 rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <span class="flex items-center justify-center">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -641,7 +641,7 @@
                             </div>
                             <div class="p-4 bg-red-50 rounded-lg">
                                 <h4 class="font-semibold text-red-900">5. Critical Sophistication</h4>
-                                <p class="text-red-700">Reflexivity, original contribution, theoretical engagement, and scholarly maturity</p>
+                                <p class="text-red-700">Reflexivity, originality, theoretical engagement, and scholarly maturity</p>
                             </div>
                         </div>
 
@@ -679,7 +679,8 @@
         let dimensionChart = null;
         let currentSessionId = null;
         let websocket = null;
-        let apiBaseUrl = window.location.origin;
+        // Configure API base URL
+        const API_BASE_URL = window.location.protocol + '//' + window.location.host;
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -700,7 +701,7 @@
             // fileInput.addEventListener('change', handleFileSelect);
 
             // Text input
-            const paperText = document.getElementById('paper-text');
+            const paperText = document.getElementById('paper-content');
             paperText.addEventListener('input', updateWordCount);
         }
 
@@ -873,7 +874,7 @@
         // Submit paper for analysis via API
         async function submitPaperForAnalysis(content, title, type) {
             try {
-                const response = await fetch(`${apiBaseUrl}/api/critique/start`, {
+                const response = await fetch(`${API_BASE_URL}/api/critique/start`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -937,17 +938,27 @@
         async function startProgressPolling(sessionId) {
             const pollInterval = setInterval(async () => {
                 try {
-                    const response = await fetch(`${apiBaseUrl}/api/critique/status/${sessionId}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        updateProgressFromAPI(data);
+                    const response = await fetch(`${API_BASE_URL}/api/critique/status/${sessionId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        mode: 'cors'
+                    });
 
-                        // Stop polling when completed or failed
-                        if (data.status === 'completed' || data.status === 'failed') {
-                            clearInterval(pollInterval);
-                            if (data.status === 'completed') {
-                                await loadFinalResults(sessionId);
-                            }
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    updateProgressFromAPI(data);
+
+                    // Stop polling when completed or failed
+                    if (data.status === 'completed' || data.status === 'failed') {
+                        clearInterval(pollInterval);
+                        if (data.status === 'completed') {
+                            await loadFinalResults(sessionId);
                         }
                     }
                 } catch (error) {
@@ -1028,7 +1039,7 @@
         // Load final results from the API
         async function loadFinalResults(sessionId) {
             try {
-                const response = await fetch(`${apiBaseUrl}/api/critique/results/${sessionId}`);
+                const response = await fetch(`${API_BASE_URL}/api/critique/results/${sessionId}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -1516,7 +1527,7 @@
                 downloadButton.disabled = true;
 
                 // Request the report from the API
-                const response = await fetch(`${apiBaseUrl}/api/critique/download/${currentSessionId}?format=${format}`);
+                const response = await fetch(`${API_BASE_URL}/api/critique/download/${currentSessionId}?format=${format}`);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);

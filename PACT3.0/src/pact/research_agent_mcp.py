@@ -52,7 +52,7 @@ def get_mcp_client():
     return _client
 
 # Initialize models
-compress_model = init_chat_model(model="openai:gpt-4.1", max_tokens=32000)
+compress_model = init_chat_model(model="openai:gpt-4o", max_tokens=32000)
 model = init_chat_model(model="openai:gpt-5")
 
 # ===== AGENT NODES =====
