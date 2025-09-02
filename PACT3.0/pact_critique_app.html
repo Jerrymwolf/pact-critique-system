@@ -913,13 +913,13 @@
         async function submitPaperForAnalysis(content, title, type) {
             try {
                 const analysisMode = document.getElementById('analysisMode').value;
-                
+
                 const response = await fetch(`${API_BASE_URL}/api/critique/start`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
+                    body: JSON.JSON.stringify({
                         content: content,
                         title: title,
                         paper_type: type,
@@ -1017,7 +1017,7 @@
         // Update UI based on API progress data
         function updateProgressFromAPI(data) {
             console.log('Updating progress from API:', data);
-            
+
             // Update overall progress
             updateProgress(data.overall_progress || 0);
 
@@ -1118,41 +1118,15 @@
         // Convert API results to a display-friendly format
         function convertAPIResultsToDisplayFormat(apiResults) {
             console.log('Converting API results:', apiResults);
-            
+
             const dimensions = {};
             const strengths = [];
             const improvements = [];
             const nextSteps = ["Review detailed feedback", "Address priority improvements", "Consider revision timeline"];
-            
-            // Process dimension critiques
-            if (apiResults.dimension_critiques) {
-                for (const [dimId, critique] of Object.entries(apiResults.dimension_critiques)) {
-                    dimensions[critique.dimension_name || dimId] = critique.dimension_score || 0;
-                    
-                    // Collect strengths and improvements
-                    if (critique.strengths) {
-                        strengths.push(...critique.strengths);
-                    }
-                    if (critique.weaknesses) {
-                        improvements.push(...critique.weaknesses);
-                    }
-                }
-            }
-
-            return {
-                overallScore: apiResults.overall_score || 75,
-                recommendation: apiResults.overall_score >= 85 ? "Ready for submission" : "Minor revisions recommended",
-                summary: apiResults.final_critique || "Analysis completed successfully.",
-                strengths: strengths.length > 0 ? strengths : ["Well-structured content", "Clear research objectives"],
-                improvements: improvements.length > 0 ? improvements : ["Consider minor revisions"],
-                dimensions: Object.keys(dimensions).length > 0 ? dimensions : {"Clarity": 85, "Coherence": 80},
-                nextSteps: nextSteps,
-                dimensionAnalyses: apiResults.dimension_critiques || {}
-            };
-        }ensionAnalyses = {};
+            const dimensionAnalyses = {};
             const checklistItems = [];
 
-            // Process dimension critiques from enhanced format
+            // Process dimension critiques
             if (apiResults.dimension_analyses) {
                 for (const [dimId, dimension] of Object.entries(apiResults.dimension_analyses)) {
                     dimensions[dimension.dimension_name] = getScoreFromAssessment(dimension.overall_assessment);
@@ -1169,13 +1143,14 @@
             } else if (apiResults.dimension_critiques) {
                 // Fallback to old format
                 for (const [dimId, critique] of Object.entries(apiResults.dimension_critiques)) {
-                    dimensions[critique.dimension_name] = critique.dimension_score;
+                    dimensions[critique.dimension_name || dimId] = critique.dimension_score || 0;
 
+                    // Collect strengths and improvements
                     if (critique.strengths) {
-                        strengths.push(...critique.strengths.slice(0, 2));
+                        strengths.push(...critique.strengths);
                     }
                     if (critique.weaknesses) {
-                        improvements.push(...critique.weaknesses.slice(0, 2));
+                        improvements.push(...critique.weaknesses);
                     }
                     if (critique.recommendations) {
                         nextSteps.push(...critique.recommendations.slice(0, 1));
@@ -1776,7 +1751,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const validTypes = ['text/plain', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
             const validExtensions = ['.txt', '.pdf', '.docx'];
             const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-            
+
             if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
                 showMessage('Please upload a TXT, PDF, or DOCX file.', 'error');
                 clearFile();
@@ -1818,10 +1793,10 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                 const result = await response.json();
                 uploadedFileContent = result.content;
                 fileName.textContent = file.name;
-                
+
                 // Also populate the textarea with the content
                 document.getElementById('paper-content').value = result.content;
-                
+
                 showMessage(`File "${file.name}" processed successfully!`, 'success');
                 enableAnalysisButton();
                 updateWordCount();
