@@ -379,10 +379,26 @@ class CritiqueRequest(BaseModel):
     paper_type: Optional[str] = Field(default=None, description="Type of the paper")
     mode: Optional[str] = Field(default="STANDARD", description="Analysis mode: APA7, STANDARD, or COMPREHENSIVE")
 
+from pydantic import BaseModel, Field, model_validator
+from typing import Optional
+
 class StartCritiqueRequest(BaseModel):
-    title: str                     # ✅ required
-    paper_text: str                # extracted text you'll analyze
-    mode: str = "STANDARD"         # optional
+    title: str
+    paper_text: Optional[str] = None
+    paper_content: Optional[str] = None
+    mode: str = "STANDARD"
+
+    @model_validator(mode="after")
+    def ensure_text_present(self):
+        if not (self.paper_text or self.paper_content):
+            # This message will show up in the 422 response
+            raise ValueError("Provide paper_text or paper_content")
+        return self
+
+    # convenience
+    @property
+    def text(self) -> str:
+        return (self.paper_text or self.paper_content or "").strip()
 
 class CritiqueResponse(BaseModel):
     session_id: str
@@ -568,7 +584,7 @@ async def start_critique(request: StartCritiqueRequest):
         session = session_manager.create_session(
             title=title,
             mode=mode,
-            paper_content=request.paper_text
+            paper_content=request.text
         )
 
         # Broadcast initial status
@@ -579,7 +595,7 @@ async def start_critique(request: StartCritiqueRequest):
         })
 
         # Start critique processing in background
-        asyncio.create_task(run_critique_analysis(session.session_id, request.paper_text, title, session.mode), name=f"critique-{session.session_id}")
+        asyncio.create_task(run_critique_analysis(session.session_id, request.text, title, session.mode), name=f"critique-{session.session_id}")
 
         return CritiqueResponse(
             session_id=session.session_id,
