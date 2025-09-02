@@ -1,0 +1,238 @@
+Great—your logs are super helpful. They point to two primary root causes and a couple of wiring issues that explain why you’re not seeing real analysis in the UI.
+
+# What the logs actually tell us
+
+1. **You’re running the MOCK path, not the real agent.**
+
+   > `Creating mock critique supervisor...`
+   > `Mock supervisor ainvoke called ...`
+   > `Mock PDF report generated: PACT_Analysis_Report_f658fa4e.pdf`
+   > That means no LLM work is being done; you’re generating placeholder output.
+
+2. **Your WebSocket connected *after* the server tried to send early progress events.**
+
+   > `No active WebSocket connections ... to send message.` (twice)
+   > You’re missing the first messages (and possibly the final) because you don’t queue events when no WS is present.
+
+3. **The status endpoint is polling, but you likely never flip the session to DONE (or never attach results).**
+
+   > Many `GET /api/critique/status/{session}` → 200 OK
+   > If the UI doesn’t get a “complete” state + a payload/URL, it will spin forever.
+
+4. **Everything else looks fine (file read, truncation is non-fatal).**
+
+   > `Extracted 6314 characters ... Truncated length: 6000` → OK.
+
+Below are concrete, copy-paste level fixes.
+
+---
+
+## ✅ Fix 1 — Disable the mock and wire the **real supervisor/agent**
+
+Search your server for the mock call (the literal string shows up in your logs):
+
+```python
+# BAD
+supervisor = create_mock_critique_supervisor()
+```
+
+Replace with the real builder and pass your mode/model:
+
+```python
+# GOOD
+from pact.agents import create_critique_supervisor  # (or your actual path)
+
+supervisor = create_critique_supervisor(
+    mode=mode,                    # "APA7" | "STANDARD" | "COMPREHENSIVE"
+    model_name=os.getenv("OPENAI_MODEL", "gpt-5-thinking"),
+    # ... any other deps (retriever, taxonomy, caps) ...
+)
+```
+
+If your code toggles mock via an env flag, set:
+
+```
+USE_MOCK=0  (or)  PACT_USE_MOCK=0  (or)  ENABLE_MOCK_SUPERVISOR=false
+```
+
+(Use whatever your code expects; the log string confirms a mock branch exists.)
+
+Also confirm you actually **store the agents**:
+
+```python
+session.agents = {"supervisor": supervisor}
+```
+
+Your log had `"agents": {}`.
+
+---
+
+## ✅ Fix 2 — WebSocket ordering (or buffer events until connected)
+
+Right now the server tries to publish before the WS exists. Implement a **per-session event buffer**:
+
+```python
+# session registry
+SESSIONS: dict[str, dict] = {}   # { session_id: {"ws": Optional[WebSocket], "queue": deque(), ...} }
+
+from collections import deque
+
+def publish(session_id: str, event: dict):
+    s = SESSIONS.get(session_id)
+    if not s:
+        return
+    ws = s.get("ws")
+    if ws:
+        asyncio.create_task(ws.send_json(event))
+    else:
+        s.setdefault("queue", deque()).append(event)
+
+async def on_ws_connect(session_id: str, ws: WebSocket):
+    s = SESSIONS.setdefault(session_id, {})
+    s["ws"] = ws
+    # flush backlog
+    for _ in range(len(s.get("queue", []))):
+        await ws.send_json(s["queue"].popleft())
+```
+
+**Client order** that works with this:
+
+* (A) POST `/api/critique/start` → receive `{ session_id }`
+* (B) Open WS `/api/critique/live/{session_id}`
+* (C) Server begins publishing; if B happens a bit late, the backlog flushes on connect.
+
+Either this buffer or “open WS first, then POST start” will fix the “No active WebSocket” warnings and missing messages.
+
+---
+
+## ✅ Fix 3 — Make your **status** endpoint authoritative (and helpful)
+
+Update your status to **always** return:
+
+```json
+{
+  "state": "queued|running|complete|error",
+  "progress": { "completed": 3, "total": 7 },  // optional
+  "result": { ... },                           // final JSON (PACT or APA7)
+  "report_url": "/api/critique/report/<session>.pdf",  // optional
+  "error": null
+}
+```
+
+And in the code, **flip to complete** and attach result at the end:
+
+```python
+try:
+    set_status(session_id, state="running")
+    result = await supervisor.ainvoke(initial_state)
+    save_result(session_id, result)
+    set_status(session_id, state="complete")
+    publish(session_id, {"type":"done","session_id":session_id})
+except Exception as e:
+    set_status(session_id, state="error", error=str(e))
+    publish(session_id, {"type":"error","message":str(e)})
+```
+
+Your UI can then:
+
+* use WS for live updates
+* **and** fall back to polling `GET /status/{session_id}` to read the final `result`/`report_url`.
+
+Right now, from your logs, you probably never set `state="complete"` with data.
+
+---
+
+## ✅ Fix 4 — Actually run the agent and return its output
+
+After you build the **real** supervisor, invoke it and **persist the output**:
+
+```python
+initial = {
+    "paper_content": paper_text,
+    "paper_title": title,
+    "mode": mode,                         # "APA7" | "STANDARD" | "COMPREHENSIVE"
+}
+
+publish(session_id, {"type":"info","msg":"Starting analysis..."})
+
+result = await supervisor.ainvoke(initial)
+
+# Validate and persist
+validate_pact_or_apa7(result)     # your AJV/jsonschema call
+store_json(session_id, result)
+
+publish(session_id, {"type":"result","payload": result})
+```
+
+Don’t write “mock PDF” unless you’re in mock mode. For the real path, render a real PDF **from the result**.
+
+---
+
+## ✅ Fix 5 — Client: don’t hammer status before the session exists
+
+You had an early:
+
+> `GET /api/critique/status/3caf... 404`
+
+Guard the UI:
+
+* Call `/start`, get `{ session_id }`.
+* Start WS with that `session_id`.
+* Begin polling `status` **only after** you have a valid `session_id`.
+
+---
+
+## ✅ Fix 6 — Model name & token caps sanity
+
+Your boot log prints:
+
+> `OpenAI Model: gpt-5` / `Using GPT-5 (no custom temperature - uses model defaults)`
+
+Make sure this matches the API you call:
+
+* If you use **chat.completions** + **Structured Outputs**, use a model that supports `response_format: json_schema`.
+* If you use the **Responses API**, the param is `max_output_tokens` (not `max_completion_tokens`).
+* For reasoning models, some force `temperature=1`; omit temperature overrides if you got 400s earlier.
+
+**Per-node caps** are still important:
+
+* `max_output_tokens` (or model-specific param)
+* tight JSON Schemas with `maxItems`/`maxLength` so you never overflow again
+
+---
+
+## ✅ Fix 7 — Surface server errors to the UI
+
+When you return 4xx/5xx:
+
+```python
+return JSONResponse(
+  status_code=422,
+  content={"error":"Invalid payload", "details": zod_or_ajv_errors}
+)
+```
+
+And in the client:
+
+```ts
+if (!res.ok) {
+  const err = await res.json().catch(()=> ({}));
+  console.error("Start failed", res.status, err);
+  toast.error(err?.error ?? `HTTP ${res.status}`);
+  return;
+}
+```
+
+---
+
+# Quick checklist to get green
+
+* [ ] Replace **mock** supervisor with the **real** agent builder.
+* [ ] Ensure `agents.supervisor` exists and you actually `await supervisor.ainvoke(...)`.
+* [ ] Add **event buffer** so WS late connects still receive earlier messages.
+* [ ] Status endpoint: return `state`, `result`, `report_url`; flip to **complete** on success.
+* [ ] Client: obtain `session_id` from `/start`, then connect WS, then poll `/status/{id}`.
+* [ ] Persist and serve the **real** analysis result (and only generate a mock PDF in mock mode).
+* [ ] Keep model/endpoint params consistent and token-cap each node.
+
+If you paste your **/api/critique/start handler** and the **WS connect handler**, I’ll mark the exact lines to change (mock → real, add buffering, and finalize status/report emit) so your analysis appears in the UI immediately.
