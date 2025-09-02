@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""
+Startup script for PACT Critique API Server
+
+This script loads environment variables and starts the FastAPI server
+with proper configuration for the PACT critique system.
+"""
+
+import os
+import sys
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Add src directory to Python path
+src_path = Path(__file__).parent / "src"
+sys.path.insert(0, str(src_path))
+
+# Load environment variables
+load_dotenv()
+
+# Check for required environment variables
+required_vars = ["OPENAI_API_KEY"]
+missing_vars = []
+
+for var in required_vars:
+    if not os.getenv(var):
+        missing_vars.append(var)
+
+if missing_vars:
+    print("❌ Missing required environment variables:")
+    for var in missing_vars:
+        print(f"   - {var}")
+    print("\nPlease set these in your .env file or environment.")
+    print("See .env.example for reference.")
+    sys.exit(1)
+
+print("✅ Environment configured successfully")
+print(f"📝 OpenAI Model: {os.getenv('OPENAI_MODEL', 'chatgpt-5')}")
+print("🤖 Using ChatGPT 5 (no custom temperature - uses model defaults)")
+
+# Start the server
+if __name__ == "__main__":
+    import uvicorn
+    from pact.api_server import app
+    
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    debug = os.getenv("DEBUG", "true").lower() == "true"
+    
+    print(f"🚀 Starting PACT Critique API Server on {host}:{port}")
+    print(f"🔗 Access the app at: http://localhost:{port}")
+    print("📊 WebSocket endpoint: /api/critique/live/{session_id}")
+    print("📖 API documentation: /docs")
+    
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        reload=debug,
+        log_level="info"
+    )

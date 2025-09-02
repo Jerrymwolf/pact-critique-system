@@ -1,0 +1,2854 @@
+{
+  "PACT_Version": "14",
+  "title": "PennCLO Academic Critique Taxonomy",
+  "subtitle": "Complete Claude-Optimized JSON Version with Full Rubrics",
+  "description": "A comprehensive framework for understanding, evaluating, and improving academic writing",
+  "metadata": {
+    "created_for": "Claude AI optimization",
+    "structure": "Hierarchical with complete 5-level rubrics",
+    "special_note": "Cultural Inclusivity placed under 5.1 as requested"
+  },
+  "dimensions": {
+    "1.0.0": {
+      "name": "RESEARCH FOUNDATIONS",
+      "description": "The core intellectual groundwork including research purpose, theoretical frameworks, literature engagement, and argument construction",
+      "severity": "Critical",
+      "sections": {
+        "1.1.0": {
+          "name": "Research Purpose & Problem Definition",
+          "subsections": {
+            "1.1.1": {
+              "name": "Problem Identification and Significance",
+              "severity": "Critical",
+              "description": "The clear articulation of a specific problem worth addressing and its importance to theory, practice, or society",
+              "detection_patterns": [
+                "Vague problem statements",
+                "Assumed significance without justification",
+                "Gap-as-problem without explaining importance",
+                "Missing urgency or relevance",
+                "Overly broad or narrow framing"
+              ],
+              "feedback_template": "Strengthen your problem statement by: (1) identifying the specific issue rather than noting general gaps, (2) explaining why this problem matters now with concrete evidence, (3) articulating consequences if unaddressed, (4) connecting to broader theoretical or societal concerns, and (5) making urgency clear.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear problem or only vague topic area",
+                  "example": "This study looks at online learning."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Problem mentioned but significance unclear",
+                  "example": "This study examines how professionals use MOOCs. This matters because many professionals use them."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear problem identified with significance explained",
+                  "example": "IT professionals face rapid skill obsolescence, with programming languages changing every 2-3 years. Traditional education cannot respond quickly enough. This study examines how MOOCs fill this gap."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Specific problem articulated with multiple dimensions of significance",
+                  "example": "The half-life of tech skills has dropped to 18 months, yet traditional degrees take 4 years. This creates a crisis: 40% of IT workers report skill gaps. MOOCs promise rapid reskilling, but we don't know if they deliver career transitions or just certificates."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Compelling problem framing with theoretical and practical significance",
+                  "example": "The accelerating pace of technological change fundamentally disrupts traditional models of professional development. With AI tools evolving monthly, the 4-year degree model becomes obsolete. This isn't just about individual careers; it's about economic competitiveness. Yet we lack models for rapid, effective professional transitions."
+                }
+              }
+            },
+            "1.1.2": {
+              "name": "Research Question Formulation",
+              "severity": "Critical",
+              "description": "The development of focused, researchable questions that directly address the identified problem",
+              "detection_patterns": [
+                "Binary yes/no questions",
+                "Compound questions addressing multiple phenomena",
+                "Overly broad or narrow scope",
+                "Questions misaligned with identified problems",
+                "Leading or biased formulations"
+              ],
+              "feedback_template": "Refine your research question to be: (1) open-ended rather than binary, (2) focused on a single phenomenon, (3) appropriately scoped for the research, (4) directly addressing your identified problem, and (5) allowing for unexpected findings.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear question or yes/no format",
+                  "example": "Do MOOCs work?"
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Question present but unfocused or compound",
+                  "example": "What are all the ways professionals use online learning and how effective is it?"
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear, focused question addressing single phenomenon",
+                  "example": "How do mid-career IT professionals integrate MOOC learning into their career advancement strategies?"
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Well-crafted question with clear boundaries and depth potential",
+                  "example": "In what ways do IT professionals translate MOOC-based learning into workplace performance improvements and career transitions?"
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Sophisticated question opening new theoretical territory",
+                  "example": "How do IT professionals navigate the tension between rapid skill acquisition through MOOCs and the credentialing expectations of traditional career pathways?"
+                }
+              }
+            },
+            "1.1.3": {
+              "name": "Scope Definition and Management",
+              "severity": "Important",
+              "description": "The strategic bounding of research to enable depth while maintaining feasibility",
+              "detection_patterns": [
+                "Overly ambitious scope",
+                "Unclear boundaries",
+                "Missing justification for scope choices",
+                "Scope creep throughout document",
+                "Misalignment between scope and methods"
+              ],
+              "feedback_template": "Define scope more precisely by: (1) explicitly stating what's included and excluded, (2) justifying these boundaries, (3) ensuring scope aligns with methods and timeline, (4) choosing depth over breadth, and (5) maintaining consistent scope throughout.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear scope or unrealistic ambitions",
+                  "example": "This study examines all aspects of online professional development globally."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some boundaries but still too broad",
+                  "example": "This study looks at how all professionals in technology fields use various online learning platforms."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear boundaries with realistic scope",
+                  "example": "This study focuses on mid-career IT professionals in the US using MOOCs for skill updates, not career changes."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Strategic focusing with excellent justification",
+                  "example": "Study bounds: IT professionals with 5-10 years experience in San Francisco Bay Area using MOOCs for cloud computing skills. This narrow focus enables examining full learning-to-application cycle."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Scope as methodological innovation",
+                  "example": "This study embraces 'permeable scope'—core focus on 30 cloud engineers while following their networks. When participants reference Stack Overflow, we analyze those interactions. The scope breathes with the phenomenon."
+                }
+              }
+            },
+            "1.1.4": {
+              "name": "Contribution Statement",
+              "severity": "Critical",
+              "description": "The explicit articulation of how research advances knowledge beyond existing scholarship",
+              "detection_patterns": [
+                "Generic claims like 'fills a gap'",
+                "Contributions not linked to research questions",
+                "Overstated claims without evidence",
+                "Missing practical or theoretical implications",
+                "Failure to differentiate from existing work"
+              ],
+              "feedback_template": "Clarify contributions by: (1) specifying exactly what new knowledge emerges, (2) explaining theoretical advances, (3) identifying practical applications, (4) showing how this differs from existing work, and (5) connecting to broader implications.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear contribution stated",
+                  "example": "This study contributes by examining an understudied area."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic contribution stated but value unclear",
+                  "example": "This study contributes by providing new data on MOOC usage in IT careers."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear contribution with specific value explained",
+                  "example": "This study contributes a typology of MOOC-to-career pathways, helping educators design programs and professionals choose courses that lead to actual job transitions."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Multiple contributions clearly positioned",
+                  "example": "This study contributes: (1) empirical evidence challenging human capital theory's front-loading assumption, (2) a new framework for 'just-in-time' professional development, and (3) practical guidelines for career transitions."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Paradigm-challenging contributions",
+                  "example": "This study reconceptualizes professional expertise from stable possession to dynamic capability requiring constant renewal, challenging credentialing theory and opening new research on temporality in professional development."
+                }
+              }
+            }
+          }
+        },
+        "1.2.0": {
+          "name": "Theoretical/Conceptual Framework",
+          "subsections": {
+            "1.2.1": {
+              "name": "Framework Selection and Justification",
+              "severity": "Critical",
+              "description": "The thoughtful choice and clear rationale for theoretical perspectives guiding the research",
+              "detection_patterns": [
+                "Name-dropping theories without integration",
+                "Mismatched framework and phenomenon",
+                "Multiple frameworks without clear relationships",
+                "Superficial understanding of theoretical traditions",
+                "Missing justification for choices"
+              ],
+              "feedback_template": "Strengthen framework selection by: (1) clearly explaining chosen theories, (2) justifying why these fit your phenomenon, (3) showing deep understanding, (4) integrating multiple theories coherently if used, and (5) connecting to research questions.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No framework or random theory mentions",
+                  "example": "This study uses various theories including systems theory, critical theory, and behaviorism."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Framework named but weakly integrated",
+                  "example": "This study uses human capital theory because it deals with education and careers."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear framework choice with solid justification",
+                  "example": "This study employs communities of practice theory because MOOC success depends on peer learning networks, not just content consumption."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated framework selection with nuanced justification",
+                  "example": "Bourdieu's theory of capital conversion illuminates how professionals transform MOOC credentials (institutionalized cultural capital) into career advancement (economic capital) through strategic network activation (social capital)."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Framework selection that opens new theoretical possibilities",
+                  "example": "This study bridges liquid modernity theory with human capital theory—seemingly incompatible frameworks that together explain how professionals manage expertise as 'flow' rather than 'stock' in accelerating economies."
+                }
+              }
+            },
+            "1.2.2": {
+              "name": "Key Terms and Concepts Precision",
+              "severity": "Important",
+              "description": "The careful definition and consistent use of central concepts throughout the research",
+              "detection_patterns": [
+                "Undefined key terms",
+                "Inconsistent usage across document",
+                "Circular definitions",
+                "Overly broad or narrow definitions",
+                "Misalignment with theoretical framework"
+              ],
+              "feedback_template": "Improve term precision by: (1) defining all key concepts clearly, (2) maintaining consistent usage throughout, (3) distinguishing between related terms, (4) avoiding unnecessary jargon, and (5) ensuring definitions serve analytical purposes.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Key terms undefined or used inconsistently",
+                  "example": "The study examines 'professional development' and 'career growth' interchangeably without definition."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some definitions but inconsistent usage",
+                  "example": "'Professional development' is defined as 'improving skills' but sometimes used to mean promotion, certification, or learning."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear definitions with consistent usage",
+                  "example": "'Professional development' means skill acquisition for current role enhancement, while 'career advancement' means hierarchical or lateral job transitions."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Precise definitions that enable nuanced analysis",
+                  "example": "This study distinguishes 'skill acquisition' (technical capability), 'skill activation' (workplace application), and 'skill recognition' (credential/promotion), revealing gaps between learning and career impact."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Conceptual precision that advances theoretical understanding",
+                  "example": "'Liquid expertise' reconceptualizes professional knowledge as flow rate rather than accumulation, measured by knowledge refresh cycles, application velocity, and obsolescence curves."
+                }
+              }
+            },
+            "1.2.3": {
+              "name": "Framework Application Planning",
+              "severity": "Important",
+              "description": "The explicit strategy for how theoretical frameworks will guide data collection, analysis, and interpretation",
+              "detection_patterns": [
+                "Framework abandoned after literature review",
+                "No connection between theory and methods",
+                "Analysis categories unrelated to framework",
+                "Findings that don't speak to theoretical concepts",
+                "Missed opportunities for theoretical insight"
+              ],
+              "feedback_template": "Strengthen framework application by: (1) showing how theory guides methods, (2) deriving analytical categories from framework, (3) planning theoretical interpretation, (4) anticipating theoretical surprises, and (5) maintaining theory throughout document.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No application plan evident",
+                  "example": "This study uses social capital theory. [Then never mentions it again]"
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic connections but limited integration",
+                  "example": "Social capital theory suggests networks matter, so interview questions ask about professional connections."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear application strategy with theory guiding decisions",
+                  "example": "Following Putnam's framework, data collection examines bonding capital (close relationships), bridging capital (cross-functional connections), and linking capital (hierarchical relationships)."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated application with innovation",
+                  "example": "Extending social capital to digital contexts requires reconceptualization: bonding capital = sustained forum participation, bridging = cross-cultural knowledge exchange, new measure of 'capital velocity'."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Application that advances theory itself",
+                  "example": "Applying social capital theory reveals its accumulation bias. This study tracks 'capital depreciation'—when networks become liabilities, proposing 'network metabolism' model of strategic relationship renewal."
+                }
+              }
+            },
+            "1.2.4": {
+              "name": "Theoretical Integration Depth",
+              "severity": "Enhancement",
+              "description": "The sophisticated weaving of theoretical concepts throughout all aspects of the research",
+              "detection_patterns": [
+                "Theory confined to early chapters",
+                "Superficial theoretical references",
+                "Missed connections between theory and findings",
+                "No theoretical evolution through research",
+                "Decorative rather than generative theory use"
+              ],
+              "feedback_template": "Deepen theoretical integration by: (1) threading theory throughout document, (2) using theory to interpret surprises, (3) showing theoretical evolution, (4) connecting findings to theoretical debates, and (5) contributing to theory development.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Theory mentioned but not integrated",
+                  "example": "Literature review discusses theory. Methods and findings proceed without theoretical connection."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some integration but mostly superficial",
+                  "example": "Analysis mentions theoretical concepts occasionally but doesn't use them systematically."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Theory guides analysis and interpretation",
+                  "example": "Coding categories derive from theoretical framework. Findings organized by theoretical dimensions."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated integration with dialogical relationship",
+                  "example": "Theory shapes methods while findings challenge theory. Analysis reveals new theoretical patterns requiring framework extension."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Integration that transforms theoretical understanding",
+                  "example": "Applying ANT to ephemeral MOOC networks reveals 'ghost networks'—dissolved but haunting through practices. This forces ANT reconsideration of network temporality."
+                }
+              }
+            }
+          }
+        },
+        "1.3.0": {
+          "name": "Literature Engagement",
+          "subsections": {
+            "1.3.1": {
+              "name": "Literature Synthesis as Argument",
+              "severity": "Critical",
+              "description": "The construction of literature review as argumentative narrative rather than annotated bibliography",
+              "detection_patterns": [
+                "Serial summaries without synthesis",
+                "Missing argumentative thread",
+                "No clear organizational logic",
+                "Failure to show relationships between sources",
+                "Descriptive rather than analytical approach"
+              ],
+              "feedback_template": "Transform literature review by: (1) organizing around themes not authors, (2) creating argumentative narrative, (3) showing relationships between sources, (4) building toward research questions, and (5) identifying patterns and contradictions.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "List of summaries without synthesis",
+                  "example": "Smith (2020) found X. Jones (2021) studied Y. Brown (2022) examined Z."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some grouping but limited synthesis",
+                  "example": "Several studies examine professional development. Smith (2020) found X. Jones (2021) found Y. These show some patterns."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear themes with good synthesis",
+                  "example": "Three perspectives on professional development emerge: human capital (skill accumulation), social capital (network benefits), and identity (professional becoming). These frameworks conflict on whether development is individual or social."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated argument through literature",
+                  "example": "Literature reveals an evolution: early studies assumed linear skill accumulation, but digital disruption research shows cyclical deskilling/reskilling patterns, suggesting we need new non-accumulative models."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Literature review as theoretical contribution",
+                  "example": "Mapping professional development literature reveals hidden assumption: expertise as possession. But reading against grain shows counter-narrative of expertise as performance, opening space for 'liquid expertise' theory."
+                }
+              }
+            },
+            "1.3.2": {
+              "name": "Critical Source Engagement",
+              "severity": "Critical",
+              "description": "The analytical evaluation of sources showing methodological sophistication and theoretical depth",
+              "detection_patterns": [
+                "Uncritical acceptance of all sources",
+                "No methodological evaluation",
+                "Missing analysis of conflicting findings",
+                "Failure to note limitations",
+                "No consideration of source positioning"
+              ],
+              "feedback_template": "Enhance critical engagement by: (1) evaluating methodological strengths/weaknesses, (2) analyzing conflicting findings, (3) considering theoretical assumptions, (4) noting limitations, and (5) positioning sources in debates.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No critical evaluation evident",
+                  "example": "Studies show professional development is important."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic evaluation but superficial",
+                  "example": "Some studies support online learning effectiveness while others question it."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good critical analysis of sources",
+                  "example": "While Chen (2020) demonstrates MOOC effectiveness, the study's 3-week timeline cannot capture long-term career impact, a limitation addressed by Lopez's (2021) longitudinal design."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated methodological and theoretical critique",
+                  "example": "The MOOC effectiveness debate reflects paradigmatic differences: positivist studies measure completion rates while interpretivist research examines meaning-making. These produce incommensurable 'findings' about different phenomena."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Critical engagement that reveals field assumptions",
+                  "example": "Close reading reveals how 'effectiveness' studies encode industrial efficiency logic. Even critical research accepts acceleration imperative. No studies question whether professionals should constantly reskill—revealing field's complicity with platform capitalism."
+                }
+              }
+            },
+            "1.3.3": {
+              "name": "Gap Identification and Significance",
+              "severity": "Critical",
+              "description": "The strategic identification of knowledge gaps that justify the research beyond simple omissions",
+              "detection_patterns": [
+                "Gap-as-absence without significance",
+                "Manufactured gaps",
+                "Gaps unrelated to research questions",
+                "No explanation of why gap matters",
+                "Multiple unrelated gaps"
+              ],
+              "feedback_template": "Improve gap identification by: (1) showing why gap matters not just that it exists, (2) connecting to your research questions, (3) explaining consequences of gap, (4) avoiding manufactured gaps, and (5) focusing on most significant gap.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear gap or trivial omission",
+                  "example": "No studies examine MOOCs on Tuesdays."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Gap identified but significance unclear",
+                  "example": "Few studies examine IT professionals specifically, creating a gap in the literature."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear gap with explained significance",
+                  "example": "Studies examine MOOC completion but not workplace application. This gap matters because application, not completion, drives career advancement."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Strategic gap revealing theoretical blind spot",
+                  "example": "Literature assumes learning precedes application, but professionals report simultaneous learn-while-doing. This temporal gap questions foundational sequence assumptions."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Gap identification that reframes field",
+                  "example": "The gap isn't empirical but epistemological: studies ask 'does it work?' not 'what does working mean?' This effectiveness obsession obscures how MOOCs reshape professional identity beyond skill acquisition."
+                }
+              }
+            },
+            "1.3.4": {
+              "name": "Literature Integration Throughout",
+              "severity": "Important",
+              "description": "The continuous dialogue with literature throughout the document rather than confined to review chapter",
+              "detection_patterns": [
+                "Literature abandoned after review",
+                "No literature in discussion",
+                "Missing connections to findings",
+                "No evolution of literature understanding",
+                "Isolated literature chapter"
+              ],
+              "feedback_template": "Integrate literature throughout by: (1) referencing in methods justification, (2) comparing with findings, (3) discussing implications for field, (4) showing how findings extend literature, and (5) maintaining scholarly conversation.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Literature confined to single chapter",
+                  "example": "Chapter 2 reviews literature. No subsequent mention."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Minimal integration outside review",
+                  "example": "Discussion mentions 'as noted in literature review' but no specific engagement."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Literature woven throughout appropriately",
+                  "example": "Findings compared with specific studies. Discussion shows how results extend Chen (2020) while challenging Lopez (2021)."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated ongoing dialogue with literature",
+                  "example": "Each finding positioned in literature debates. Methods section justifies choices through methodological literature. Discussion advances theoretical conversations."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Literature integration that creates new knowledge",
+                  "example": "Findings reread early literature, revealing prescient insights dismissed by field. Discussion stages conversation between findings and foundational texts, generating theoretical innovation through temporal dialogue."
+                }
+              }
+            }
+          }
+        },
+        "1.4.0": {
+          "name": "Argument Development",
+          "subsections": {
+            "1.4.1": {
+              "name": "Claim-Evidence Alignment",
+              "severity": "Critical",
+              "description": "The precise matching of claims to appropriate evidence with proper calibration of certainty",
+              "detection_patterns": [
+                "Overclaiming from limited evidence",
+                "Unsupported assertions",
+                "Evidence-claim mismatches",
+                "Inappropriate certainty levels",
+                "Cherry-picked evidence"
+              ],
+              "feedback_template": "Align claims and evidence by: (1) ensuring each claim has supporting evidence, (2) calibrating claim strength to evidence quality, (3) acknowledging limitations, (4) avoiding overclaiming, and (5) presenting contradictory evidence fairly.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Claims without evidence or clear misalignment",
+                  "example": "MOOCs revolutionize all professional development. [Based on 5 interviews]"
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some evidence but poorly matched to claims",
+                  "example": "Interviews show MOOCs are highly effective for career change. [Though only 2 of 20 participants changed careers]"
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Claims appropriately supported by evidence",
+                  "example": "For technically-focused transitions within same field, MOOCs provide sufficient credentialing (15 of 20 cases), but cross-functional moves require additional credentials."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Nuanced claims with careful evidence calibration",
+                  "example": "MOOC effectiveness appears conditional: high for specific technical skills with immediate application (12 cases), moderate for broad competencies (5 cases), low for leadership capabilities (3 cases)."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Claims that acknowledge complexity with sophisticated evidence use",
+                  "example": "The evidence suggests not whether MOOCs 'work' but how they reconfigure professional development: shifting from front-loaded to just-in-time, from individual to networked, from permanent to provisional. This isn't effectiveness but transformation."
+                }
+              }
+            },
+            "1.4.2": {
+              "name": "Logical Flow and Coherence",
+              "severity": "Critical",
+              "description": "The construction of arguments that progress logically from premises through evidence to conclusions",
+              "detection_patterns": [
+                "Logical leaps",
+                "Non-sequiturs",
+                "Circular reasoning",
+                "Missing steps in reasoning",
+                "Contradictory arguments"
+              ],
+              "feedback_template": "Improve logical flow by: (1) making reasoning steps explicit, (2) checking each follows from previous, (3) avoiding logical fallacies, (4) ensuring coherence across sections, and (5) testing argument progression.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear logical progression",
+                  "example": "Professionals need new skills. Therefore, traditional education is obsolete."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some logic but significant gaps",
+                  "example": "Skills change rapidly. MOOCs offer courses quickly. So MOOCs solve professional development challenges."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear logical progression with explicit reasoning",
+                  "example": "Premise 1: Tech skills have 18-month half-life. Premise 2: Traditional programs take 2-4 years. Conclusion: Mismatch creates need for rapid alternatives. Evidence: MOOCs update content monthly."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated multi-step arguments",
+                  "example": "The acceleration paradox: faster skill change → more frequent learning → less time for deep mastery → surface knowledge → reduced innovation capacity → demand for acceleration. MOOCs both respond to and perpetuate this cycle."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Complex arguments revealing hidden logics",
+                  "example": "The logic of 'upskilling' assumes skills stack linearly. But evidence shows replacement not accumulation—each new skill displaces previous. This isn't progress but perpetual present, revealing platform capitalism's temporal regime."
+                }
+              }
+            },
+            "1.4.3": {
+              "name": "Counter-argument Engagement",
+              "severity": "Important",
+              "description": "The fair consideration and response to alternative explanations and opposing viewpoints",
+              "detection_patterns": [
+                "Ignoring contradictory evidence",
+                "Strawman arguments",
+                "Dismissive treatment of alternatives",
+                "No consideration of limitations",
+                "One-sided argumentation"
+              ],
+              "feedback_template": "Strengthen counter-argument engagement by: (1) presenting alternatives fairly, (2) addressing strongest opposition, (3) explaining why your interpretation prevails, (4) acknowledging partial validity, and (5) showing nuanced thinking.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No counter-arguments considered",
+                  "example": "MOOCs clearly provide the best solution for professional development."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Token mention of alternatives",
+                  "example": "Some critics question MOOC effectiveness, but this study shows they work."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Fair presentation with reasoned response",
+                  "example": "Critics note low completion rates (5-10%). However, this assumes completion equals success. Professional learners report extracting needed knowledge without completing courses."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated engagement strengthening argument",
+                  "example": "The completion rate critique reveals important assumption tensions: academic models value comprehensive mastery while professionals practice strategic extraction. Both valid for different purposes."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Counter-arguments that deepen understanding",
+                  "example": "Critics rightfully note MOOCs' venture capital funding creates profit pressures. Rather than dismissing this, I examine how platform capitalism shapes learning. The critique strengthens my argument about expertise commodification."
+                }
+              }
+            },
+            "1.4.4": {
+              "name": "Synthesis and Higher-Order Thinking",
+              "severity": "Enhancement",
+              "description": "The ability to integrate multiple perspectives and evidence streams into novel insights",
+              "detection_patterns": [
+                "Listing without integration",
+                "Missing connections between ideas",
+                "No emergent insights",
+                "Surface-level thinking",
+                "Failure to see patterns"
+              ],
+              "feedback_template": "Enhance synthesis by: (1) finding patterns across evidence, (2) connecting seemingly disparate ideas, (3) generating new insights, (4) thinking systemically, and (5) creating conceptual frameworks.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No synthesis evident",
+                  "example": "Study found three themes: time, cost, and quality."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic connections but limited integration",
+                  "example": "Time, cost, and quality are related—when time decreases, quality often suffers."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good synthesis creating understanding",
+                  "example": "The time-cost-quality triangle in MOOCs differs from traditional education: time compression increases quality for just-in-time learning but decreases it for foundational knowledge."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Creative synthesis generating new frameworks",
+                  "example": "Synthesis reveals 'learning metabolism'—professionals develop different speeds for consuming, processing, and eliminating knowledge. Fast metabolizers thrive with MOOCs; slow metabolizers need traditional depth."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Transformative synthesis creating new understanding",
+                  "example": "Synthesizing across cases reveals professional learning as ecology not acquisition. Knowledge flows through professionals like nutrients through organisms—the question isn't storage but throughput. This metabolic model explains why accumulation metaphors fail."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "2.0.0": {
+      "name": "METHODOLOGICAL RIGOR",
+      "description": "The systematic approach to research design, data collection, analysis, and validation ensuring credible findings",
+      "severity": "Critical",
+      "sections": {
+        "2.1.0": {
+          "name": "Method Selection & Justification",
+          "subsections": {
+            "2.1.1": {
+              "name": "Method-Question Alignment",
+              "severity": "Critical",
+              "description": "The clear rationale showing why chosen methods best answer the research questions",
+              "detection_patterns": [
+                "Methods mismatched to questions",
+                "No clear connection explained",
+                "Methods chosen by convenience",
+                "Quantitative methods for meaning questions",
+                "Qualitative methods for prevalence questions"
+              ],
+              "feedback_template": "Improve method-question alignment by: (1) showing explicit connections, (2) explaining why these methods suit questions, (3) considering alternative approaches, (4) justifying choices theoretically, and (5) ensuring methods can generate needed evidence.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Methods disconnected from questions",
+                  "example": "Research question asks 'how' professionals experience transitions. Method: Survey measuring satisfaction scores."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Weak connection between methods and questions",
+                  "example": "To understand professional experiences, this study uses interviews. [No explanation why interviews suit experience questions]"
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear alignment with good justification",
+                  "example": "Phenomenological interviews capture lived experience of transitions, allowing professionals to describe meaning-making processes that surveys cannot access."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated matching with nuanced reasoning",
+                  "example": "Longitudinal ethnographic interviews capture transition temporality—initial interviews establish baseline, weekly check-ins track micro-changes, final interviews enable retrospective sense-making of transformation."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Method-question alignment as methodological innovation",
+                  "example": "Traditional methods assume stable subjects answering questions. But professionals in transition are becoming—identity shifting during research. This demands 'process interviewing': questions evolve with participants, co-creating rather than extracting knowledge."
+                }
+              }
+            },
+            "2.1.2": {
+              "name": "Methodology Justification Depth",
+              "severity": "Critical",
+              "description": "The thorough explanation of methodological choices grounded in philosophical and practical considerations",
+              "detection_patterns": [
+                "No paradigm discussion",
+                "Methods without methodology",
+                "Superficial justification",
+                "Misaligned ontology/epistemology",
+                "Cookie-cutter methodology sections"
+              ],
+              "feedback_template": "Deepen methodology justification by: (1) explaining paradigmatic stance, (2) connecting ontology to methods, (3) addressing epistemological implications, (4) justifying specific techniques, and (5) showing methodological coherence.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No methodological justification",
+                  "example": "This study uses qualitative methods."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic justification without depth",
+                  "example": "This qualitative study uses interviews because they provide rich data about experiences."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good justification with paradigm clarity",
+                  "example": "Interpretivist paradigm suits exploring meaning-making. Reality is socially constructed through professional narratives. Semi-structured interviews access these constructions while allowing emergent themes."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated philosophical grounding",
+                  "example": "Critical realist stance recognizes structural forces shaping careers while maintaining agency. Methods combine: interviews (experienced reality), document analysis (institutional structures), and observation (enacted practices). This stratified approach reveals mechanism interaction."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Methodological innovation from philosophical insight",
+                  "example": "Posthuman methodology decenters individual professionals. Methods trace assemblages: human-MOOC-algorithm-workplace entanglements. 'Interviews' include screen recordings, algorithm outputs, and traditional talk. This flat ontology reveals learning as distributed achievement, not individual accomplishment."
+                }
+              }
+            },
+            "2.1.3": {
+              "name": "Alternative Approaches Consideration",
+              "severity": "Important",
+              "description": "The thoughtful discussion of why other reasonable methods were not chosen",
+              "detection_patterns": [
+                "No alternatives mentioned",
+                "Dismissive of other approaches",
+                "Strawman alternatives",
+                "No engagement with method debates",
+                "Assumed method superiority"
+              ],
+              "feedback_template": "Strengthen by considering alternatives: (1) identify other viable methods, (2) explain tradeoffs, (3) justify final choice, (4) acknowledge method limitations, and (5) show methodological awareness.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No alternatives considered",
+                  "example": "This study uses interviews to understand experiences."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Token mention of alternatives",
+                  "example": "While surveys could be used, interviews provide richer data."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Fair consideration of alternatives",
+                  "example": "Ethnography would provide deeper context but requires access negotiation difficult in corporate settings. Surveys enable larger samples but miss narrative complexity. Interviews balance depth with feasibility."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated methodological reasoning",
+                  "example": "Three approaches considered: (1) Experimental—but artificial learning contexts lack ecological validity, (2) Survey—captures patterns but misses process, (3) Ethnography—ideal but pragmatically impossible. Longitudinal interviews approximate ethnographic depth within constraints."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Alternative consideration advancing methodology",
+                  "example": "Traditional alternatives assume researcher-participant separation. But studying platform learning while using platforms for research creates methodological entanglement. Rather than avoiding, this study embraces 'complicit methodology'—researcher and participants co-navigate platforms, generating reflexive knowledge impossible through distanced observation."
+                }
+              }
+            }
+          }
+        },
+        "2.2.0": {
+          "name": "Data Approach",
+          "subsections": {
+            "2.2.1": {
+              "name": "Data Source Selection",
+              "severity": "Critical",
+              "description": "The strategic selection of data sources that can adequately answer research questions",
+              "detection_patterns": [
+                "Convenience sampling without justification",
+                "Data sources mismatched to questions",
+                "Single source when multiple needed",
+                "No discussion of source limitations",
+                "Unclear selection criteria"
+              ],
+              "feedback_template": "Improve data source selection by: (1) clearly linking sources to questions, (2) justifying selection criteria, (3) discussing access and limitations, (4) considering multiple sources, and (5) explaining sufficiency.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Unclear or inappropriate sources",
+                  "example": "Study interviews some professionals found through LinkedIn."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic sources with limited justification",
+                  "example": "20 IT professionals interviewed, recruited through professional networks."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Well-justified source selection",
+                  "example": "30 mid-career IT professionals (5-10 years experience) who completed MOOCs in past year. Maximum variation sampling across: company size, specialization, and career outcomes. Recruitment through three channels ensuring diversity."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Strategic multi-source approach",
+                  "example": "Three data sources triangulated: (1) Professionals—30 interviews tracking learning-to-application, (2) Platforms—API data on actual usage patterns, (3) Employers—managers assessing skill application. Sources reveal different transition facets."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Innovative source selection advancing knowledge",
+                  "example": "Beyond human informants, this study treats algorithms as data sources. MOOC recommendation algorithms 'interviewed' through systematic input variation. Platform dashboards analyzed as 'participant observation' of algorithmic behavior. This more-than-human data reveals hidden curriculum of platform pedagogy."
+                }
+              }
+            },
+            "2.2.2": {
+              "name": "Data Collection Protocol",
+              "severity": "Critical",
+              "description": "The detailed procedures ensuring systematic, ethical, and rigorous data gathering",
+              "detection_patterns": [
+                "Vague collection procedures",
+                "No pilot testing mentioned",
+                "Missing quality assurance",
+                "Inconsistent protocols",
+                "Ethical concerns unaddressed"
+              ],
+              "feedback_template": "Strengthen collection protocols by: (1) detailing specific procedures, (2) including pilot testing, (3) ensuring consistency measures, (4) addressing ethical considerations, and (5) planning quality assurance.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear protocol described",
+                  "example": "Participants will be interviewed about their experiences."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic protocol with gaps",
+                  "example": "Semi-structured interviews lasting 60 minutes will explore professional development experiences."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Detailed protocol with quality measures",
+                  "example": "90-minute semi-structured interviews following tested protocol. Opening rapport-building, three main sections with probes, closing debrief. Audio recorded with backup. Post-interview reflection notes. Member-checking transcripts."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated protocol with innovation",
+                  "example": "Three-phase interview protocol: (1) Pre-interview career mapping exercise, (2) 90-minute interview with artifact elicitation (certificates, course lists), (3) 30-minute follow-up after transcript analysis. Pilot tested with feedback incorporation. Reflexive journaling throughout."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Protocol as methodological contribution",
+                  "example": "'Learning journey mapping' protocol co-developed with participants: They document MOOC engagement real-time through app. Weekly 15-minute check-ins explore micro-decisions. Final collaborative analysis session where participants interpret own data. Protocol generates processual data impossible through retrospective interviews alone."
+                }
+              }
+            },
+            "2.2.3": {
+              "name": "Analytical Framework",
+              "severity": "Critical",
+              "description": "The systematic approach to analyzing data aligned with methodological stance",
+              "detection_patterns": [
+                "Vague analysis description",
+                "Analysis misaligned with methodology",
+                "No systematic procedure",
+                "Missing quality criteria",
+                "Superficial analysis plan"
+              ],
+              "feedback_template": "Clarify analytical framework by: (1) specifying analytical approach, (2) detailing procedures, (3) explaining alignment with methodology, (4) including quality measures, and (5) showing systematic rigor.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear analytical approach",
+                  "example": "Data will be analyzed for themes."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic approach named but limited detail",
+                  "example": "Thematic analysis will identify patterns in interview data."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear framework with detailed procedures",
+                  "example": "Braun & Clarke's reflexive thematic analysis: (1) Familiarization through repeated reading, (2) Initial coding combining inductive/deductive, (3) Theme development through code clustering, (4) Review against dataset, (5) Refinement and naming, (6) Writing as analysis."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated framework with theoretical integration",
+                  "example": "Abductive analysis iterating between data and theory: Initial coding using sensitizing concepts from liquid modernity. Surprising codes trigger return to theory. New theoretical reading suggests new codes. Three cycles produced 'expertise flow' framework grounded in data yet theoretically informed."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Analytical innovation advancing methodology",
+                  "example": "'Temporal analysis' tracks how participants' meaningmaking evolves during transition. Same experience coded differently as told initially, mid-transition, and retrospectively. Analysis maps narrative transformation revealing how professionals revision past to enable futures. Method captures becoming, not being."
+                }
+              }
+            },
+            "2.2.4": {
+              "name": "Data Quality Indicators",
+              "severity": "Important",
+              "description": "The measures ensuring data quality appropriate to the methodological approach",
+              "detection_patterns": [
+                "No quality measures mentioned",
+                "Inappropriate validity concepts",
+                "Single quality measure",
+                "Quality as afterthought",
+                "Misaligned quality criteria"
+              ],
+              "feedback_template": "Enhance data quality by: (1) using paradigm-appropriate criteria, (2) implementing multiple measures, (3) showing quality throughout process, (4) being transparent about limitations, and (5) demonstrating systematic rigor.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No quality measures described",
+                  "example": "Good quality data will be collected through careful interviewing."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic quality mentions without integration",
+                  "example": "Triangulation and member checking will ensure validity."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Appropriate quality framework implemented",
+                  "example": "Trustworthiness through: credibility (member checking, peer debriefing), transferability (thick description), dependability (audit trail), confirmability (reflexive journal). Each integrated throughout research process."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated quality approach with innovation",
+                  "example": "Beyond traditional criteria, study implements 'catalytic validity'—does research promote participant action? 'Transgressive validity'—does it challenge power structures? 'Ironic validity'—does it problematize its own truth claims? Quality becomes political and ethical."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Quality approach as methodological contribution",
+                  "example": "'Liquid quality' for studying unstable phenomena: Rather than fixed criteria, quality measures evolve with phenomenon. Early stages emphasize openness (avoiding premature closure). Middle stages value crystallization (multiple perspectives). Late stages prize actionability (enabling navigation). Quality framework performs the fluidity it studies."
+                }
+              }
+            }
+          }
+        },
+        "2.3.0": {
+          "name": "Validity & Credibility",
+          "subsections": {
+            "2.3.1": {
+              "name": "Limitations Recognition",
+              "severity": "Critical",
+              "description": "The honest acknowledgment of study boundaries and constraints without undermining contribution",
+              "detection_patterns": [
+                "No limitations mentioned",
+                "Trivial limitations only",
+                "Limitations undermining entire study",
+                "Generic limitation lists",
+                "No discussion of implications"
+              ],
+              "feedback_template": "Improve limitations discussion by: (1) identifying genuine constraints, (2) explaining their impact, (3) discussing management strategies, (4) maintaining study value, and (5) suggesting future research.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No limitations acknowledged",
+                  "example": "This comprehensive study provides definitive answers about professional development."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Generic limitations mentioned",
+                  "example": "Limitations include small sample size and single geographic location."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Specific limitations with implications discussed",
+                  "example": "Focusing on IT professionals limits generalizability to other fields where skill evolution differs. Bay Area location provides extreme case—findings may not apply to regions with fewer opportunities. Mitigation: theoretical rather than empirical generalization intended."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated limitation analysis enhancing credibility",
+                  "example": "Three interlocking limitations: (1) Temporal—18-month study captures one transition cycle, missing longer career arcs, (2) Sectoral—IT's rapid change makes it leading indicator or outlier?, (3) Platform—studying MOOCs during venture capital expansion phase may capture temporary dynamics. These boundaries become scope conditions for emerging theory."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Limitations as generative constraints",
+                  "example": "The study's 'limitation'—researching platform learning while using platforms—becomes methodological strength. Rather than distanced objectivity, implicated research generates insights unavailable to outside observers. The constraint of studying accelerating phenomenon with slow academic tools reveals temporal politics of knowledge production itself."
+                }
+              }
+            },
+            "2.3.2": {
+              "name": "Quality Criteria Application",
+              "severity": "Important",
+              "description": "The systematic implementation of appropriate quality standards throughout the research",
+              "detection_patterns": [
+                "Quality criteria mismatched to paradigm",
+                "Criteria mentioned but not implemented",
+                "Single quality measure",
+                "Post-hoc quality claims",
+                "No evidence of quality procedures"
+              ],
+              "feedback_template": "Strengthen quality criteria by: (1) selecting paradigm-appropriate standards, (2) implementing throughout process, (3) providing evidence, (4) using multiple criteria, and (5) showing systematic application.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No quality criteria applied",
+                  "example": "This study ensures quality through careful research."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic criteria mentioned without evidence",
+                  "example": "Validity ensured through triangulation and member checking."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear criteria with implementation evidence",
+                  "example": "Credibility through: prolonged engagement (18 months), triangulation (interviews/documents/observations), member reflections (participant validation sessions). Audit trail documents all analytical decisions. Peer debriefing with two independent researchers."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Multiple sophisticated criteria with innovation",
+                  "example": "Beyond trustworthiness, study implements: Crystallization—multiple theoretical lenses refract data differently. Resonance—findings 'ring true' to practitioners (validated through industry presentations). Pedagogical value—study teaches while researching (participants report learning from participation). Ethical validity—research serves participant-defined goods."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Quality criteria advancing methodological standards",
+                  "example": "'Liquid validity' for unstable phenomena: Traditional validity assumes fixed truth to discover. But professional transitions involve becoming—truth emerges through process. Quality criteria: (1) Processual fidelity—captures change not snapshots, (2) Performative validity—research enables rather than documents, (3) Diffractive reading—how findings change when read through different theoretical/temporal lenses."
+                }
+              }
+            },
+            "2.3.3": {
+              "name": "Finding-Method Coherence",
+              "severity": "Critical",
+              "description": "The alignment between findings claims and what the methods could actually reveal",
+              "detection_patterns": [
+                "Findings exceeding method capacity",
+                "Causal claims from correlational methods",
+                "Generalization beyond sample",
+                "Meaning claims from surveys",
+                "Pattern claims from single cases"
+              ],
+              "feedback_template": "Ensure finding-method coherence by: (1) limiting claims to what methods reveal, (2) avoiding overreach, (3) matching finding type to method type, (4) being explicit about what methods cannot show, and (5) maintaining logical alignment.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Clear mismatch between methods and findings",
+                  "example": "Interviews with 20 professionals prove MOOCs cause career advancement globally."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some overreach in claims",
+                  "example": "Interview data suggests MOOCs are the most effective form of professional development."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Findings appropriately bounded by methods",
+                  "example": "Within this sample of IT professionals, three patterns of MOOC engagement emerged. These suggest possible trajectories rather than universal pathways."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated method-finding alignment",
+                  "example": "Longitudinal interviews reveal meaning evolution, not causation. Professionals retrospectively construct MOOC value—interviews capture this construction process, not objective effectiveness. Findings about narrative patterns, not impact measurement."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Method-finding coherence generating insight",
+                  "example": "The 'limitation' that interviews capture constructed rather than objective reality becomes the finding: professional development IS narrative construction. MOOCs provide raw material for career stories. Success isn't platform feature but story quality. Methods perfectly matched to this performative understanding."
+                }
+              }
+            },
+            "2.3.4": {
+              "name": "Claims-Evidence Calibration",
+              "severity": "Critical",
+              "description": "The careful matching of claim strength to evidence quality and quantity",
+              "detection_patterns": [
+                "Overclaiming from thin evidence",
+                "Universal claims from limited data",
+                "Certainty without warrant",
+                "Hedging when evidence strong",
+                "Mismatched confidence levels"
+              ],
+              "feedback_template": "Calibrate claims by: (1) matching certainty to evidence strength, (2) using appropriate hedging, (3) avoiding overclaiming, (4) being specific about warrant, and (5) showing evidential reasoning.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Severe miscalibration of claims",
+                  "example": "This study definitively proves MOOCs transform all professional development."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some overclaiming or underclaiming",
+                  "example": "Evidence strongly suggests MOOCs might possibly have some effect on careers."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Generally appropriate calibration",
+                  "example": "For IT professionals in this study, MOOCs enabled specific skill updates leading to project assignments in 70% of cases. Broader career transformation required additional factors."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Nuanced calibration with sophisticated reasoning",
+                  "example": "Strong evidence for tactical skill acquisition (consistent across cases, mechanism clear). Moderate evidence for career advancement (pattern present but confounded by market conditions). Tentative evidence for identity transformation (emerging in subset, needs further investigation)."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Calibration that advances understanding",
+                  "example": "The evidence permits different certainty levels revealing phenomenon's nature: High certainty—MOOCs provide learning content. Moderate certainty—professionals extract value variably. Low certainty—long-term career impact. This certainty gradient isn't limitation but finding: professional development operates across timescales with decreasing predictability."
+                }
+              }
+            }
+          }
+        },
+        "2.4.0": {
+          "name": "Ethical Considerations",
+          "subsections": {
+            "2.4.1": {
+              "name": "Basic Ethical Compliance",
+              "severity": "Critical",
+              "description": "Meeting fundamental ethical requirements for research with human participants",
+              "detection_patterns": [
+                "No IRB mention",
+                "Missing consent procedures",
+                "Confidentiality unclear",
+                "Potential harm unaddressed",
+                "Power dynamics ignored"
+              ],
+              "feedback_template": "Ensure ethical compliance by: (1) obtaining appropriate approvals, (2) detailing consent procedures, (3) protecting confidentiality, (4) addressing potential harms, and (5) considering power dynamics.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No ethical considerations mentioned",
+                  "example": "Professionals were interviewed about their experiences."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic ethics mentioned but incomplete",
+                  "example": "Study received IRB approval. Participants provided consent."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Complete ethical compliance described",
+                  "example": "IRB approval obtained. Written informed consent details: voluntary participation, withdrawal rights, confidentiality measures, data storage/destruction plans. Pseudonyms used, identifying details altered."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Ethics beyond compliance",
+                  "example": "Beyond IRB requirements: ongoing consent process recognizing participant evolution. Power dynamics addressed through participant control of transcript editing. Benefits include skill-mapping tool and aggregate findings report. Researcher positionality statement included."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Ethical innovation",
+                  "example": "Participatory ethics framework: participants as co-researchers with publication credit option. Data sovereignty—participants retain ownership with researcher access rights. Findings prioritize participant-defined benefits. Ethics committee includes community members. Research agreement specifies mutual obligations beyond standard consent."
+                }
+              }
+            },
+            "2.4.2": {
+              "name": "Advanced Ethical Reflection",
+              "severity": "Important",
+              "description": "Deep consideration of ethical complexities beyond compliance",
+              "detection_patterns": [
+                "Ethics as checkbox only",
+                "No reflexivity about power",
+                "Missing reciprocity discussion",
+                "Extractive approach",
+                "No consideration of representation"
+              ],
+              "feedback_template": "Deepen ethical reflection by: (1) examining power dynamics, (2) ensuring reciprocity, (3) considering representation politics, (4) addressing potential unintended consequences, and (5) centering participant benefit.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No reflection beyond compliance",
+                  "example": "Study follows all ethical guidelines."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some reflection but surface level",
+                  "example": "Researcher considered power dynamics and tried to minimize influence on participants."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good ethical reflection with specific actions",
+                  "example": "Power dynamics addressed through: interview location choice by participants, question co-development option, transcript ownership. Reciprocity through skill assessment tool and networking opportunities among participants."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Deep ethical reasoning with transparency",
+                  "example": "Research faces tension: documenting precarity while not increasing vulnerability. Response: findings anonymize beyond individuals to companies/platforms. Representation politics addressed through participant review of all claims. Benefits include policy brief for labor advocates."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Ethics driving methodological innovation",
+                  "example": "Traditional research extracts knowledge from participants. This study inverts: researchers provide theory/methods training, participants study their own transitions, collaborative analysis generates shared knowledge. 'Giving research away' transforms ethics from protection to empowerment. Participants become transition experts for their communities."
+                }
+              }
+            },
+            "2.4.3": {
+              "name": "Cultural and Contextual Sensitivity",
+              "severity": "Important",
+              "description": "Careful attention to cultural factors and contextual appropriateness in research design",
+              "detection_patterns": [
+                "Culturally inappropriate methods",
+                "Universalist assumptions",
+                "Missing contextual adaptation",
+                "Insensitive to population needs",
+                "Western-centric approaches"
+              ],
+              "feedback_template": "Enhance cultural sensitivity by: (1) consulting with community members, (2) adapting methods to cultural contexts, (3) recognizing diverse communication styles, (4) avoiding universalist assumptions, and (5) centering cultural appropriateness.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No cultural consideration",
+                  "example": "Standard protocols will be used regardless of participant background."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic cultural awareness",
+                  "example": "Questions will be adjusted for cultural differences."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear cultural considerations with adaptations",
+                  "example": "Interview protocols adapted through consultation with cultural advisors regarding appropriate question framing, trust-building needs, and preferred communication styles."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Deep cultural understanding informing design",
+                  "example": "Protocols co-developed with cultural advisors addressing: trust-building sequences, code-switching comfort, preferred terminology, scheduling flexibility. Option for culturally-matched interviewers provided."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Culture-centered methodology",
+                  "example": "Afrocentric research principles guide design: circular rather than linear conversation flow, affect welcomed alongside cognition, collective alongside individual analysis. Method challenges Western assumptions while centering participants' ways of knowing."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "3.0.0": {
+      "name": "STRUCTURAL COHERENCE",
+      "description": "The architectural integrity of academic writing ensuring all parts work together to advance the central argument",
+      "severity": "Important",
+      "sections": {
+        "3.1.0": {
+          "name": "Document Architecture",
+          "subsections": {
+            "3.1.1": {
+              "name": "Strategic Section Organization",
+              "severity": "Important",
+              "description": "The purposeful arrangement of chapters and sections to build arguments progressively",
+              "detection_patterns": [
+                "Cookie-cutter organization without rationale",
+                "Sections that don't build on each other",
+                "Missing organizational logic",
+                "Buried key insights",
+                "Repetitive rather than progressive structure"
+              ],
+              "feedback_template": "Strengthen document architecture by: (1) explaining organizational strategy, (2) showing how sections advance argument, (3) creating clear progression, (4) using structure to reinforce meaning, and (5) considering innovative organizations.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Random or purely conventional organization",
+                  "example": "Chapter 1: Introduction, Chapter 2: Literature Review, Chapter 3: Methods, Chapter 4: Results, Chapter 5: Discussion [without explaining why]"
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some organizational logic but limited progression",
+                  "example": "The thesis follows standard structure with literature review establishing background, methods explaining approach, and results presenting findings."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear organizational strategy with good progression",
+                  "example": "Organization mirrors the research journey: Chapter 2 establishes problem urgency through stakeholder voices. Chapter 3 shows why current solutions fail. Chapter 4 presents alternative approach. Chapter 5 demonstrates effectiveness."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Innovative organization reinforcing argument",
+                  "example": "Structure embodies theoretical argument about transitions: Part I 'Endings' examines what professionals leave behind. Part II 'Liminal Space' explores uncertainty. Part III 'New Beginnings' analyzes emergence. Matrix structure reveals patterns."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Structure as argument",
+                  "example": "Dissertation on algorithmic oppression structurally performs its argument. Non-linear structure forces readers to experience disorientation marginalized users face. Navigation difficulties aren't bugs but features—making privilege visible through frustration."
+                }
+              }
+            },
+            "3.1.2": {
+              "name": "Introduction and Conclusion Excellence",
+              "severity": "Critical",
+              "description": "The crafting of compelling openings and powerful closures that frame the entire work",
+              "detection_patterns": [
+                "Weak opening hooks",
+                "Unclear problem presentation",
+                "Missing roadmaps",
+                "Repetitive conclusions",
+                "No forward-looking elements"
+              ],
+              "feedback_template": "Enhance introductions and conclusions by: (1) creating compelling openings, (2) clearly stating the problem and approach, (3) providing roadmaps, (4) synthesizing not summarizing in conclusions, and (5) pointing toward implications.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Weak or missing framing",
+                  "example": "This dissertation examines professional development. Chapter 1 is introduction. Chapter 2 reviews literature. [Conclusion merely summarizes chapters]"
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic framing present but uncompelling",
+                  "example": "Professional development is important in today's economy. This study looks at MOOCs. [Conclusion restates findings without synthesis]"
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear, effective framing",
+                  "example": "Opening: 'Learn or become obsolete'—this ultimatum faces every IT professional. Yet traditional education can't match technological pace. Introduction maps the problem, proposes MOOCs as solution, outlines investigation approach. Conclusion synthesizes findings into actionable framework."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Compelling framing that draws readers in",
+                  "example": "Opening with professional's crisis story personalizes abstract problem. Introduction weaves statistics with narratives, building to research questions. Conclusion doesn't just synthesize but transforms—showing how findings reshape understanding of careers themselves."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Framing that transforms reader understanding",
+                  "example": "Introduction begins: 'This dissertation will fail.' Then explains how studying acceleration requires accelerated methods impossible in academia. This performative contradiction frames entire work. Conclusion reveals 'failure' as finding—mismatch between phenomenon and institutional knowledge production."
+                }
+              }
+            },
+            "3.1.3": {
+              "name": "Argumentative Through-Line",
+              "severity": "Critical",
+              "description": "The consistent thread connecting all parts of the document to the central argument",
+              "detection_patterns": [
+                "Sections disconnected from main argument",
+                "Lost thread between chapters",
+                "Tangential inclusions",
+                "Multiple competing arguments",
+                "Weak connection to thesis"
+              ],
+              "feedback_template": "Strengthen argumentative through-line by: (1) maintaining clear connection to central thesis, (2) showing how each section advances argument, (3) using transitions to maintain thread, (4) removing tangential material, and (5) reinforcing connections throughout.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear through-line",
+                  "example": "Chapters address different topics without clear connection to central argument."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Thread present but frequently lost",
+                  "example": "Introduction states thesis about professional development, but some chapters drift into unrelated territory."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear thread maintained throughout",
+                  "example": "'Professional identity transformation' thread connects all chapters. Literature review examines identity theories. Methods capture identity evolution. Findings trace transformation patterns. Discussion synthesizes identity model."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Powerful thread building momentum",
+                  "example": "'Platform learning creates liquid expertise' argument structures document. Theory chapter liquifies expertise concepts. Methods capture flow dynamics. Each chapter deepens liquidity metaphor while building toward new theory."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Thread creates revelation",
+                  "example": "'MOOCs financialize self-development' thesis controls every element. Document structure mirrors financialization: accumulation, commodification, speculation, crisis. Thread doesn't just connect—it reveals process through reader engagement."
+                }
+              }
+            }
+          }
+        },
+        "3.2.0": {
+          "name": "Paragraph Construction",
+          "subsections": {
+            "3.2.1": {
+              "name": "Paragraph Focus and Unity",
+              "severity": "Important",
+              "description": "The construction of paragraphs with single clear focus and internal coherence",
+              "detection_patterns": [
+                "Multi-topic paragraphs",
+                "No clear topic sentences",
+                "Wandering focus",
+                "Disconnected sentences",
+                "Paragraph breaks arbitrary"
+              ],
+              "feedback_template": "Improve paragraph focus by: (1) ensuring one main idea per paragraph, (2) using clear topic sentences, (3) maintaining internal coherence, (4) removing unrelated material, and (5) using transitions between sentences.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No paragraph unity",
+                  "example": "Professional development matters. MOOCs are online. Technology changes quickly. Many people take courses. Companies need skilled workers."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Weak focus with wandering",
+                  "example": "MOOCs offer new learning opportunities. They are often free. Professional development is expensive. Technology skills matter. MOOCs can help with skills."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear focus with good unity",
+                  "example": "MOOCs democratize access to professional development. Unlike traditional programs costing thousands, MOOCs offer free or low-cost alternatives. This accessibility particularly benefits mid-career professionals who cannot afford career breaks for education."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Tight focus with elegant development",
+                  "example": "The temporality of MOOC learning differs fundamentally from traditional education. Where degree programs assume front-loaded investment for future returns, MOOCs enable just-in-time learning synchronized with immediate needs. This temporal shift transforms professional development from preparation to performance."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Paragraph as perfect thought unit",
+                  "example": "Platform capitalism doesn't just deliver education—it reshapes learner subjectivity. The dashboard's relentless metrics (completion rates, streak counters, peer rankings) interpellate professionals as 'human capital' requiring constant optimization. Learning becomes less about understanding than about profile enhancement. Each click feeds the algorithm that feeds anxiety that feeds more clicks. The platform's pedagogy is its business model."
+                }
+              }
+            },
+            "3.2.2": {
+              "name": "Transition Effectiveness",
+              "severity": "Important",
+              "description": "The smooth connection between paragraphs and sections maintaining flow",
+              "detection_patterns": [
+                "Abrupt topic shifts",
+                "No transitional elements",
+                "Mechanical transitions only",
+                "Lost logical connections",
+                "Reader disorientation"
+              ],
+              "feedback_template": "Improve transitions by: (1) showing logical connections, (2) using varied transition strategies, (3) maintaining conceptual links, (4) preparing readers for shifts, and (5) creating smooth flow.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No transitions between ideas",
+                  "example": "MOOCs are popular. Employers value credentials."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic mechanical transitions",
+                  "example": "MOOCs are popular. In addition, employers value credentials."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear logical transitions",
+                  "example": "MOOCs are popular among professionals seeking rapid reskilling. However, this popularity creates a paradox: employers still privilege traditional credentials despite skills-based rhetoric."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated conceptual bridges",
+                  "example": "The paradox of credentialism reveals deeper tensions in professional development. While MOOCs promise democratized learning, labor markets remain aristocratic—sorting by pedigree not performance. This contradiction illuminates..."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Transitions that advance argument",
+                  "example": "This labor market aristocracy, however, contains seeds of its own disruption. As skills half-lives shrink below credential production cycles, the mismatch becomes untenable. Companies claiming 'skills shortage' while maintaining degree requirements face competitive disadvantage. The question becomes not whether but when this contradiction breaks—and what emerges from the rupture."
+                }
+              }
+            },
+            "3.2.3": {
+              "name": "Evidence Integration",
+              "severity": "Critical",
+              "description": "The seamless incorporation of evidence within paragraph flow",
+              "detection_patterns": [
+                "Dropped quotes without integration",
+                "Evidence overwhelming argument",
+                "No analysis of evidence",
+                "Mechanical citation practices",
+                "Evidence-argument disconnect"
+              ],
+              "feedback_template": "Integrate evidence better by: (1) introducing evidence purpose, (2) analyzing not just presenting, (3) showing relevance to argument, (4) maintaining your voice, and (5) synthesizing multiple sources.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Evidence dropped without integration",
+                  "example": "Professional development matters. 'MOOCs have 5% completion rates' (Smith, 2020). This is important."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic integration with limited analysis",
+                  "example": "Research shows MOOCs have low completion. Smith (2020) found 5% completion rates. This suggests problems with the format."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good integration with analysis",
+                  "example": "The 5% completion rate (Smith, 2020) seems damning until we question the metric itself. Completion assumes linear progression through material, but professionals report 'surgical' engagement—extracting specific skills without course completion."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated evidence synthesis",
+                  "example": "While Smith (2020) highlights 5% completion as failure, Chen (2021) reveals 73% of professionals achieve learning goals without completion. This discrepancy exposes measurement paradigm conflicts: academic metrics (completion) versus professional reality (application). The 'failure' narrative says more about evaluation frameworks than MOOC effectiveness."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Evidence integration advancing theory",
+                  "example": "The completion rate 'crisis' (5% per Smith, 2020) becomes intelligible through liquid modernity lens. Traditional education assumes solid knowledge—acquired, possessed, completed. But liquid expertise flows through professionals, pooling temporarily where needed. 'Incomplete' learners aren't failing—they're performing expertise liquidity. The metric measures solidity in liquid world, like weighing water."
+                }
+              }
+            }
+          }
+        },
+        "3.3.0": {
+          "name": "Flow & Readability",
+          "subsections": {
+            "3.3.1": {
+              "name": "Section/Chapter Transitions",
+              "severity": "Important",
+              "description": "Strategic connections between major document divisions maintaining momentum",
+              "detection_patterns": [
+                "Abrupt chapter endings",
+                "Cold starts to new sections",
+                "Missing connections",
+                "Repetitive transitions",
+                "Lost momentum at breaks"
+              ],
+              "feedback_template": "Improve major transitions by: (1) creating bridges between chapters, (2) showing progression, (3) maintaining momentum, (4) preparing readers for shifts, and (5) reinforcing overall argument.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No transitions between major sections",
+                  "example": "Chapter 2 ends: 'This concludes the literature review.' Chapter 3 begins: 'This chapter describes methods.'"
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic mechanical transitions",
+                  "example": "Chapter 2 ends: 'The next chapter will describe methods.' Chapter 3 begins: 'As mentioned, this chapter presents methods.'"
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear bridges with logical connections",
+                  "example": "Chapter 2 ends: 'These three gaps demand innovative approaches.' Chapter 3 begins: 'Addressing temporal mismatch requires longitudinal design capturing learning as process...'"
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated bridges enhancing understanding",
+                  "example": "Chapter 3 ends: '...revealing identity work beyond skill acquisition. But what enables this transformation?' Chapter 4 begins: 'Maria's story provides one answer. \"I wasn't learning Python—I was becoming someone who could learn Python.\"'"
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Transitions that create suspense and insight",
+                  "example": "Chapter 4 ends: 'The platform promises connection but delivers isolation—each learner alone with their dashboard. Yet professionals report deep bonds. This paradox unlocks understanding...' Chapter 5 begins: 'The bonds form not through the platform but against it. Learners create underground networks...'"
+                }
+              }
+            },
+            "3.3.2": {
+              "name": "Signposting and Navigation",
+              "severity": "Important",
+              "description": "Clear guidance helping readers understand location and direction in the document",
+              "detection_patterns": [
+                "No orientation provided",
+                "Unclear document structure",
+                "Missing previews/summaries",
+                "Confusing organization",
+                "Reader gets lost"
+              ],
+              "feedback_template": "Enhance navigation by: (1) providing clear roadmaps, (2) using consistent signposting, (3) offering periodic orientation, (4) previewing what's coming, and (5) summarizing key progressions.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No navigational aids",
+                  "example": "Content proceeds without any indication of structure or progression."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Minimal signposting present",
+                  "example": "This chapter has three sections. First... Second... Third..."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear signposting throughout",
+                  "example": "This chapter examines three dimensions of identity transformation. We begin with professional identity crisis, move to liminal learning spaces, and conclude with emergent identities. This progression mirrors participants' journeys."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated multi-level navigation",
+                  "example": "Having established the theoretical framework (Chapter 2) and methodology (Chapter 3), we now turn to findings. Three chapters trace transformation: unbecoming (Chapter 4), becoming (Chapter 5), and re-becoming (Chapter 6). We begin with professionals' initial identity disruption..."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Navigation that performs the argument",
+                  "example": "Readers expecting linear progression will feel disoriented—precisely the experience of platform learners. This chapter fragments across themes, requiring you to construct coherence. Navigation isn't provided but earned. By chapter's end, you'll have performed the assembly work that professionals do with MOOCs."
+                }
+              }
+            },
+            "3.3.3": {
+              "name": "Rhythm and Pacing",
+              "severity": "Enhancement",
+              "description": "The variation in sentence and paragraph length creating engaging readability",
+              "detection_patterns": [
+                "Monotonous sentence length",
+                "Exhausting long sections",
+                "No variation in pace",
+                "Reader fatigue",
+                "Mechanical rhythm"
+              ],
+              "feedback_template": "Improve rhythm by: (1) varying sentence length, (2) mixing paragraph sizes, (3) using short sentences for emphasis, (4) providing breathing space, and (5) creating natural reading flow.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Monotonous, exhausting pace",
+                  "example": "Every sentence follows similar structure and length. Every paragraph contains the same number of sentences. Reading becomes tedious and mechanical. No variation provides relief."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some variation but still mechanical",
+                  "example": "Most sentences are long and complex. Occasionally a shorter sentence appears. But overall rhythm remains fairly uniform."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good variation creating readability",
+                  "example": "Complex theoretical explanations use longer sentences to develop nuanced ideas. Key points punch through in short sentences. Paragraphs vary from quick transitions to extended analysis. The rhythm supports comprehension."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Rhythm enhances meaning",
+                  "example": "The acceleration of professional life demands new forms. Short. Sharp. Immediate. Then, like the professionals who must pause to integrate learning, the prose slows, becomes contemplative, allows ideas to settle before the next sprint begins."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Rhythm as rhetorical device",
+                  "example": "Platform time stutters—notification, response, notification, response. The prose performs this temporality. Fragments. Interruptions. Then suddenly, in moments of insight, sentences stretch luxuriously, thought given space to breathe, readers experiencing the relief professionals feel when escaping platform pressure into deep learning."
+                }
+              }
+            }
+          }
+        },
+        "3.4.0": {
+          "name": "Integration & Synthesis",
+          "subsections": {
+            "3.4.1": {
+              "name": "Introduction-Body-Conclusion Alignment",
+              "severity": "Critical",
+              "description": "The coherent relationship between promises made, development provided, and conclusions drawn",
+              "detection_patterns": [
+                "Introduction promises unmet",
+                "Conclusion introduces new ideas",
+                "Misalignment between sections",
+                "Scope creep through document",
+                "Missing synthesis"
+              ],
+              "feedback_template": "Improve alignment by: (1) listing introduction promises, (2) tracking delivery through body, (3) ensuring conclusion addresses all elements, (4) removing misaligned content, and (5) creating true synthesis.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Major misalignment between sections",
+                  "example": "Introduction promises to examine MOOCs. Body analyzes traditional education. Conclusion discusses future of work."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some alignment but gaps remain",
+                  "example": "Introduction raises three questions. Body addresses two. Conclusion summarizes findings without returning to original questions."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good alignment throughout",
+                  "example": "Introduction poses research questions about identity transformation. Each body chapter addresses specific aspect. Conclusion synthesizes findings into identity transformation model answering original questions."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Tight alignment creating coherence",
+                  "example": "Introduction's metaphor of 'liquid expertise' flows through entire document. Each chapter deepens the metaphor. Conclusion doesn't just answer questions but shows how liquid framework transforms understanding of professional development itself."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Perfect integration creating revelation",
+                  "example": "Introduction begins: 'This dissertation performs what it studies.' Body organized as MOOC with nonlinear navigation. Conclusion reveals: readers who followed nonlinear path showed deeper engagement. Structure generates its own evidence. Form and content merge completely."
+                }
+              }
+            },
+            "3.4.2": {
+              "name": "Theoretical Framework Integration",
+              "severity": "Important",
+              "description": "The consistent application of theoretical lens throughout all document sections",
+              "detection_patterns": [
+                "Theory abandoned after introduction",
+                "Inconsistent theoretical application",
+                "Findings not interpreted through framework",
+                "Missing theoretical implications",
+                "Decorative theory use"
+              ],
+              "feedback_template": "Integrate framework by: (1) threading theory throughout, (2) using theoretical lens consistently, (3) interpreting findings theoretically, (4) discussing theoretical implications, and (5) showing theoretical development.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Theory mentioned then abandoned",
+                  "example": "Introduction discusses Bourdieu. No subsequent theoretical references appear."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Sporadic theoretical references",
+                  "example": "Theory appears in introduction and briefly in discussion, absent from methods and findings."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Consistent theoretical application",
+                  "example": "Communities of practice theory guides methods design, shapes analytical categories, organizes findings presentation, and frames discussion implications."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated theoretical dialogue",
+                  "example": "Theory and data in constant conversation. Surprising findings prompt return to theory. Theoretical extensions emerge from empirical patterns. Discussion advances theory while explaining findings."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Integration generating new theory",
+                  "example": "Actor-network theory typically studies stable networks. Applying to ephemeral MOOCs reveals 'ghost networks'—dissolved but haunting through practices. Every section contributes to this theoretical innovation. Integration doesn't use theory but transforms it."
+                }
+              }
+            },
+            "3.4.3": {
+              "name": "Cross-Chapter Coherence",
+              "severity": "Important",
+              "description": "The intellectual coherence across all chapters creating unified whole",
+              "detection_patterns": [
+                "Chapters as independent articles",
+                "Inconsistent terminology",
+                "Competing arguments",
+                "Missing cross-references",
+                "No building between chapters"
+              ],
+              "feedback_template": "Enhance coherence by: (1) maintaining consistent terminology, (2) building arguments progressively, (3) cross-referencing between chapters, (4) showing relationships, and (5) creating cumulative understanding.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Chapters unconnected",
+                  "example": "Each chapter reads as separate paper with different terminology and arguments."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Weak connections between chapters",
+                  "example": "Chapters share general topic but don't build on each other. Terms shift meaning between chapters."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good coherence with clear building",
+                  "example": "Each chapter explicitly builds on previous. Terminology remains consistent. Later chapters reference earlier findings. Clear progression toward unified argument."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated multi-chapter architecture",
+                  "example": "Chapters interweave like braided rope. Themes introduced in Chapter 2 develop through 3-4, culminate in 5. Forward and backward references create dense conceptual network. Reading order matters—understanding accumulates."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Chapters creating emergent meaning",
+                  "example": "Each chapter appears complete yet reveals incompleteness when next begins. Like MOOCs modules, chapters are both standalone and interdependent. Final chapter reframes all previous—what seemed like findings about learning reveals theory of becoming. Coherence creates transformation."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "4.0.0": {
+      "name": "TECHNICAL EXECUTION",
+      "description": "The precision in language, citation, formatting, and mechanics ensuring professional scholarly communication",
+      "severity": "Critical",
+      "sections": {
+        "4.1.0": {
+          "name": "Language Precision & Clarity",
+          "subsections": {
+            "4.1.1": {
+              "name": "Term Definition and Consistency",
+              "severity": "Important",
+              "description": "The precise definition and consistent use of key terms throughout the document",
+              "detection_patterns": [
+                "Undefined key terms",
+                "Shifting definitions",
+                "Inconsistent usage",
+                "Circular definitions",
+                "Jargon without explanation"
+              ],
+              "feedback_template": "Improve term precision by: (1) defining all key concepts clearly, (2) maintaining consistent usage, (3) distinguishing related terms, (4) avoiding unnecessary jargon, and (5) ensuring definitions serve analysis.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Key terms undefined or inconsistent",
+                  "example": "Uses 'learning,' 'training,' 'education,' and 'development' interchangeably without distinction."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some definitions but inconsistent usage",
+                  "example": "'Professional development' defined as skill improvement but sometimes used to mean career advancement."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear definitions with consistent usage",
+                  "example": "Distinguishes 'professional development' (skill enhancement for current role) from 'career transition' (role change). Terms used consistently throughout."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Precise definitions enabling nuanced analysis",
+                  "example": "Distinguishes 'skill acquisition' (technical capability), 'skill activation' (workplace application), and 'skill recognition' (credential/advancement). These distinctions reveal gaps between learning and career impact."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Definitional precision advancing theory",
+                  "example": "'Liquid expertise' defined as knowledge flow rate rather than stock. Measured by refresh cycles, application velocity, and obsolescence curves. This precision enables new theoretical framework beyond accumulation models."
+                }
+              }
+            },
+            "4.1.2": {
+              "name": "Sentence Construction and Clarity",
+              "severity": "Critical",
+              "description": "The crafting of clear, precise sentences conveying complex ideas efficiently",
+              "detection_patterns": [
+                "Convoluted sentences",
+                "Unclear referents",
+                "Passive voice obscuring agents",
+                "Unnecessary complexity",
+                "Ambiguous phrasing"
+              ],
+              "feedback_template": "Improve sentence clarity by: (1) simplifying complex constructions, (2) clarifying referents, (3) using active voice appropriately, (4) eliminating ambiguity, and (5) ensuring each sentence has clear purpose.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Unclear, convoluted sentences",
+                  "example": "The phenomenon of professionals who are engaged in the process of developing skills which may or may not be recognized by their employers is one that requires investigation."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some clarity issues remain",
+                  "example": "Professionals developing skills face recognition challenges from employers, which requires investigation."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear, effective sentences",
+                  "example": "Professionals who develop new skills often struggle to gain employer recognition for their learning, creating career advancement barriers."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Elegant clarity with sophisticated ideas",
+                  "example": "The gap between skill acquisition and career recognition reveals a temporal mismatch: professionals learn at digital speed while organizations evaluate at bureaucratic pace."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Crystalline prose conveying complexity",
+                  "example": "Platform capitalism accelerates learning while decelerating recognition. Each new credential pursued further devalues existing credentials. Professionals run faster to stay in place—the Red Queen's race of digital careers."
+                }
+              }
+            },
+            "4.1.3": {
+              "name": "Abstract Concept Translation",
+              "severity": "Important",
+              "description": "The ability to make complex theoretical concepts accessible through clear explanation",
+              "detection_patterns": [
+                "Unexplained theoretical jargon",
+                "Abstract concepts without examples",
+                "Assumed reader knowledge",
+                "Dense theoretical prose",
+                "Missing conceptual bridges"
+              ],
+              "feedback_template": "Improve concept translation by: (1) explaining theoretical terms, (2) providing concrete examples, (3) using analogies appropriately, (4) building conceptual bridges, and (5) layering complexity gradually.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Abstract concepts unexplained",
+                  "example": "This study employs Bourdieusian concepts of habitus and field to examine professional trajectories."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic explanations but still unclear",
+                  "example": "Habitus refers to internalized dispositions that shape how professionals act in their field of practice."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear explanations with examples",
+                  "example": "Habitus—the deeply ingrained habits and assumptions professionals develop—shapes career decisions unconsciously. An engineer's habitus might prioritize technical elegance over market viability, affecting project choices."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated translation maintaining complexity",
+                  "example": "Think of habitus as professional muscle memory—the automatic responses developed through years of practice. Just as pianists' fingers 'know' scales, professionals' decisions follow grooves carved by experience. These grooves enable efficiency but can trap professionals when contexts change."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Translation that illuminates and extends theory",
+                  "example": "Digital platforms disrupt habitus through interface design. Where traditional workplaces allowed habitus to develop through repeated practice, platforms constantly update, preventing stable dispositions. Professionals develop 'liquid habitus'—temporary behavioral patterns that must remain revisable. The platform doesn't allow muscle memory; it demands conscious flexibility."
+                }
+              }
+            },
+            "4.1.4": {
+              "name": "Academic Voice and Authority",
+              "severity": "Important",
+              "description": "The development of confident scholarly voice balancing authority with appropriate humility",
+              "detection_patterns": [
+                "Overly tentative language",
+                "Inappropriate certainty",
+                "Inconsistent voice",
+                "Excessive hedging",
+                "Missing authorial presence"
+              ],
+              "feedback_template": "Strengthen academic voice by: (1) calibrating certainty to evidence, (2) maintaining consistent tone, (3) showing appropriate confidence, (4) avoiding excessive hedging, and (5) developing distinctive scholarly presence.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear academic voice",
+                  "example": "Maybe MOOCs might possibly help some professionals potentially improve certain skills in some cases."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Inconsistent or overly tentative voice",
+                  "example": "It seems that perhaps MOOCs could be somewhat effective for possibly helping professionals."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear academic voice with appropriate confidence",
+                  "example": "Evidence suggests MOOCs effectively support specific skill development, particularly for technical competencies with immediate application."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Authoritative voice with nuanced positions",
+                  "example": "This study demonstrates that MOOC effectiveness depends critically on alignment between learning modality and professional context. While technical skills transfer readily, tacit knowledge requires different approaches."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Distinctive voice advancing scholarly conversation",
+                  "example": "The question is not whether MOOCs 'work'—a framing that accepts instrumental logic—but how they reconstruct professional subjectivity. This study reveals MOOCs as technologies of the self, producing 'learning subjects' who internalize perpetual inadequacy as motivation."
+                }
+              }
+            }
+          }
+        },
+        "4.2.0": {
+          "name": "Citation & Academic Formatting",
+          "subsections": {
+            "4.2.1": {
+              "name": "Citation Accuracy and Integrity",
+              "severity": "Critical",
+              "description": "The precise and ethical attribution of all sources according to disciplinary standards",
+              "detection_patterns": [
+                "Missing citations",
+                "Incorrect citation format",
+                "Inconsistent style",
+                "Over or under-citation",
+                "Citation/reference mismatches"
+              ],
+              "feedback_template": "Improve citations by: (1) citing all claims requiring support, (2) following style guide precisely, (3) maintaining consistency, (4) balancing citation density, and (5) ensuring all citations match references.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Major citation problems",
+                  "example": "MOOCs transform professional development (Smith). [No year, no page numbers, Smith not in references]"
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Citation present but flawed",
+                  "example": "MOOCs transform professional development (Smith 2020). [Missing page numbers for direct quote, inconsistent formatting]"
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Accurate, consistent citations",
+                  "example": "MOOCs 'fundamentally transform professional development paradigms' (Smith, 2020, p. 147), though this transformation remains contested (Jones, 2021; Chen, 2022)."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated citation practices",
+                  "example": "While Smith (2020, p. 147) argues MOOCs 'fundamentally transform' professional development, critics note important limitations (Jones, 2021; Chen, 2022). This debate reflects deeper paradigmatic tensions (see Lopez, 2019 for review)."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Citation as scholarly conversation",
+                  "example": "The transformation debate reveals competing temporalities: Smith (2020) measures by innovation speed, Jones (2021) by institutional change, Chen (2022) by career outcomes. These different time horizons produce incommensurable findings—transformation depends on when you stop looking (cf. Rosa's, 2013 social acceleration theory)."
+                }
+              }
+            },
+            "4.2.2": {
+              "name": "Academic Document Formatting",
+              "severity": "Important",
+              "description": "The consistent application of disciplinary formatting conventions throughout",
+              "detection_patterns": [
+                "Inconsistent formatting",
+                "Missing required elements",
+                "Poor visual hierarchy",
+                "Incorrect margins/spacing",
+                "Amateur appearance"
+              ],
+              "feedback_template": "Improve formatting by: (1) following style guide requirements, (2) maintaining absolute consistency, (3) using formatting to enhance readability, (4) including all required elements, and (5) achieving professional appearance.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No consistent formatting",
+                  "example": "Mixed fonts, irregular spacing, no page numbers, missing required elements"
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic formatting with errors",
+                  "example": "Mostly consistent font but irregular headings, some required elements missing"
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Professional formatting throughout",
+                  "example": "Consistent APA formatting: proper margins, headers, page numbers, heading hierarchy. All required elements present."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Polished formatting enhancing readability",
+                  "example": "Perfect style compliance with thoughtful use of white space, clear visual hierarchy, professional tables/figures. Document looks publication-ready."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Formatting as communication tool",
+                  "example": "Formatting reinforces argument—fragmentation chapter uses disrupted layouts. Every formatting choice deliberate. Tables visualize arguments not just data. Perfect style compliance while innovating within conventions."
+                }
+              }
+            },
+            "4.2.3": {
+              "name": "Table and Figure Excellence",
+              "severity": "Important",
+              "description": "The creation of clear, informative visual elements that enhance understanding",
+              "detection_patterns": [
+                "Unclear tables/figures",
+                "Missing captions",
+                "Poor integration with text",
+                "Low visual quality",
+                "Decorative rather than informative"
+              ],
+              "feedback_template": "Improve visual elements by: (1) ensuring each serves clear purpose, (2) providing informative captions, (3) integrating with text discussion, (4) maintaining visual clarity, and (5) following formatting guidelines.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Poor quality or missing visuals",
+                  "example": "Blurry screenshots, tables without headers, figures without captions"
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic visuals with limitations",
+                  "example": "Simple tables with minimal labeling, basic charts without clear connection to text"
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear, well-integrated visuals",
+                  "example": "Professional tables with clear headers, figures with descriptive captions, proper numbering and text references"
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Excellent visuals enhancing understanding",
+                  "example": "Tables that synthesize complex data clearly, figures that reveal patterns, captions that guide interpretation. Visuals and text work synergistically."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Visuals as analytical tools",
+                  "example": "Innovative visualizations revealing insights impossible in text. Interactive elements in digital version. Figures don't illustrate arguments—they make arguments. Visual rhetoric as sophisticated as textual."
+                }
+              }
+            }
+          }
+        },
+        "4.3.0": {
+          "name": "Writing Mechanics",
+          "subsections": {
+            "4.3.1": {
+              "name": "Grammar, Syntax, and Spelling",
+              "severity": "Critical",
+              "description": "The correct use of language structures ensuring clear professional communication",
+              "detection_patterns": [
+                "Subject-verb disagreement",
+                "Tense inconsistency",
+                "Pronoun errors",
+                "Spelling mistakes",
+                "Sentence fragments"
+              ],
+              "feedback_template": "Address mechanical issues by: (1) checking subject-verb agreement, (2) maintaining tense consistency, (3) ensuring pronoun clarity, (4) proofreading carefully, and (5) using grammar tools appropriately.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Pervasive errors obscuring meaning",
+                  "example": "The professionals shares their experience with MOOCs, each tell different story but patterns emerges."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Frequent errors distracting reader",
+                  "example": "The professionals shared their experiences with MOOC's, each one tell their story differently."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Generally correct with minor errors",
+                  "example": "The professionals shared their experiences with MOOCs, each telling their story from a unique perspective."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Near-flawless mechanics",
+                  "example": "The professionals shared nuanced accounts of their MOOC experiences, each narrative revealing unique yet interconnected patterns of engagement."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Perfect mechanics with stylistic sophistication",
+                  "example": "The professionals' narratives wove individual threads into collective tapestry—each voice distinct yet harmonizing around shared themes of transformation, frustration, and eventual breakthrough."
+                }
+              }
+            },
+            "4.3.2": {
+              "name": "Punctuation Precision",
+              "severity": "Important",
+              "description": "The accurate use of punctuation to clarify meaning and enhance readability",
+              "detection_patterns": [
+                "Comma splices",
+                "Missing commas",
+                "Incorrect semicolon use",
+                "Apostrophe errors",
+                "Inconsistent dash usage"
+              ],
+              "feedback_template": "Improve punctuation by: (1) reviewing comma rules, (2) using semicolons correctly, (3) maintaining consistency, (4) checking apostrophe usage, and (5) ensuring punctuation clarifies meaning.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Punctuation errors confuse meaning",
+                  "example": "The professionals learned quickly however they struggled with application the platforms interface was confusing."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some punctuation errors present",
+                  "example": "The professionals learned quickly, however they struggled with application, the platform's interface was confusing."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Correct punctuation throughout",
+                  "example": "The professionals learned quickly; however, they struggled with application because the platform's interface was confusing."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated punctuation use",
+                  "example": "The professionals learned quickly—technical content posed no challenge—yet application proved difficult: the platform's interface, designed for students not practitioners, impeded workflow integration."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Punctuation as rhetorical device",
+                  "example": "Learning? Quick. Application? Fraught. The platform—sleek, gamified, 'intuitive'—fought professionals' every attempt at integration. Semicolons linked what designers severed; dashes revealed what interfaces concealed."
+                }
+              }
+            },
+            "4.3.3": {
+              "name": "Technical Accuracy",
+              "severity": "Critical",
+              "description": "The precise use of disciplinary terminology and technical concepts",
+              "detection_patterns": [
+                "Misused technical terms",
+                "Incorrect statistical notation",
+                "Wrong methodological language",
+                "Confused theoretical concepts",
+                "Imprecise technical descriptions"
+              ],
+              "feedback_template": "Ensure technical accuracy by: (1) verifying term usage, (2) checking statistical notation, (3) confirming methodological language, (4) validating technical descriptions, and (5) consulting disciplinary standards.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Major technical errors",
+                  "example": "The t-test showed correlation between variables (p > 0.05) proving significance."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some technical confusion",
+                  "example": "The t-test showed difference between groups (p < 0.05) indicating correlation."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Technically accurate throughout",
+                  "example": "The independent samples t-test revealed significant difference between groups (t(48) = 3.24, p = .002, d = 0.92)."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Precise technical communication",
+                  "example": "The Welch's t-test, appropriate given unequal variances (Levene's test: F = 4.32, p = .043), revealed significant between-group differences (t(38.4) = 3.24, p = .002, d = 0.92, 95% CI [0.34, 1.49])."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Technical precision advancing understanding",
+                  "example": "The significant effect (d = 0.92) requires contextualization: while statistically robust, the practical significance depends on implementation costs. The confidence interval's width (95% CI [0.34, 1.49]) reflects sample heterogeneity—itself a finding about professional diversity in platform engagement."
+                }
+              }
+            }
+          }
+        },
+        "4.4.0": {
+          "name": "Disciplinary Conventions",
+          "subsections": {
+            "4.4.1": {
+              "name": "Field-Specific Writing Norms",
+              "severity": "Important",
+              "description": "The adherence to writing conventions specific to the academic discipline",
+              "detection_patterns": [
+                "Wrong disciplinary style",
+                "Inappropriate conventions",
+                "Missing field expectations",
+                "Cross-disciplinary confusion",
+                "Generic academic writing"
+              ],
+              "feedback_template": "Align with disciplinary norms by: (1) studying exemplar papers, (2) following field-specific conventions, (3) using appropriate terminology, (4) matching expected style, and (5) consulting disciplinary guides.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No awareness of disciplinary norms",
+                  "example": "Sociology paper written like lab report with hypothesis, materials, procedures sections"
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some disciplinary awareness but inconsistent",
+                  "example": "Mixes ethnographic description with statistical reporting without clear rationale"
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Follows disciplinary conventions appropriately",
+                  "example": "Education research properly integrates theoretical framework, uses appropriate qualitative terminology, follows field norms for reflexivity"
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated use of disciplinary conventions",
+                  "example": "Demonstrates deep familiarity with field debates, uses insider terminology precisely, structures argument according to disciplinary expectations while maintaining originality"
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Masters conventions while innovating",
+                  "example": "Perfectly executes disciplinary expectations while subtly challenging them. Uses conventional forms to make unconventional arguments. Shows how disciplinary boundaries might productively blur."
+                }
+              }
+            },
+            "4.4.2": {
+              "name": "Methodological Writing Standards",
+              "severity": "Important",
+              "description": "The precise description of methods according to disciplinary and paradigmatic standards",
+              "detection_patterns": [
+                "Insufficient methodological detail",
+                "Wrong level of detail",
+                "Missing replication information",
+                "Paradigm-method mismatch",
+                "Unclear procedures"
+              ],
+              "feedback_template": "Improve methodological writing by: (1) providing appropriate detail level, (2) enabling replication, (3) following paradigmatic standards, (4) being transparent about decisions, and (5) using standard terminology.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Vague or missing methodological detail",
+                  "example": "Participants were interviewed and data was analyzed for themes."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic methods described but gaps remain",
+                  "example": "Semi-structured interviews conducted with professionals. Thematic analysis used to identify patterns."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear methodological description",
+                  "example": "30 semi-structured interviews (60-90 minutes) with professionals recruited through purposive sampling. Braun & Clarke's six-phase thematic analysis applied with initial deductive coding followed by inductive refinement."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Excellent methodological transparency",
+                  "example": "Provides interview protocol, coding framework, analytical decision trail. Discusses reflexivity, quality criteria implementation, and limitations. Includes enough detail for informed replication while maintaining readability."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Methodological writing as contribution",
+                  "example": "Methods section itself advances methodology through innovative approaches clearly described. Provides not just what was done but why, with theoretical justification. Creates template others might adapt. Makes methodological choices visible as intellectual work."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "5.0.0": {
+      "name": "SCHOLARLY EXCELLENCE",
+      "description": "The highest level of academic achievement demonstrating original thought, theoretical sophistication, and paradigmatic contribution",
+      "severity": "Enhancement",
+      "sections": {
+        "5.1.0": {
+          "name": "Researcher Positionality & Cultural Dimensions",
+          "subsections": {
+            "5.1.1": {
+              "name": "Advanced Reflexivity",
+              "severity": "Enhancement",
+              "description": "The sophisticated examination of how researcher position shapes knowledge production",
+              "detection_patterns": [
+                "No reflexivity present",
+                "Superficial position statement",
+                "No analysis of influence",
+                "Missing power dynamics",
+                "Reflexivity as confession only"
+              ],
+              "feedback_template": "Deepen reflexivity by: (1) analyzing not just stating position, (2) examining knowledge production effects, (3) addressing power dynamics, (4) showing reflexivity throughout, and (5) using position productively.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No reflexivity evident",
+                  "example": "Research conducted objectively without researcher bias."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic position statement",
+                  "example": "As a former IT professional, I bring insider knowledge to this research."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good reflexive analysis",
+                  "example": "My decade in tech shapes this research—providing access and credibility but potentially normalizing industry assumptions. I maintained reflexive journal to track how position influenced interpretation."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated reflexivity throughout",
+                  "example": "My tech background created complex dynamics: insider status enabled frank discussions about platform frustrations, yet my success story potentially silenced failure narratives. Reflexivity became methodological through participant feedback on interpretations, revealing my unconscious success bias."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Reflexivity as theoretical contribution",
+                  "example": "This research revealed 'positional vertigo'—researching career transitions while experiencing one. My shifting position (tech→academia) became data: field notes track how evolving identity changed what I could see/hear. Rather than limitation, this instability illuminated transition's phenomenology. Reflexivity moved from methodological hygiene to theoretical insight about becoming."
+                }
+              }
+            },
+            "5.1.2": {
+              "name": "Ethical Complexity Navigation",
+              "severity": "Enhancement",
+              "description": "The sophisticated handling of ethical dilemmas beyond basic compliance",
+              "detection_patterns": [
+                "Ethics as checkbox only",
+                "No complex dilemmas acknowledged",
+                "Simple solutions to complex problems",
+                "Missing stakeholder tensions",
+                "No ethical innovation"
+              ],
+              "feedback_template": "Navigate ethical complexity by: (1) acknowledging dilemmas openly, (2) showing reasoning process, (3) considering multiple stakeholders, (4) accepting imperfect solutions, and (5) contributing to ethical thinking.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No complex ethics considered",
+                  "example": "Research followed all IRB requirements."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some ethical complexity noted",
+                  "example": "Balancing participant confidentiality with rich description posed challenges resolved through careful anonymization."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good engagement with ethical complexity",
+                  "example": "Tension emerged between protecting participants and exposing platform practices. Solution: anonymize individuals while naming platforms, accepting legal risk to serve participant interests. IRB initially resisted; negotiated approval through harm/benefit analysis."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Deep ethical reasoning transparent",
+                  "example": "Research faces fundamental tension: documenting algorithmic discrimination requires exposing discriminated communities to scrutiny. Response: sharing findings first with affected communities, co-developing dissemination strategies, publishing in accessible venues before academic journals. This slows career advancement but prioritizes community benefit."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Ethical innovation transforming practice",
+                  "example": "Studying surveillance capitalism while using its tools creates complicity. Traditional ethics inadequate. Developed 'compromised ethics': acknowledging inability to research 'outside' platform capitalism, we research toward its subversion. Published guides for gaming systems studied. Transformed research from documentation to resistance tool. This violates neutrality but honors deeper justice commitment."
+                }
+              }
+            },
+            "5.1.3": {
+              "name": "Cultural Inclusivity",
+              "severity": "Important",
+              "description": "Recognition and integration of diverse cultural perspectives and rhetorical traditions",
+              "subsections": {
+                "5.1.3.1": {
+                  "name": "Recognition of Diverse Rhetorical Traditions",
+                  "severity": "Important",
+                  "description": "Understanding that effective academic writing varies across cultures and recognizing different rhetorical approaches",
+                  "detection_patterns": [
+                    "Penalizing non-Western structures",
+                    "Missing cultural writing norms",
+                    "Ethnocentric assumptions",
+                    "Rigid style enforcement",
+                    "Deficit framing of difference"
+                  ],
+                  "feedback_template": "Enhance cultural inclusivity by: (1) recognizing multiple valid rhetorical traditions, (2) appreciating strengths in different approaches, (3) avoiding deficit framing, (4) considering evaluation criteria flexibility, and (5) examining power dynamics in conventions.",
+                  "rubric": {
+                    "1": {
+                      "level": "Inadequate",
+                      "description": "Single standard imposed",
+                      "example": "This indirect approach shows poor organization. Academic writing requires direct thesis statements."
+                    },
+                    "2": {
+                      "level": "Developing",
+                      "description": "Some awareness but limited accommodation",
+                      "example": "While some cultures prefer indirect approaches, academic writing in English typically requires directness."
+                    },
+                    "3": {
+                      "level": "Competent",
+                      "description": "Recognizes and values alternatives",
+                      "example": "This paper's circular structure reflects East Asian academic traditions, building context before revealing argument. While different from linear Western organization, it effectively prepares readers for complexity."
+                    },
+                    "4": {
+                      "level": "Strong",
+                      "description": "Sophisticated appreciation of diversity",
+                      "example": "The spiral organization doesn't delay the thesis—it constructs conditions for understanding. Western directness assumes shared context; this approach builds context first. Both valid for different purposes. The paper bridges traditions effectively."
+                    },
+                    "5": {
+                      "level": "Exemplary",
+                      "description": "Transforms understanding through inclusion",
+                      "example": "This masterful code-switching between rhetorical traditions creates new possibilities. The spiral-then-linear structure teaches Western readers patience while offering familiar landmarks. It doesn't accommodate difference—it argues that academic writing itself must expand. By refusing single tradition, it performs decolonization."
+                    }
+                  }
+                },
+                "5.1.3.2": {
+                  "name": "Supporting Multilingual Scholars",
+                  "severity": "Important",
+                  "description": "Recognition that academic English is not neutral and supporting multilingual contributions",
+                  "detection_patterns": [
+                    "Focusing on minor errors over ideas",
+                    "Native speaker bias",
+                    "Deficit assumptions",
+                    "Missing linguistic creativity",
+                    "Monolingual norms"
+                  ],
+                  "feedback_template": "Support multilingual scholars by: (1) prioritizing ideas over minor language issues, (2) recognizing linguistic innovation, (3) avoiding deficit framing, (4) appreciating multilingual advantages, and (5) questioning monolingual norms.",
+                  "rubric": {
+                    "1": {
+                      "level": "Inadequate",
+                      "description": "Language errors overshadow content",
+                      "example": "The numerous grammatical errors make this work unsuitable for publication."
+                    },
+                    "2": {
+                      "level": "Developing",
+                      "description": "Some support but deficit framing",
+                      "example": "Despite language challenges, the ideas have merit. Editing could help overcome English limitations."
+                    },
+                    "3": {
+                      "level": "Competent",
+                      "description": "Constructive support recognizing strengths",
+                      "example": "While some phrases need clarification, the multilingual perspective enriches analysis. The term 'knowledge-flowing' captures something 'knowledge transfer' misses."
+                    },
+                    "4": {
+                      "level": "Strong",
+                      "description": "Celebrates multilingual contributions",
+                      "example": "The syntactic innovations aren't errors but features—they reveal assumptions invisible to monolingual writers. 'Time is becoming dense' translates temporal experience more precisely than standard academic English allows."
+                    },
+                    "5": {
+                      "level": "Exemplary",
+                      "description": "Multilingualism as theoretical resource",
+                      "example": "This work demonstrates how multilingual scholarship advances theory. Concepts that English linearizes, the author's linguistic background reveals as multidimensional. The 'errors' are windows—showing where English fails phenomenon. Rather than 'fixing' language, we should fix our monolingual expectations."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "5.2.0": {
+          "name": "Originality & Contribution",
+          "subsections": {
+            "5.2.1": {
+              "name": "Defining Original Contribution",
+              "severity": "Critical",
+              "description": "The clear articulation of how research advances knowledge in novel ways",
+              "detection_patterns": [
+                "Vague contribution claims",
+                "Incremental not original",
+                "No clear advancement",
+                "Overclaiming novelty",
+                "Missing significance"
+              ],
+              "feedback_template": "Define contribution by: (1) specifying what's genuinely new, (2) explaining theoretical advancement, (3) showing practical implications, (4) positioning in literature, and (5) opening future directions.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No clear original contribution",
+                  "example": "This study examines an important topic that hasn't been fully studied."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic contribution but limited originality",
+                  "example": "This study provides new data about MOOCs in professional development."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear original contribution stated",
+                  "example": "This study contributes the first longitudinal analysis of MOOC-to-career pathways, revealing temporal patterns invisible in cross-sectional research."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Multiple original contributions positioned well",
+                  "example": "Three contributions: (1) Temporal theory of professional learning challenging accumulation models, (2) Methodological innovation in tracking learning-application cycles, (3) Practical framework for designing career-aligned MOOCs."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Paradigm-shifting contribution",
+                  "example": "This work fundamentally reconceptualizes expertise from possession to flow. By documenting expertise obsolescence curves and renewal cycles, it replaces human capital theory's banking metaphor with metabolic model. This isn't incremental—it's revolutionary, requiring new measurement approaches and policy frameworks."
+                }
+              }
+            },
+            "5.2.2": {
+              "name": "Contribution Substantiation",
+              "severity": "Critical",
+              "description": "The rigorous demonstration that claimed contributions genuinely advance knowledge",
+              "detection_patterns": [
+                "Unsubstantiated claims",
+                "Weak evidence for novelty",
+                "Missing significance argument",
+                "No impact demonstration",
+                "Circular justification"
+              ],
+              "feedback_template": "Substantiate contributions by: (1) providing multiple evidence forms, (2) showing clear advancement, (3) demonstrating impact, (4) addressing counter-arguments, and (5) validating through reception.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Claims without support",
+                  "example": "This groundbreaking research transforms our understanding."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some evidence but weak connection",
+                  "example": "This research provides new insights as shown by the findings presented."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good evidence for contribution claims",
+                  "example": "The typology's contribution evidenced by: improved outcome prediction (R² increase .23 to .41), practitioner adoption (3 companies implementing), and theoretical advancement (resolving debate about completion metrics)."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Comprehensive multi-dimensional substantiation",
+                  "example": "Liquid expertise framework substantiated through: empirical evidence (obsolescence curves across 50 professions), theoretical validation (resolving human capital paradoxes), practical adoption (policy recommendations in EU report), scholarly impact (special issue planned)."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Paradigm shift documented",
+                  "example": "Expertise metabolism theory's impact cascades: empirical studies now measure flow not stock, funding agencies created 'renewal learning' category, companies restructured L&D from training events to continuous flows. The paradigm shift from accumulation to metabolism already reshaping field—evidenced by terminology adoption, method innovations, and institutional restructuring."
+                }
+              }
+            },
+            "5.2.3": {
+              "name": "Field Transformation Potential",
+              "severity": "Enhancement",
+              "description": "The capacity for research to fundamentally reshape field understanding or practices",
+              "detection_patterns": [
+                "Limited impact scope",
+                "No transformative vision",
+                "Incremental thinking",
+                "Missing implications",
+                "No paradigm challenge"
+              ],
+              "feedback_template": "Enhance transformation potential by: (1) identifying paradigm assumptions challenged, (2) envisioning field changes, (3) showing ripple effects, (4) inspiring new research programs, and (5) affecting practice fundamentally.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No transformative potential",
+                  "example": "This study adds to existing knowledge about professional development."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some potential but limited scope",
+                  "example": "Findings might influence how some organizations view MOOC credentials."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear potential for field influence",
+                  "example": "By showing credential timing matters more than source, this research could reshape hiring practices and professional development strategies across tech industry."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Significant transformation envisioned",
+                  "example": "Liquid expertise model transforms: how we measure professional capability (flow not stock), design learning systems (continuous not episodic), evaluate careers (adaptation not advancement), and conceptualize work itself (performance not position)."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Revolutionary field transformation",
+                  "example": "This work doesn't add to professional development field—it dissolves it. If expertise is metabolism not accumulation, 'development' metaphor fails. We need new field: 'professional ecology' studying knowledge flows through career systems. Requires new methods (flow tracking), theories (ecosystem not pipeline), and institutions (metabolic support not training). The work makes current field obsolete."
+                }
+              }
+            }
+          }
+        },
+        "5.3.0": {
+          "name": "Theoretical Sophistication",
+          "subsections": {
+            "5.3.1": {
+              "name": "Deep Theoretical Engagement",
+              "severity": "Enhancement",
+              "description": "The sophisticated use of theory that advances theoretical understanding itself",
+              "detection_patterns": [
+                "Surface theory use",
+                "No theoretical advancement",
+                "Single theory dependence",
+                "Missing theoretical implications",
+                "Theory as decoration"
+              ],
+              "feedback_template": "Deepen theoretical engagement by: (1) showing theory evolution through research, (2) challenging theoretical assumptions, (3) synthesizing multiple theories, (4) generating theoretical insights, and (5) advancing theory not just applying.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "Minimal theoretical engagement",
+                  "example": "This study uses human capital theory to examine professional development."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic theoretical application",
+                  "example": "Human capital theory suggests education increases productivity, which this study confirms through MOOC analysis."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good theoretical application and extension",
+                  "example": "Findings extend human capital theory by revealing temporal dynamics—capital doesn't just accumulate but decays. This suggests need for 'capital maintenance' concept alongside acquisition."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated theoretical development",
+                  "example": "By revealing expertise half-lives, this work fundamentally challenges human capital theory's accumulation assumption. Proposing 'capital metabolism'—continuous breakdown and renewal—transforms theory from banking to biological metaphor with different predictions and implications."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Theoretical innovation",
+                  "example": "This work performs theoretical metamorphosis: human capital theory assumes stable self accumulating skills. But platform capitalism creates 'quantum professional'—simultaneously skilled/unskilled until measurement moment (job application). Expertise exists in superposition, collapsed by observation. This quantum theory of careers explains paradoxes classical theory cannot: why more education correlates with more precarity."
+                }
+              }
+            },
+            "5.3.2": {
+              "name": "Theory Development",
+              "severity": "Enhancement",
+              "description": "The creation of new theoretical frameworks or significant theoretical extensions",
+              "detection_patterns": [
+                "No new theoretical elements",
+                "Weak theorization",
+                "Descriptive not theoretical",
+                "Missing abstraction",
+                "Limited theoretical reach"
+              ],
+              "feedback_template": "Develop theory by: (1) identifying patterns requiring theorization, (2) creating conceptual frameworks, (3) specifying relationships and mechanisms, (4) testing theoretical propositions, and (5) showing broad applicability.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No theory development",
+                  "example": "Study findings show various patterns in the data."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic pattern identification",
+                  "example": "Three types of MOOC users emerged: completers, samplers, and strategic extractors."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good theoretical propositions",
+                  "example": "Theory of Strategic MOOC Engagement: Professionals with immediate application needs engage selectively rather than completely, producing better outcomes than completion. Framework specifies when selective beats comprehensive engagement."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated multi-dimensional theory",
+                  "example": "Platform Learning Theory integrates individual (learning metabolism), technological (algorithmic mediation), and social (network effects) dimensions. Theory predicts: high metabolism × open algorithms × diverse networks = transformative learning. Boundary conditions specified, variance explained doubles existing models."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Paradigmatic theory creation",
+                  "example": "Ecological Theory of Professional Learning: Learning isn't individual achievement but ecosystem property. Professionals occupy learning niches with specific resource access, competition levels, and adaptation pressures. Theory explains why identical courses produce different outcomes—niche dynamics not individual differences determine success. Generates testable hypotheses about learning climate change, invasive skill species, and knowledge ecosystem collapse."
+                }
+              }
+            },
+            "5.3.3": {
+              "name": "Paradigmatic Thinking",
+              "severity": "Enhancement",
+              "description": "The ability to identify and challenge fundamental assumptions shaping field understanding",
+              "detection_patterns": [
+                "Accepting all assumptions",
+                "No paradigm awareness",
+                "Working within constraints",
+                "Missing deeper questions",
+                "No epistemological reflection"
+              ],
+              "feedback_template": "Develop paradigmatic thinking by: (1) identifying hidden assumptions, (2) questioning fundamental premises, (3) imagining alternatives, (4) showing paradigm limits, and (5) proposing new foundations.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No paradigmatic awareness",
+                  "example": "Professional development obviously requires continuous learning in today's economy."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some questioning but limited",
+                  "example": "While continuous learning is generally assumed necessary, some might question this assumption."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good paradigm awareness and questioning",
+                  "example": "The 'lifelong learning' paradigm assumes education solves economic problems. But what if constant reskilling is symptom not solution? Perhaps the problem is economic systems requiring human obsolescence."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated paradigm analysis",
+                  "example": "Professional development paradigm embeds three assumptions: (1) individuals responsible for adaptation, (2) learning equals economic value, (3) change is inevitable/good. Each assumption serves capital not professionals. Alternative paradigm: collective skill stability through system adaptation to humans."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Revolutionary paradigm creation",
+                  "example": "This work explodes the professional development paradigm itself. 'Development' assumes teleological progress toward higher states. But platform capitalism creates 'professional entropy'—constant decay requiring energy input just to maintain position. We need post-developmental paradigm: not how professionals progress but how they persist. This shift from development to persistence fundamentally reframes research questions, methods, and interventions."
+                }
+              }
+            }
+          }
+        },
+        "5.4.0": {
+          "name": "Intellectual Leadership",
+          "subsections": {
+            "5.4.1": {
+              "name": "Boundary-Spanning Integration",
+              "severity": "Enhancement",
+              "description": "The sophisticated integration across disciplines, methods, or theoretical traditions",
+              "detection_patterns": [
+                "Single discipline focus",
+                "No integration attempts",
+                "Superficial connections",
+                "Missing synthesis opportunities",
+                "Disciplinary isolation"
+              ],
+              "feedback_template": "Enhance integration by: (1) identifying connection points, (2) translating across boundaries, (3) creating synthesis frameworks, (4) showing mutual enrichment, and (5) opening new interdisciplinary spaces.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No boundary spanning",
+                  "example": "This education research examines professional development from educational perspective."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Mentions other fields",
+                  "example": "While this is education research, economics and sociology also study professional development."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Good integration across boundaries",
+                  "example": "Integrating education's learning theory with economics' human capital models and sociology's field theory reveals how micro-learning translates through meso-organizational structures to macro-economic outcomes."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Sophisticated synthesis creating new understanding",
+                  "example": "Platform learning sits at nexus of education (pedagogy), computer science (algorithms), economics (labor markets), and psychology (motivation). This study creates trading zones—concepts that translate across fields while maintaining discipline-specific richness. 'Learning liquidity' works economically (asset flow), computationally (data streams), and pedagogically (knowledge transfer)."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Creates new interdisciplinary field",
+                  "example": "This work doesn't bridge fields—it reveals their obsolescence. Studying platform professionals requires 'digital career studies': post-disciplinary field integrating critical code studies, platform studies, career theory, and learning sciences. Not additive but transformative—each field must reconstruct core concepts. Economics abandons equilibrium for flow dynamics. Education relinquishes individual learner for learning assemblages. The integration doesn't connect fields but births new intellectual space."
+                }
+              }
+            },
+            "5.4.2": {
+              "name": "Future Research Trajectory",
+              "severity": "Enhancement",
+              "description": "The articulation of compelling research directions opened by the work",
+              "detection_patterns": [
+                "No future directions",
+                "Generic next steps",
+                "Limited vision",
+                "No research program",
+                "Closed rather than opening"
+              ],
+              "feedback_template": "Articulate future trajectories by: (1) identifying opened questions, (2) outlining research programs, (3) suggesting methodological innovations, (4) envisioning field evolution, and (5) inspiring others.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No future research mentioned",
+                  "example": "This study examined professional development through MOOCs."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Basic future research suggestions",
+                  "example": "Future research could examine other professional groups or different platforms."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear research directions identified",
+                  "example": "Three research directions emerge: (1) How do expertise decay rates vary across professions?, (2) Can organizations design 'learning metabolism' support systems?, (3) What happens when entire fields face simultaneous obsolescence?"
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Comprehensive research program outlined",
+                  "example": "This work opens multi-year research program: Phase 1—Map expertise half-lives across economy. Phase 2—Develop metabolic support interventions. Phase 3—Test policy frameworks for 'just transitions.' Requires new methods (flow ethnography), collaborations (computer scientists for algorithm studies), and infrastructure (real-time career tracking systems)."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Visionary research trajectory",
+                  "example": "This work makes visible civilization-level questions: How do societies manage accelerating knowledge obsolescence? When does learning acceleration hit physical limits? What happens after 'peak learning'? The research trajectory isn't incremental but existential—studying not career development but species adaptation to self-created acceleration. Requires posthuman methods tracking human-AI learning assemblages, new institutions beyond universities, and courage to ask if professional development has become professionally destructive."
+                }
+              }
+            },
+            "5.4.3": {
+              "name": "Scholarly Voice Distinctiveness",
+              "severity": "Enhancement",
+              "description": "The development of unique intellectual perspective and recognizable scholarly voice",
+              "detection_patterns": [
+                "Generic academic voice",
+                "No distinctive perspective",
+                "Derivative thinking",
+                "Missing authorial presence",
+                "Conventional approaches only"
+              ],
+              "feedback_template": "Develop distinctive voice by: (1) showing unique perspective, (2) developing signature concepts, (3) maintaining consistent intellectual stance, (4) contributing recognizable insights, and (5) inspiring through originality.",
+              "rubric": {
+                "1": {
+                  "level": "Inadequate",
+                  "description": "No distinctive voice",
+                  "example": "This research examines an important topic using established methods."
+                },
+                "2": {
+                  "level": "Developing",
+                  "description": "Some personality but limited",
+                  "example": "This research brings new energy to studying professional development, offering fresh perspectives."
+                },
+                "3": {
+                  "level": "Competent",
+                  "description": "Clear scholarly voice emerging",
+                  "example": "This work consistently views professional development through temporal lens—every phenomenon examined for its rhythm, pace, and acceleration. This temporal sensitivity reveals patterns others miss."
+                },
+                "4": {
+                  "level": "Strong",
+                  "description": "Distinctive voice and perspective",
+                  "example": "This scholar's signature move: finding metabolic metaphors in social phenomena. Just as they revealed 'learning metabolism,' they might uncover 'innovation digestion' or 'cultural circulation.' The biological lens applied to digital phenomena creates unique insights. You can identify their work from conceptual DNA alone."
+                },
+                "5": {
+                  "level": "Exemplary",
+                  "description": "Transformative intellectual presence",
+                  "example": "This voice doesn't just contribute but haunts—once heard, it changes how you see. The work's dark poetry ('professionals as ghosts in the machine, learning to disappear productively') combines with rigorous analysis to create unforgettable scholarship. Not just distinctive but necessary—after reading, the field seems incomplete without this perspective. The voice doesn't seek recognition but reshapes recognition itself."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "implementation_guidance": {
+    "for_claude": {
+      "instructions": [
+        "Use hierarchical navigation to find specific elements",
+        "Reference subsection codes (e.g., '1.1.1') for precision",
+        "Apply rubrics to identify current level and suggest improvements",
+        "Use severity levels to prioritize feedback",
+        "Combine multiple relevant dimensions for comprehensive evaluation"
+      ]
+    },
+    "for_users": {
+      "evaluation_process": [
+        "Start with foundational dimensions for early-stage work",
+        "Progress to intermediate dimensions as basics are mastered",
+        "Apply advanced dimensions for doctoral-level excellence",
+        "Use severity indicators to prioritize improvements",
+        "Track progress using rubric levels"
+      ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+    "dockerfile_lines": [],
+    "graphs": {
+      "scope_research": "./src/pact/research_agent_scope.py:scope_research",
+      "research_agent": "./src/pact/research_agent.py:researcher_agent",
+      "research_agent_mcp": "./src/pact/research_agent_mcp.py:agent_mcp",
+      "research_agent_supervisor": "./src/pact/multi_agent_supervisor.py:supervisor_agent",
+      "research_agent_full": "./src/pact/research_agent_full.py:agent",
+      "pact_critique_agent": "./src/pact/pact_critique_agent.py:pact_critique_agent"
+    },
+    "python_version": "3.11",
+    "env": ".env",
+    "dependencies": [
+      "."
+    ]
+  }

@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PACT 3.0 - Multi-Agent Academic Paper Critique System</title>
+    <meta name="description" content="PACT 3.0: Advanced AI-powered academic paper critique using the PennCLO Academic Critique Taxonomy with specialized multi-agent analysis">
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom styling -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .agent-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .agent-card.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+            }
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+        
+        .score-ring {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        
+        /* Prevent infinite page expansion */
+        #results-section {
+            overflow-x: hidden;
+        }
+        
+        /* Ensure chart container has proper constraints */
+        .chart-container {
+            max-width: 100%;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <div>
+                        <h1 class="text-2xl font-bold">PACT 3.0</h1>
+                        <p class="text-sm opacity-90">Multi-Agent Academic Paper Analysis</p>
+                    </div>
+                </div>
+                <nav class="hidden md:flex space-x-6">
+                    <button onclick="showScreen('upload')" class="hover:opacity-80 transition">Upload</button>
+                    <button onclick="showScreen('analysis')" class="hover:opacity-80 transition">Analysis</button>
+                    <button onclick="showScreen('about')" class="hover:opacity-80 transition">About</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="container mx-auto px-6 py-8">
+        
+        <!-- Upload Screen -->
+        <div id="upload-screen" class="screen">
+            <div class="max-w-4xl mx-auto">
+                <!-- Upload Card -->
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <h2 class="text-3xl font-bold mb-4 gradient-text">Submit Your Paper for Critique</h2>
+                    <p class="text-gray-600 mb-8">Upload your academic paper to receive comprehensive feedback from our specialized AI agents trained on the PACT taxonomy.</p>
+                    
+                    <!-- File Upload Area -->
+                    <div id="drop-zone" class="border-3 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-purple-500 transition cursor-pointer">
+                        <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        <p class="text-lg font-medium text-gray-700 mb-2">Drop your paper here or click to browse</p>
+                        <p class="text-sm text-gray-500">Supports PDF, DOCX, TXT, and MD files (max 10MB)</p>
+                        <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.txt,.md">
+                    </div>
+                    
+                    <!-- Or paste text -->
+                    <div class="relative my-8">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-4 bg-white text-gray-500">Or paste your text</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Text Input Area -->
+                    <div class="mb-6">
+                        <textarea id="paper-text" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" rows="10" placeholder="Paste your paper text here..."></textarea>
+                        <div class="flex justify-between mt-2">
+                            <span class="text-sm text-gray-500">
+                                <span id="word-count">0</span> words
+                            </span>
+                            <span class="text-sm text-gray-500">Minimum 500 words recommended</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Paper Type Selection -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Paper Type</label>
+                        <select id="paper-type" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            <option value="research">Research Article</option>
+                            <option value="thesis">Thesis/Dissertation</option>
+                            <option value="review">Literature Review</option>
+                            <option value="essay">Academic Essay</option>
+                            <option value="proposal">Research Proposal</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button id="analyze-btn" onclick="startAnalysis()" class="w-full gradient-bg text-white font-semibold py-4 px-6 rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <span class="flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            Start PACT Analysis
+                        </span>
+                    </button>
+                </div>
+                
+                <!-- PACT Dimensions Info -->
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h3 class="text-2xl font-bold mb-6">What We Analyze</h3>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                    <span class="text-purple-600 font-bold">1</span>
+                                </div>
+                                <h4 class="font-semibold">Research Foundations</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">Problem definition, theoretical framework, literature synthesis</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                    <span class="text-blue-600 font-bold">2</span>
+                                </div>
+                                <h4 class="font-semibold">Methodological Rigor</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">Methods alignment, data quality, analysis validity</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                    <span class="text-green-600 font-bold">3</span>
+                                </div>
+                                <h4 class="font-semibold">Structure & Coherence</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">Organization, flow, transitions, logical progression</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                                    <span class="text-yellow-600 font-bold">4</span>
+                                </div>
+                                <h4 class="font-semibold">Academic Precision</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">Citations, terminology, grammar, formatting</p>
+                        </div>
+                        
+                        <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                                    <span class="text-red-600 font-bold">5</span>
+                                </div>
+                                <h4 class="font-semibold">Critical Sophistication</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">Reflexivity, originality, theoretical depth</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Screen -->
+        <div id="analysis-screen" class="screen hidden">
+            <!-- Progress Section -->
+            <div id="progress-section" class="max-w-6xl mx-auto mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold mb-6">Analysis in Progress</h2>
+                    
+                    <!-- Overall Progress -->
+                    <div class="mb-8">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Overall Progress</span>
+                            <span id="progress-percent" class="text-sm font-medium text-purple-600">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="progress-bar" class="gradient-bg h-3 rounded-full progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Agent Status Grid -->
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Supervisor Agent -->
+                        <div id="agent-supervisor" class="agent-card p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-2">
+                                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                        </svg>
+                                    </div>
+                                    <span class="font-semibold text-sm">Supervisor</span>
+                                </div>
+                                <span class="agent-status text-xs text-gray-500">Waiting</span>
+                            </div>
+                            <div class="agent-message text-xs text-gray-600 hidden">
+                                <div class="typing-indicator">
+                                    <span class="typing-dot"></span>
+                                    <span class="typing-dot"></span>
+                                    <span class="typing-dot"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Agent 1: Research Foundations -->
+                        <div id="agent-1" class="agent-card p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-2">
+                                        <span class="text-purple-600 font-bold text-xs">1</span>
+                                    </div>
+                                    <span class="font-semibold text-sm">Research Found.</span>
+                                </div>
+                                <span class="agent-status text-xs text-gray-500">Waiting</span>
+                            </div>
+                            <div class="agent-message text-xs text-gray-600 hidden"></div>
+                        </div>
+                        
+                        <!-- Agent 2: Methodological Rigor -->
+                        <div id="agent-2" class="agent-card p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                                        <span class="text-blue-600 font-bold text-xs">2</span>
+                                    </div>
+                                    <span class="font-semibold text-sm">Method. Rigor</span>
+                                </div>
+                                <span class="agent-status text-xs text-gray-500">Waiting</span>
+                            </div>
+                            <div class="agent-message text-xs text-gray-600 hidden"></div>
+                        </div>
+                        
+                        <!-- Agent 3: Structure & Coherence -->
+                        <div id="agent-3" class="agent-card p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-2">
+                                        <span class="text-green-600 font-bold text-xs">3</span>
+                                    </div>
+                                    <span class="font-semibold text-sm">Structure</span>
+                                </div>
+                                <span class="agent-status text-xs text-gray-500">Waiting</span>
+                            </div>
+                            <div class="agent-message text-xs text-gray-600 hidden"></div>
+                        </div>
+                        
+                        <!-- Agent 4: Academic Precision -->
+                        <div id="agent-4" class="agent-card p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-2">
+                                        <span class="text-yellow-600 font-bold text-xs">4</span>
+                                    </div>
+                                    <span class="font-semibold text-sm">Precision</span>
+                                </div>
+                                <span class="agent-status text-xs text-gray-500">Waiting</span>
+                            </div>
+                            <div class="agent-message text-xs text-gray-600 hidden"></div>
+                        </div>
+                        
+                        <!-- Agent 5: Critical Sophistication -->
+                        <div id="agent-5" class="agent-card p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-2">
+                                        <span class="text-red-600 font-bold text-xs">5</span>
+                                    </div>
+                                    <span class="font-semibold text-sm">Sophistication</span>
+                                </div>
+                                <span class="agent-status text-xs text-gray-500">Waiting</span>
+                            </div>
+                            <div class="agent-message text-xs text-gray-600 hidden"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section (Initially Hidden) -->
+            <div id="results-section" class="hidden max-w-6xl mx-auto">
+                <!-- Overall Score Card -->
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <div class="flex flex-col md:flex-row items-center justify-between">
+                        <div class="mb-6 md:mb-0">
+                            <h2 class="text-3xl font-bold mb-2">Analysis Complete</h2>
+                            <p id="paper-title" class="text-gray-600">Your Paper Analysis</p>
+                        </div>
+                        
+                        <!-- Score Circle -->
+                        <div class="relative">
+                            <svg class="w-32 h-32">
+                                <circle cx="64" cy="64" r="56" stroke="#e5e7eb" stroke-width="8" fill="none"></circle>
+                                <circle id="score-circle" cx="64" cy="64" r="56" stroke="url(#gradient)" stroke-width="8" fill="none" 
+                                        class="score-ring" stroke-dasharray="351.86" stroke-dashoffset="351.86"></circle>
+                                <defs>
+                                    <linearGradient id="gradient">
+                                        <stop offset="0%" stop-color="#667eea"/>
+                                        <stop offset="100%" stop-color="#764ba2"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center">
+                                    <span id="overall-score" class="text-3xl font-bold gradient-text">0</span>
+                                    <span class="text-gray-500 text-sm block">/ 100</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendation Badge -->
+                    <div class="mt-6">
+                        <span id="recommendation-badge" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span id="recommendation-text">Processing...</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Dimension Scores -->
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <h3 class="text-2xl font-bold mb-6">Dimension Scores</h3>
+                    <div class="relative chart-container" style="height: 400px;">
+                        <canvas id="dimension-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Detailed Feedback Tabs -->
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h3 class="text-2xl font-bold mb-6">Detailed Feedback</h3>
+                    
+                    <!-- Tab Navigation -->
+                    <div class="border-b border-gray-200 mb-6">
+                        <nav class="-mb-px flex space-x-8">
+                            <button onclick="showTab('summary')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-purple-500 text-purple-600">
+                                Summary
+                            </button>
+                            <button onclick="showTab('strengths')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                Strengths
+                            </button>
+                            <button onclick="showTab('improvements')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                Improvements
+                            </button>
+                            <button onclick="showTab('dimensions')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                Dimensions
+                            </button>
+                            <button onclick="showTab('next-steps')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                Next Steps
+                            </button>
+                            <button onclick="showTab('checklist')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                PACT Checklist
+                            </button>
+                        </nav>
+                    </div>
+                    
+                    <!-- Tab Content -->
+                    <div id="tab-summary" class="tab-content">
+                        <div class="prose max-w-none">
+                            <h4 class="text-xl font-semibold mb-4">Executive Summary</h4>
+                            <p id="executive-summary" class="text-gray-700">Loading summary...</p>
+                        </div>
+                    </div>
+                    
+                    <div id="tab-strengths" class="tab-content hidden">
+                        <h4 class="text-xl font-semibold mb-4">Key Strengths</h4>
+                        <ul id="strengths-list" class="space-y-3">
+                            <!-- Strengths will be added here -->
+                        </ul>
+                    </div>
+                    
+                    <div id="tab-improvements" class="tab-content hidden">
+                        <h4 class="text-xl font-semibold mb-4">Priority Improvements</h4>
+                        <ul id="improvements-list" class="space-y-3">
+                            <!-- Improvements will be added here -->
+                        </ul>
+                    </div>
+                    
+                    <div id="tab-dimensions" class="tab-content hidden">
+                        <h4 class="text-xl font-semibold mb-4">Detailed Dimension Analysis</h4>
+                        <div id="dimensions-detail" class="space-y-8">
+                            <!-- Enhanced dimension details will be added here -->
+                        </div>
+                    </div>
+                    
+                    <div id="tab-next-steps" class="tab-content hidden">
+                        <h4 class="text-xl font-semibold mb-4">Actionable Next Steps</h4>
+                        <ol id="next-steps-list" class="space-y-3">
+                            <!-- Next steps will be added here -->
+                        </ol>
+                    </div>
+                    
+                    <div id="tab-checklist" class="tab-content hidden">
+                        <h4 class="text-xl font-semibold mb-4">PACT Assessment Checklist</h4>
+                        <div class="mb-6">
+                            <p class="text-gray-600 mb-4">Use this checklist to track your revision progress. Check off items as you address them.</p>
+                        </div>
+                        
+                        <div id="checklist-improvements" class="mb-8">
+                            <h5 class="text-lg font-medium mb-4 text-orange-700">Areas for Improvement - Should Be Addressed</h5>
+                            <div id="improvement-checklist" class="space-y-3">
+                                <!-- Improvement checklist items will be added here -->
+                            </div>
+                        </div>
+                        
+                        <div id="checklist-strengths">
+                            <h5 class="text-lg font-medium mb-4 text-green-700">Strengths - Well-Executed Elements</h5>
+                            <div id="strength-checklist" class="space-y-3">
+                                <!-- Strength checklist items will be added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                    <!-- Download Dropdown -->
+                    <div class="relative flex-1">
+                        <button onclick="toggleDownloadMenu()" class="w-full bg-white border-2 border-purple-600 text-purple-600 font-semibold py-3 px-6 rounded-lg hover:bg-purple-50 transition flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Download Report
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Download Menu -->
+                        <div id="download-menu" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                            <button onclick="downloadReport('pdf')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center">
+                                <svg class="w-4 h-4 mr-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                Professional PDF Report
+                                <span class="ml-auto text-xs text-gray-500">Recommended</span>
+                            </button>
+                            <button onclick="downloadReport('html')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center">
+                                <svg class="w-4 h-4 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"></path>
+                                </svg>
+                                HTML Web Page
+                            </button>
+                            <button onclick="downloadReport('md')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center border-t">
+                                <svg class="w-4 h-4 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Markdown Document
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button onclick="startNewAnalysis()" class="flex-1 gradient-bg text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition">
+                        <span class="flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Analyze Another Paper
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Screen -->
+        <div id="about-screen" class="screen hidden">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h2 class="text-3xl font-bold mb-6 gradient-text">About PACT 3.0</h2>
+                    
+                    <div class="prose max-w-none">
+                        <p class="text-lg text-gray-700 mb-6">
+                            The PACT (PennCLO Academic Critique Taxonomy) system provides comprehensive, multi-dimensional analysis of academic papers using specialized AI agents trained on rigorous scholarly standards.
+                        </p>
+                        
+                        <h3 class="text-xl font-semibold mt-8 mb-4">How It Works</h3>
+                        <ol class="list-decimal list-inside space-y-3 text-gray-700">
+                            <li><strong>Submit Your Paper:</strong> Upload or paste your academic work</li>
+                            <li><strong>Supervisor Planning:</strong> Our supervisor agent analyzes your paper and creates a critique plan</li>
+                            <li><strong>Parallel Analysis:</strong> Five specialized agents evaluate different dimensions simultaneously</li>
+                            <li><strong>Synthesis:</strong> The supervisor combines all feedback into a cohesive report</li>
+                            <li><strong>Actionable Feedback:</strong> Receive specific recommendations for improvement</li>
+                        </ol>
+                        
+                        <h3 class="text-xl font-semibold mt-8 mb-4">The Five PACT Dimensions</h3>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-purple-50 rounded-lg">
+                                <h4 class="font-semibold text-purple-900">1. Research Foundations</h4>
+                                <p class="text-purple-700">Problem identification, theoretical frameworks, literature synthesis, and argument construction</p>
+                            </div>
+                            <div class="p-4 bg-blue-50 rounded-lg">
+                                <h4 class="font-semibold text-blue-900">2. Methodological Rigor</h4>
+                                <p class="text-blue-700">Method-question alignment, data quality, analysis validity, and limitations recognition</p>
+                            </div>
+                            <div class="p-4 bg-green-50 rounded-lg">
+                                <h4 class="font-semibold text-green-900">3. Structure & Coherence</h4>
+                                <p class="text-green-700">Organization, paragraph unity, transitions, and logical flow</p>
+                            </div>
+                            <div class="p-4 bg-yellow-50 rounded-lg">
+                                <h4 class="font-semibold text-yellow-900">4. Academic Precision</h4>
+                                <p class="text-yellow-700">Term consistency, citation accuracy, grammar, and formatting standards</p>
+                            </div>
+                            <div class="p-4 bg-red-50 rounded-lg">
+                                <h4 class="font-semibold text-red-900">5. Critical Sophistication</h4>
+                                <p class="text-red-700">Reflexivity, original contribution, theoretical engagement, and scholarly maturity</p>
+                            </div>
+                        </div>
+                        
+                        <h3 class="text-xl font-semibold mt-8 mb-4">Privacy & Security</h3>
+                        <p class="text-gray-700">
+                            Your papers are processed securely and are not stored after analysis. All evaluations are performed in real-time and results are only accessible to you.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-6 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-sm">© 2024 PACT 3.0. Built with LangGraph & Multi-Agent AI</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-sm hover:text-purple-400 transition">Documentation</a>
+                    <a href="#" class="text-sm hover:text-purple-400 transition">GitHub</a>
+                    <a href="#" class="text-sm hover:text-purple-400 transition">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Global variables
+        let currentScreen = 'upload';
+        let analysisData = null;
+        let dimensionChart = null;
+        let currentSessionId = null;
+        let websocket = null;
+        let apiBaseUrl = window.location.origin;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updateWordCount();
+        });
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // File upload
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', handleDragOver);
+            dropZone.addEventListener('drop', handleDrop);
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // Text input
+            const paperText = document.getElementById('paper-text');
+            paperText.addEventListener('input', updateWordCount);
+        }
+
+        // Handle drag and drop
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('border-purple-500');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('border-purple-500');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            // Validate file
+            const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'text/markdown'];
+            if (!validTypes.includes(file.type) && !file.name.endsWith('.md')) {
+                alert('Please upload a PDF, DOCX, TXT, or MD file.');
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB.');
+                return;
+            }
+            
+            // Update UI
+            const dropZone = document.getElementById('drop-zone');
+            dropZone.innerHTML = `
+                <svg class="mx-auto h-16 w-16 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-lg font-medium text-gray-700 mb-2">${file.name}</p>
+                <p class="text-sm text-gray-500">${(file.size / 1024).toFixed(2)} KB</p>
+            `;
+            
+            enableAnalysisButton();
+        }
+
+        // Update word count
+        function updateWordCount() {
+            const text = document.getElementById('paper-text').value;
+            const wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length;
+            document.getElementById('word-count').textContent = wordCount;
+            
+            if (wordCount >= 100) {
+                enableAnalysisButton();
+            } else {
+                disableAnalysisButton();
+            }
+        }
+
+        function enableAnalysisButton() {
+            document.getElementById('analyze-btn').disabled = false;
+        }
+
+        function disableAnalysisButton() {
+            document.getElementById('analyze-btn').disabled = true;
+        }
+
+        // Screen navigation
+        function showScreen(screenName) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.add('hidden');
+            });
+            
+            // Show selected screen
+            const screen = document.getElementById(`${screenName}-screen`);
+            if (screen) {
+                screen.classList.remove('hidden');
+                currentScreen = screenName;
+            }
+        }
+
+        // Start analysis
+        async function startAnalysis() {
+            showScreen('analysis');
+            
+            // Get paper content
+            const paperContent = document.getElementById('paper-text').value.trim();
+            const paperTitle = extractPaperTitle(paperContent);
+            const paperType = document.getElementById('paper-type').value;
+            
+            if (!paperContent) {
+                alert('Please provide paper content before starting analysis.');
+                showScreen('upload');
+                return;
+            }
+            
+            try {
+                // Submit paper for analysis
+                await submitPaperForAnalysis(paperContent, paperTitle, paperType);
+            } catch (error) {
+                console.error('Error starting analysis:', error);
+                alert('Failed to start analysis. Please try again.');
+                showScreen('upload');
+            }
+        }
+        
+        function extractPaperTitle(content) {
+            const lines = content.split('\n');
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('Title:')) {
+                    return line.replace('Title:', '').trim();
+                }
+                if (line && !line.startsWith('Abstract:') && line.length > 10) {
+                    // Assume first substantial line is the title
+                    return line;
+                }
+            }
+            return null;
+        }
+
+        // Submit paper for analysis via API
+        async function submitPaperForAnalysis(content, title, type) {
+            try {
+                const response = await fetch(`${apiBaseUrl}/api/critique/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: content,
+                        title: title,
+                        paper_type: type
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                currentSessionId = result.session_id;
+
+                // Start WebSocket connection for real-time updates
+                await connectWebSocket(currentSessionId);
+                
+                // Start polling for progress (fallback if WebSocket fails)
+                startProgressPolling(currentSessionId);
+
+            } catch (error) {
+                console.error('Error submitting paper:', error);
+                throw error;
+            }
+        }
+
+        // Connect to WebSocket for real-time updates
+        async function connectWebSocket(sessionId) {
+            try {
+                const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/critique/live/${sessionId}`;
+                websocket = new WebSocket(wsUrl);
+
+                websocket.onopen = function(event) {
+                    console.log('WebSocket connected');
+                };
+
+                websocket.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    updateProgressFromAPI(data);
+                };
+
+                websocket.onclose = function(event) {
+                    console.log('WebSocket closed');
+                    websocket = null;
+                };
+
+                websocket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                };
+
+            } catch (error) {
+                console.error('Failed to connect WebSocket:', error);
+            }
+        }
+
+        // Start polling for progress updates (fallback)
+        async function startProgressPolling(sessionId) {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/api/critique/status/${sessionId}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        updateProgressFromAPI(data);
+                        
+                        // Stop polling when completed or failed
+                        if (data.status === 'completed' || data.status === 'failed') {
+                            clearInterval(pollInterval);
+                            if (data.status === 'completed') {
+                                await loadFinalResults(sessionId);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error polling progress:', error);
+                }
+            }, 2000); // Poll every 2 seconds
+        }
+
+        // Update UI based on API progress data
+        function updateProgressFromAPI(data) {
+            // Update overall progress
+            updateProgress(data.overall_progress || 0);
+            
+            // Update agent statuses
+            if (data.agents) {
+                for (const [agentId, agentData] of Object.entries(data.agents)) {
+                    updateAgentStatus(agentId, agentData);
+                }
+            }
+            
+            // Show results if completed
+            if (data.status === 'completed') {
+                loadFinalResults(data.session_id);
+            } else if (data.status === 'failed') {
+                showError(data.error_message || 'Analysis failed');
+            }
+        }
+
+        // Update individual agent status
+        function updateAgentStatus(agentId, agentData) {
+            const agentCard = document.getElementById(`agent-${agentId}`);
+            if (!agentCard) return;
+
+            const statusElement = agentCard.querySelector('.agent-status');
+            const messageElement = agentCard.querySelector('.agent-message');
+
+            // Update status text and color
+            statusElement.textContent = agentData.status === 'active' ? 'Active' : 
+                                       agentData.status === 'completed' ? 'Complete' :
+                                       agentData.status === 'failed' ? 'Failed' : 'Waiting';
+
+            // Update status colors
+            statusElement.classList.remove('text-gray-500', 'text-purple-600', 'text-green-600', 'text-red-600');
+            if (agentData.status === 'active') {
+                statusElement.classList.add('text-purple-600');
+                agentCard.classList.add('active');
+            } else if (agentData.status === 'completed') {
+                statusElement.classList.add('text-green-600');
+                agentCard.classList.remove('active');
+            } else if (agentData.status === 'failed') {
+                statusElement.classList.add('text-red-600');
+                agentCard.classList.remove('active');
+            } else {
+                statusElement.classList.add('text-gray-500');
+                agentCard.classList.remove('active');
+            }
+
+            // Update message
+            if (agentData.message) {
+                messageElement.classList.remove('hidden');
+                if (agentData.status === 'active') {
+                    messageElement.innerHTML = `
+                        <div class="typing-indicator">
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                        </div>
+                    `;
+                    setTimeout(() => {
+                        messageElement.textContent = agentData.message;
+                    }, 1000);
+                } else {
+                    messageElement.textContent = agentData.message;
+                }
+            }
+        }
+
+        // Load final results from API
+        async function loadFinalResults(sessionId) {
+            try {
+                const response = await fetch(`${apiBaseUrl}/api/critique/results/${sessionId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const results = await response.json();
+                
+                // Convert API results to the format expected by displayResults
+                const mockData = convertAPIResultsToDisplayFormat(results);
+                
+                // Show results
+                showResults();
+                displayResults(mockData);
+
+            } catch (error) {
+                console.error('Error loading final results:', error);
+                showError('Failed to load analysis results');
+            }
+        }
+
+        // Convert API results to display format
+        function convertAPIResultsToDisplayFormat(apiResults) {
+            const dimensions = {};
+            const strengths = [];
+            const improvements = [];
+            const nextSteps = [];
+            const dimensionAnalyses = {};
+            const checklistItems = [];
+
+            // Process dimension critiques from enhanced format
+            if (apiResults.dimension_analyses) {
+                for (const [dimId, dimension] of Object.entries(apiResults.dimension_analyses)) {
+                    dimensions[dimension.dimension_name] = getScoreFromAssessment(dimension.overall_assessment);
+                    dimensionAnalyses[dimId] = dimension;
+                    
+                    // Collect key strengths and improvements from dimension
+                    if (dimension.key_strengths) {
+                        strengths.push(...dimension.key_strengths.slice(0, 2));
+                    }
+                    if (dimension.priority_improvements) {
+                        improvements.push(...dimension.priority_improvements.slice(0, 2));
+                    }
+                }
+            } else if (apiResults.dimension_critiques) {
+                // Fallback to old format
+                for (const [dimId, critique] of Object.entries(apiResults.dimension_critiques)) {
+                    dimensions[critique.dimension_name] = critique.dimension_score;
+                    
+                    if (critique.strengths) {
+                        strengths.push(...critique.strengths.slice(0, 2));
+                    }
+                    if (critique.weaknesses) {
+                        improvements.push(...critique.weaknesses.slice(0, 2));
+                    }
+                    if (critique.recommendations) {
+                        nextSteps.push(...critique.recommendations.slice(0, 1));
+                    }
+                }
+            }
+
+            // Process next steps and checklist items
+            if (apiResults.next_steps) {
+                nextSteps.push(...apiResults.next_steps.slice(0, 5));
+            }
+            
+            if (apiResults.checklist_items) {
+                checklistItems.push(...apiResults.checklist_items);
+            }
+
+            return {
+                overallScore: calculateOverallScore(apiResults),
+                recommendation: getRecommendationFromReadiness(apiResults.submission_readiness),
+                dimensions: Object.keys(dimensions).length > 0 ? dimensions : getDefaultDimensions(),
+                dimensionAnalyses: dimensionAnalyses,
+                summary: apiResults.executive_summary || extractSummaryFromCritique(apiResults.final_critique),
+                strengths: apiResults.key_findings || strengths.slice(0, 4) || ['Analysis completed successfully'],
+                improvements: improvements.slice(0, 4) || ['See detailed feedback for specific recommendations'],
+                nextSteps: nextSteps.slice(0, 5) || ['Review the detailed critique report'],
+                checklistItems: checklistItems,
+                submissionReadiness: apiResults.submission_readiness
+            };
+        }
+        
+        function getScoreFromAssessment(assessment) {
+            switch (assessment) {
+                case 'Strong': return 85;
+                case 'Developing': return 70;
+                case 'Weak': return 55;
+                default: return 75;
+            }
+        }
+        
+        function calculateOverallScore(apiResults) {
+            if (apiResults.overall_score) return apiResults.overall_score;
+            if (apiResults.submission_readiness && apiResults.submission_readiness.readiness_score) {
+                return apiResults.submission_readiness.readiness_score * 20; // Convert 5-point to 100-point scale
+            }
+            return 75;
+        }
+        
+        function getRecommendationFromReadiness(readiness) {
+            if (!readiness) return 'Review';
+            
+            switch (readiness.overall_readiness) {
+                case 'READY': return 'Accept';
+                case 'NEARLY_READY': return 'Minor Revision';
+                case 'NEEDS_WORK': return 'Revision Required';
+                case 'MAJOR_ISSUES': return 'Major Revision';
+                default: return 'Review';
+            }
+        }
+        
+        function getDefaultDimensions() {
+            return {
+                'Research Foundations': 75,
+                'Methodological Rigor': 75,
+                'Structure & Coherence': 75,
+                'Academic Precision': 75,
+                'Critical Sophistication': 75
+            };
+        }
+
+        function getRecommendationFromScore(score) {
+            if (score >= 85) return 'Accept';
+            if (score >= 70) return 'Minor Revision';
+            if (score >= 60) return 'Revise';
+            return 'Major Revision';
+        }
+
+        function extractSummaryFromCritique(critique) {
+            if (!critique) return 'Analysis completed. See detailed feedback below.';
+            
+            // Try to extract executive summary section
+            const lines = critique.split('\n');
+            let summaryStart = -1;
+            let summaryEnd = -1;
+            
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].toLowerCase().includes('executive summary') || 
+                    lines[i].toLowerCase().includes('summary')) {
+                    summaryStart = i + 1;
+                } else if (summaryStart > -1 && lines[i].startsWith('##')) {
+                    summaryEnd = i;
+                    break;
+                }
+            }
+            
+            if (summaryStart > -1) {
+                const endIndex = summaryEnd > -1 ? summaryEnd : Math.min(summaryStart + 5, lines.length);
+                return lines.slice(summaryStart, endIndex).join('\n').trim() || 
+                       'Analysis completed. See detailed feedback below.';
+            }
+            
+            return critique.split('\n').slice(0, 3).join(' ').substring(0, 200) + '...';
+        }
+
+        function showError(message) {
+            alert(`Analysis Error: ${message}`);
+            showScreen('upload');
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progress-percent').textContent = `${Math.round(percent)}%`;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Show results
+        function showResults() {
+            // Hide progress section
+            document.getElementById('progress-section').classList.add('hidden');
+            
+            // Show results section
+            document.getElementById('results-section').classList.remove('hidden');
+        }
+
+        function displayResults(data) {
+            // Update score
+            const score = data.overallScore;
+            document.getElementById('overall-score').textContent = score;
+            
+            // Animate score circle
+            const circle = document.getElementById('score-circle');
+            const circumference = 351.86;
+            const offset = circumference - (score / 100) * circumference;
+            setTimeout(() => {
+                circle.style.strokeDashoffset = offset;
+                circle.style.transition = 'stroke-dashoffset 1s ease-in-out';
+            }, 100);
+            
+            // Update recommendation
+            const badge = document.getElementById('recommendation-badge');
+            const recommendationText = document.getElementById('recommendation-text');
+            recommendationText.textContent = data.recommendation;
+            
+            // Style badge based on recommendation
+            if (data.recommendation.includes('Accept')) {
+                badge.className = 'inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800';
+            } else if (data.recommendation.includes('Minor')) {
+                badge.className = 'inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800';
+            } else if (data.recommendation.includes('Major')) {
+                badge.className = 'inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800';
+            } else {
+                badge.className = 'inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800';
+            }
+            
+            // Update summary
+            document.getElementById('executive-summary').textContent = data.summary;
+            
+            // Update strengths
+            const strengthsList = document.getElementById('strengths-list');
+            strengthsList.innerHTML = data.strengths.map(strength => `
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-gray-700">${strength}</span>
+                </li>
+            `).join('');
+            
+            // Update improvements
+            const improvementsList = document.getElementById('improvements-list');
+            improvementsList.innerHTML = data.improvements.map(improvement => `
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-yellow-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-gray-700">${improvement}</span>
+                </li>
+            `).join('');
+            
+            // Update next steps
+            const nextStepsList = document.getElementById('next-steps-list');
+            nextStepsList.innerHTML = data.nextSteps.map((step, index) => `
+                <li class="flex items-start">
+                    <span class="flex-shrink-0 w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mr-3 text-sm font-semibold">
+                        ${index + 1}
+                    </span>
+                    <span class="text-gray-700">${step}</span>
+                </li>
+            `).join('');
+            
+            // Update detailed dimension analysis
+            displayDetailedDimensions(data.dimensionAnalyses || {});
+            
+            // Update PACT checklist
+            displayPACTChecklist(data.checklistItems || []);
+            
+            // Create dimension chart
+            createDimensionChart(data.dimensions);
+            
+            // Store data for download
+            analysisData = data;
+        }
+        
+        function displayDetailedDimensions(dimensionAnalyses) {
+            const container = document.getElementById('dimensions-detail');
+            
+            if (Object.keys(dimensionAnalyses).length === 0) {
+                container.innerHTML = '<p class="text-gray-500">Detailed dimension analysis will be available after enhanced critique completion.</p>';
+                return;
+            }
+            
+            container.innerHTML = Object.entries(dimensionAnalyses).map(([dimId, dimension]) => `
+                <div class="border-l-4 border-purple-500 pl-6 py-4">
+                    <div class="mb-4">
+                        <h5 class="text-xl font-bold text-gray-900 mb-2">${dimension.dimension_name.toUpperCase()}</h5>
+                        <div class="flex items-center mb-3">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                dimension.overall_assessment === 'Strong' ? 'bg-green-100 text-green-800' :
+                                dimension.overall_assessment === 'Developing' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                            }">
+                                ${dimension.overall_assessment}
+                            </span>
+                        </div>
+                        <p class="text-gray-700 mb-4">${dimension.executive_summary}</p>
+                    </div>
+                    
+                    ${dimension.subsections ? Object.entries(dimension.subsections).map(([code, subsection]) => `
+                        <div class="mb-4 pl-4 border-l-2 border-gray-200">
+                            <h6 class="font-semibold text-gray-900 mb-2">${code}: ${subsection.name}</h6>
+                            <div class="mb-2">
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                    subsection.assessment === 'Strong' ? 'bg-green-100 text-green-700' :
+                                    subsection.assessment === 'Developing' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                }">
+                                    ${subsection.assessment}
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">${subsection.detailed_feedback}</p>
+                            
+                            ${subsection.strengths && subsection.strengths.length > 0 ? `
+                                <div class="mb-2">
+                                    <span class="text-xs font-medium text-green-700">Strengths:</span>
+                                    <ul class="list-disc list-inside text-xs text-gray-600 ml-2">
+                                        ${subsection.strengths.map(s => `<li>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            
+                            ${subsection.areas_for_improvement && subsection.areas_for_improvement.length > 0 ? `
+                                <div class="mb-2">
+                                    <span class="text-xs font-medium text-yellow-700">Areas for Improvement:</span>
+                                    <ul class="list-disc list-inside text-xs text-gray-600 ml-2">
+                                        ${subsection.areas_for_improvement.map(i => `<li>${i}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('') : ''}
+                    
+                    ${dimension.key_strengths && dimension.key_strengths.length > 0 ? `
+                        <div class="mt-4">
+                            <h6 class="font-semibold text-green-700 mb-2">Key Dimension Strengths:</h6>
+                            <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                ${dimension.key_strengths.map(s => `<li>${s.strength} - ${s.evidence}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    
+                    ${dimension.priority_improvements && dimension.priority_improvements.length > 0 ? `
+                        <div class="mt-4">
+                            <h6 class="font-semibold text-orange-700 mb-2">Priority Improvements:</h6>
+                            <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                ${dimension.priority_improvements.map(i => `<li>${i.area} - ${i.recommendation}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+        
+        function displayPACTChecklist(checklistItems) {
+            const improvementContainer = document.getElementById('improvement-checklist');
+            const strengthContainer = document.getElementById('strength-checklist');
+            
+            if (checklistItems.length === 0) {
+                improvementContainer.innerHTML = '<p class="text-gray-500">Checklist items will be available after enhanced critique completion.</p>';
+                strengthContainer.innerHTML = '<p class="text-gray-500">Strengths checklist will be available after enhanced critique completion.</p>';
+                return;
+            }
+            
+            const improvements = checklistItems.filter(item => !item.completed);
+            const strengths = checklistItems.filter(item => item.completed);
+            
+            improvementContainer.innerHTML = improvements.map(item => `
+                <div class="flex items-start p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <input type="checkbox" class="mt-1 mr-3 text-orange-600" ${item.completed ? 'checked' : ''}>
+                    <div class="flex-1">
+                        <div class="flex items-center mb-1">
+                            <span class="font-semibold text-orange-800 text-sm mr-2">${item.code}</span>
+                            <span class="font-medium text-gray-900 text-sm">${item.name}</span>
+                        </div>
+                        <p class="text-sm text-gray-700">${item.description}</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            strengthContainer.innerHTML = strengths.map(item => `
+                <div class="flex items-start p-3 bg-green-50 rounded-lg border border-green-200">
+                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div class="flex-1">
+                        <div class="flex items-center mb-1">
+                            <span class="font-semibold text-green-800 text-sm mr-2">${item.code}</span>
+                            <span class="font-medium text-gray-900 text-sm">${item.name}</span>
+                        </div>
+                        <p class="text-sm text-gray-700">${item.description}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function createDimensionChart(dimensions) {
+            const ctx = document.getElementById('dimension-chart').getContext('2d');
+            
+            if (dimensionChart) {
+                dimensionChart.destroy();
+            }
+            
+            dimensionChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: Object.keys(dimensions),
+                    datasets: [{
+                        label: 'Score',
+                        data: Object.values(dimensions),
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(102, 126, 234, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.5,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Tab navigation
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Reset all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-purple-500', 'text-purple-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            
+            // Highlight selected tab button
+            event.target.classList.remove('border-transparent', 'text-gray-500');
+            event.target.classList.add('border-purple-500', 'text-purple-600');
+        }
+
+        // Toggle download menu
+        function toggleDownloadMenu() {
+            const menu = document.getElementById('download-menu');
+            menu.classList.toggle('hidden');
+        }
+        
+        // Close download menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('download-menu');
+            const button = event.target.closest('button[onclick="toggleDownloadMenu()"]');
+            
+            if (!button && !menu.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Download report in specified format
+        async function downloadReport(format = 'pdf') {
+            if (!currentSessionId) {
+                alert('No analysis session available for download.');
+                return;
+            }
+            
+            try {
+                // Close the dropdown menu
+                document.getElementById('download-menu').classList.add('hidden');
+                
+                // Show loading state
+                const downloadButton = event.target;
+                const originalText = downloadButton.innerHTML;
+                downloadButton.innerHTML = `
+                    <svg class="w-4 h-4 mr-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Generating ${format.toUpperCase()}...
+                `;
+                downloadButton.disabled = true;
+                
+                // Request the report download
+                const response = await fetch(`${apiBaseUrl}/api/critique/download/${currentSessionId}?format=${format}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // Handle the download
+                if (format === 'pdf') {
+                    // For PDF, create a download link
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `PACT_Analysis_Report_${currentSessionId.substring(0, 8)}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    // For HTML/MD, create a download link
+                    const text = await response.text();
+                    const blob = new Blob([text], { 
+                        type: format === 'html' ? 'text/html' : 'text/markdown' 
+                    });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `PACT_Report_${currentSessionId.substring(0, 8)}.${format}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }
+                
+                // Show success message
+                showNotification(`${format.toUpperCase()} report downloaded successfully!`, 'success');
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                showNotification(`Failed to download ${format.toUpperCase()} report. Please try again.`, 'error');
+            } finally {
+                // Restore button state
+                setTimeout(() => {
+                    const downloadButton = document.querySelector('button[disabled]');
+                    if (downloadButton) {
+                        downloadButton.innerHTML = originalText;
+                        downloadButton.disabled = false;
+                    }
+                }, 1000);
+            }
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-100 border border-green-400 text-green-700' :
+                type === 'error' ? 'bg-red-100 border border-red-400 text-red-700' :
+                'bg-blue-100 border border-blue-400 text-blue-700'
+            }`;
+            
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        ${type === 'success' ? 
+                            '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>' :
+                            type === 'error' ?
+                            '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>' :
+                            '<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>'
+                        }
+                    </svg>
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-lg font-bold hover:opacity-70">×</button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        function generateReport(data) {
+            return `# PACT Academic Critique Report
+
+## Overall Assessment
+- **Score:** ${data.overallScore}/100
+- **Recommendation:** ${data.recommendation}
+
+## Executive Summary
+${data.summary}
+
+## Key Strengths
+${data.strengths.map(s => `- ${s}`).join('\n')}
+
+## Priority Improvements
+${data.improvements.map(i => `- ${i}`).join('\n')}
+
+## Dimension Scores
+${Object.entries(data.dimensions).map(([dim, score]) => `- ${dim}: ${score}/100`).join('\n')}
+
+## Actionable Next Steps
+${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
+
+---
+*Generated by PACT 3.0*`;
+        }
+
+        // Start new analysis
+        function startNewAnalysis() {
+            // Close existing WebSocket connection
+            if (websocket) {
+                websocket.close();
+                websocket = null;
+            }
+            
+            // Reset session
+            currentSessionId = null;
+            
+            // Reset UI
+            document.getElementById('progress-section').classList.remove('hidden');
+            document.getElementById('results-section').classList.add('hidden');
+            
+            // Reset progress
+            updateProgress(0);
+            
+            // Reset agent cards
+            document.querySelectorAll('.agent-card').forEach(card => {
+                card.classList.remove('active');
+                card.querySelector('.agent-status').textContent = 'Waiting';
+                card.querySelector('.agent-status').className = 'agent-status text-xs text-gray-500';
+                card.querySelector('.agent-message').classList.add('hidden');
+            });
+            
+            // Go back to upload screen
+            showScreen('upload');
+            
+            // Clear form
+            document.getElementById('paper-text').value = '';
+            document.getElementById('file-input').value = '';
+            updateWordCount();
+            
+            // Reset drop zone
+            document.getElementById('drop-zone').innerHTML = `
+                <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                <p class="text-lg font-medium text-gray-700 mb-2">Drop your paper here or click to browse</p>
+                <p class="text-sm text-gray-500">Supports PDF, DOCX, TXT, and MD files (max 10MB)</p>
+            `;
+        }
+    </script>
+</body>
+</html>
