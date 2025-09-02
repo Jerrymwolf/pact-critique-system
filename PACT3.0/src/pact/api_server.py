@@ -815,16 +815,15 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             session_id=session_id
         )
 
-        # Save results to session
+        # ✅ persist results so /status (or later GET) can return them
         session_manager.update_session_results(session_id, result)
-        session_manager.update_session_status(session_id, "completed")
 
-        # Broadcast completion status
-        await manager.broadcast(session_id, {
-            "event": "status",
-            "status": "completed",
-            "progress": 100
-        })
+        # ✅ set final status/progress and broadcast
+        session_manager.update_progress(session_id, 100, status="completed")
+        await manager.broadcast(session_id, {"event": "status", "status": "completed", "progress": 100})
+        
+        # If the supervisor didn't already send a summary, send it here too:
+        await manager.broadcast(session_id, {"event": "summary", "payload": result})
 
         logger.info("Critique completed for session %s", session_id)
 
