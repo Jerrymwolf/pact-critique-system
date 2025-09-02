@@ -53,7 +53,7 @@ if __name__ == "__main__":
     print("📖 API documentation: /docs")
     
     uvicorn.run(
-        app,
+        "pact.api_server:app",
         host=host,
         port=port,
         reload=debug,
