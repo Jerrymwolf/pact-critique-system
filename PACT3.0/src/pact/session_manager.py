@@ -80,6 +80,18 @@ class CritiqueSession:
         if self.dimension_critiques is None:
             self.dimension_critiques = {}
 
+    def __getitem__(self, key):
+        """Allow dict-like access for backward compatibility."""
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        """Allow dict-like assignment for backward compatibility."""
+        setattr(self, key, value)
+
+    def get(self, key, default=None):
+        """Dict-like get method for backward compatibility."""
+        return getattr(self, key, default)
+
 class SessionManager:
     """
     Manages PACT critique sessions and their progress.

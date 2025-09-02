@@ -563,7 +563,7 @@ async def get_critique_status(session_id: str):
 
     # Convert status enum to string
     status = session.status.value if hasattr(session.status, 'value') else str(session.status)
-    
+
     response = {
         "session_id": session_id,
         "state": status,  # Use 'state' for consistency
