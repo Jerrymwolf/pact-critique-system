@@ -788,8 +788,8 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
                     }
             supervisor = MockSupervisor()
         else:
-            logger.info(f"Creating real critique supervisor with model: {model_name}")
-            supervisor = create_critique_supervisor(mode=mode, model_name=model_name)
+            logger.info(f"Creating real critique supervisor")
+            supervisor = create_critique_supervisor()
 
         # Store supervisor in session
         session = session_manager.get_session(session_id)
