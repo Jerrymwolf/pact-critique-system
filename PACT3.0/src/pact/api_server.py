@@ -10,13 +10,15 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect, Query
+from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 import uvicorn
 import io
+from docx import Document
+import PyPDF2
 
 from .session_manager import session_manager, CritiqueStatus, AgentStatus
 from .pact_critique_agent import pact_critique_agent
@@ -110,6 +112,50 @@ async def serve_app():
     return FileResponse("pact_critique_app.html")
 
 # ===== API ENDPOINTS =====
+
+@app.post("/api/upload", response_model=Dict[str, str])
+async def upload_file(file: UploadFile = File(...)):
+    """
+    Upload and extract text content from uploaded files (DOCX, PDF, TXT).
+    """
+    try:
+        content = await file.read()
+        
+        if file.filename.endswith('.docx'):
+            # Extract text from DOCX
+            doc = Document(io.BytesIO(content))
+            text_content = []
+            for paragraph in doc.paragraphs:
+                if paragraph.text.strip():
+                    text_content.append(paragraph.text)
+            extracted_text = '\n'.join(text_content)
+            
+        elif file.filename.endswith('.pdf'):
+            # Extract text from PDF
+            pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
+            text_content = []
+            for page in pdf_reader.pages:
+                text_content.append(page.extract_text())
+            extracted_text = '\n'.join(text_content)
+            
+        elif file.filename.endswith('.txt'):
+            # Handle plain text
+            extracted_text = content.decode('utf-8')
+            
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format. Please upload TXT, DOCX, or PDF files.")
+        
+        if not extracted_text.strip():
+            raise HTTPException(status_code=400, detail="No text content could be extracted from the file.")
+        
+        return {
+            "content": extracted_text,
+            "filename": file.filename,
+            "message": "File processed successfully"
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
 
 @app.post("/api/critique/start", response_model=CritiqueResponse)
 async def start_critique(paper: PaperSubmission, background_tasks: BackgroundTasks):
