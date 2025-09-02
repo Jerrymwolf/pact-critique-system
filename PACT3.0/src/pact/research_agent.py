@@ -1,4 +1,3 @@
-
 """Research Agent Implementation.
 
 This module implements a research agent that can perform iterative web searches
@@ -23,7 +22,7 @@ tools = [tavily_search, think_tool]
 tools_by_name = {tool.name: tool for tool in tools}
 
 # Initialize models
-model = init_chat_model(model="anthropic:claude-sonnet-4-20250514")
+model = init_chat_model(model="openai:gpt-5")
 model_with_tools = model.bind_tools(tools)
 summarization_model = init_chat_model(model="openai:gpt-4.1-mini")
 compress_model = init_chat_model(model="openai:gpt-4.1", max_tokens=32000) # model="anthropic:claude-sonnet-4-20250514", max_tokens=64000
@@ -86,7 +85,7 @@ def compress_research(state: ResearcherState) -> dict:
     # Extract raw notes from tool and AI messages
     raw_notes = [
         str(m.content) for m in filter_messages(
-            state["researcher_messages"], 
+            state["researcher_messages"],
             include_types=["tool", "ai"]
         )
     ]

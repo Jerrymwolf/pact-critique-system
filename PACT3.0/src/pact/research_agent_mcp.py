@@ -1,4 +1,3 @@
-
 """Research Agent with MCP Integration.
 
 This module implements a research agent that integrates with Model Context Protocol (MCP)
@@ -54,7 +53,7 @@ def get_mcp_client():
 
 # Initialize models
 compress_model = init_chat_model(model="openai:gpt-4.1", max_tokens=32000)
-model = init_chat_model(model="anthropic:claude-sonnet-4-20250514")
+model = init_chat_model(model="openai:gpt-5")
 
 # ===== AGENT NODES =====
 
@@ -154,7 +153,7 @@ def compress_research(state: ResearcherState) -> dict:
     # Extract raw notes from tool and AI messages
     raw_notes = [
         str(m.content) for m in filter_messages(
-            state["researcher_messages"], 
+            state["researcher_messages"],
             include_types=["tool", "ai"]
         )
     ]

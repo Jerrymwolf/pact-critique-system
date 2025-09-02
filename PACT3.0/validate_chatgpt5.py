@@ -35,7 +35,7 @@ async def validate_chatgpt5():
         
         # Initialize ChatGPT 5 model (no temperature setting)
         model = ChatOpenAI(
-            model=os.getenv("OPENAI_MODEL", "chatgpt-5"),
+            model=os.getenv("OPENAI_MODEL", "gpt-5"),
             max_tokens=100,  # Small test
             timeout=30
         )

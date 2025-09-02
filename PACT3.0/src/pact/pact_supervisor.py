@@ -22,7 +22,7 @@ from .enhanced_schemas import (
 # Initialize supervisor model with environment configuration  
 # ChatGPT 5 doesn't support custom temperature settings
 supervisor_model = ChatOpenAI(
-    model=os.getenv("OPENAI_MODEL", "chatgpt-5"),
+    model=os.getenv("OPENAI_MODEL", "gpt-5"),
     max_tokens=int(os.getenv("OPENAI_MAX_TOKENS", "4000")),
     timeout=int(os.getenv("OPENAI_TIMEOUT", "120"))
 )

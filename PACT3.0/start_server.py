@@ -36,8 +36,8 @@ if missing_vars:
     sys.exit(1)
 
 print("✅ Environment configured successfully")
-print(f"📝 OpenAI Model: {os.getenv('OPENAI_MODEL', 'chatgpt-5')}")
-print("🤖 Using ChatGPT 5 (no custom temperature - uses model defaults)")
+print(f"📝 OpenAI Model: {os.getenv('OPENAI_MODEL', 'gpt-5')}")
+print("🤖 Using GPT-5 (no custom temperature - uses model defaults)")
 
 # Check optional services
 tavily_key = os.getenv("TAVILY_API_KEY")

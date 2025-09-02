@@ -1,4 +1,3 @@
-
 """Multi-agent supervisor for coordinating research across multiple specialized agents.
 
 This module implements a supervisor pattern where:
@@ -16,9 +15,9 @@ from typing_extensions import Literal
 
 from langchain_community.chat_models import init_chat_model
 from langchain_core.messages import (
-    HumanMessage, 
-    BaseMessage, 
-    SystemMessage, 
+    HumanMessage,
+    BaseMessage,
+    SystemMessage,
     ToolMessage,
     filter_messages
 )
@@ -28,8 +27,8 @@ from langgraph.types import Command
 from pact.prompts import lead_researcher_prompt
 from pact.research_agent import researcher_agent
 from pact.state_multi_agent_supervisor import (
-    SupervisorState, 
-    ConductResearch, 
+    SupervisorState,
+    ConductResearch,
     ResearchComplete
 )
 from pact.utils import get_today_str, think_tool
@@ -68,7 +67,7 @@ except ImportError:
 # ===== CONFIGURATION =====
 
 supervisor_tools = [ConductResearch, ResearchComplete, think_tool]
-supervisor_model = init_chat_model(model="anthropic:claude-sonnet-4-20250514")
+supervisor_model = init_chat_model(model="openai:gpt-5")
 supervisor_model_with_tools = supervisor_model.bind_tools(supervisor_tools)
 
 # System constants
@@ -100,7 +99,7 @@ async def supervisor(state: SupervisorState) -> Command[Literal["supervisor_tool
 
     # Prepare system message with current date and constraints
     system_message = lead_researcher_prompt.format(
-        date=get_today_str(), 
+        date=get_today_str(),
         max_concurrent_research_units=max_concurrent_researchers,
         max_researcher_iterations=max_researcher_iterations
     )
@@ -146,7 +145,7 @@ async def supervisor_tools(state: SupervisorState) -> Command[Literal["superviso
     exceeded_iterations = research_iterations >= max_researcher_iterations
     no_tool_calls = not most_recent_message.tool_calls
     research_complete = any(
-        tool_call["name"] == "ResearchComplete" 
+        tool_call["name"] == "ResearchComplete"
         for tool_call in most_recent_message.tool_calls
     )
 
@@ -159,12 +158,12 @@ async def supervisor_tools(state: SupervisorState) -> Command[Literal["superviso
         try:
             # Separate think_tool calls from ConductResearch calls
             think_tool_calls = [
-                tool_call for tool_call in most_recent_message.tool_calls 
+                tool_call for tool_call in most_recent_message.tool_calls
                 if tool_call["name"] == "think_tool"
             ]
 
             conduct_research_calls = [
-                tool_call for tool_call in most_recent_message.tool_calls 
+                tool_call for tool_call in most_recent_message.tool_calls
                 if tool_call["name"] == "ConductResearch"
             ]
 
@@ -188,7 +187,7 @@ async def supervisor_tools(state: SupervisorState) -> Command[Literal["superviso
                             HumanMessage(content=tool_call["args"]["research_topic"])
                         ],
                         "research_topic": tool_call["args"]["research_topic"]
-                    }) 
+                    })
                     for tool_call in conduct_research_calls
                 ]
 
@@ -211,7 +210,7 @@ async def supervisor_tools(state: SupervisorState) -> Command[Literal["superviso
 
                 # Aggregate raw notes from all research
                 all_raw_notes = [
-                    "\n".join(result.get("raw_notes", [])) 
+                    "\n".join(result.get("raw_notes", []))
                     for result in tool_results
                 ]
 
