@@ -105,23 +105,20 @@ class SessionManager:
         self.sessions: Dict[str, CritiqueSession] = {}
         self.load_sessions()
 
-    def create_session(self, paper_content: str, paper_title: Optional[str] = None,
-                      paper_type: Optional[str] = None, mode: str = "STANDARD", **kwargs) -> CritiqueSession:
+    def create_session(self, title: str, mode: str = "STANDARD", **kwargs) -> CritiqueSession:
         """Create a new critique session."""
         session_id = str(uuid.uuid4())
 
         session = CritiqueSession(
             session_id=session_id,
             status=CritiqueStatus.PENDING,
-            paper_content=paper_content,
-            paper_title=paper_title,
-            paper_type=paper_type,
+            paper_content=kwargs.get('paper_content', ''),
+            paper_title=title,
+            paper_type=kwargs.get('paper_type'),
             created_at=datetime.now(),
-            updated_at=datetime.now()
+            updated_at=datetime.now(),
+            mode=mode
         )
-        
-        # Add mode as a custom attribute
-        session.mode = mode
         
         # Handle any additional kwargs
         for key, value in kwargs.items():
@@ -129,12 +126,16 @@ class SessionManager:
                 setattr(session, key, value)
 
         self.sessions[session_id] = session
-        logger.info(f"Created session {session_id} with title: {paper_title}, mode: {mode}")
+        logger.info(f"Created session {session_id} with title: {title}, mode: {mode}")
 
         return session
 
     def get_session(self, session_id: str) -> Optional[CritiqueSession]:
         """Get a session by ID."""
+        return self.sessions.get(session_id)
+
+    def get(self, session_id: str) -> Optional[CritiqueSession]:
+        """Get a session by ID - alias for backward compatibility."""
         return self.sessions.get(session_id)
 
     def update_session_status(self, session_id: str, status,
@@ -220,11 +221,42 @@ class SessionManager:
         self.save_session(session)
         return True
 
-    def update_session_results(self, session_id: str, result: Dict[str, Any]) -> bool:
+    def update_progress(self, session_id: str, progress: int, status: str = None):
+        """Update session progress and optionally status."""
+        session = self.sessions.get(session_id)
+        if not session:
+            return
+        
+        session.overall_progress = float(progress)
+        if status:
+            # Handle both string and enum status values
+            if isinstance(status, str):
+                status_map = {
+                    "pending": CritiqueStatus.PENDING,
+                    "processing": CritiqueStatus.PROCESSING,
+                    "running": CritiqueStatus.PROCESSING,
+                    "planning": CritiqueStatus.PLANNING,
+                    "evaluating": CritiqueStatus.EVALUATING,
+                    "synthesizing": CritiqueStatus.SYNTHESIZING,
+                    "completed": CritiqueStatus.COMPLETED,
+                    "complete": CritiqueStatus.COMPLETED,
+                    "failed": CritiqueStatus.FAILED,
+                    "error": CritiqueStatus.FAILED
+                }
+                status = status_map.get(status, CritiqueStatus.PENDING)
+            session.status = status
+            
+        if status == "completed":
+            session.updated_at = datetime.now()
+            
+        session.updated_at = datetime.now()
+        self.save_session(session)
+
+    def update_session_results(self, session_id: str, result: Dict[str, Any]):
         """Update session with critique results."""
         session = self.sessions.get(session_id)
         if not session:
-            return False
+            raise KeyError(f"Unknown session_id: {session_id}")
 
         # Store the complete result
         session.result = result
@@ -239,7 +271,6 @@ class SessionManager:
 
         session.updated_at = datetime.now()
         self.save_session(session)
-        return True
 
     def set_error(self, session_id: str, error_message: str) -> bool:
         """Set error state for a session."""
@@ -315,6 +346,11 @@ class SessionManager:
                 session_file.unlink()
 
         return len(to_remove)
+
+    def get_session_results(self, session_id: str) -> Optional[Dict[str, Any]]:
+        """Get the final results for a session."""
+        session = self.sessions.get(session_id)
+        return session.result if session else None
 
     def save_session(self, session: CritiqueSession):
         """Save session to disk."""
