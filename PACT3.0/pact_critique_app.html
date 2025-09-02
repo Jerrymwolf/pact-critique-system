@@ -1088,10 +1088,9 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        content: content,
-                        title: title,
-                        paper_type: type,
-                        mode: analysisMode
+                        title: title || "Untitled",
+                        paper_text: content,
+                        mode: analysisMode || "STANDARD"
                     })
                 });
 
