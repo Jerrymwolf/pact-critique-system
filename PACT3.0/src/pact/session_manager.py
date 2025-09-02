@@ -52,6 +52,7 @@ class CritiqueSession:
     updated_at: datetime
     paper_title: Optional[str] = None
     paper_type: Optional[str] = None
+    mode: str = "STANDARD"
 
     # Progress tracking
     overall_progress: float = 0.0
@@ -104,7 +105,7 @@ class SessionManager:
         self.load_sessions()
 
     def create_session(self, paper_content: str, paper_title: Optional[str] = None,
-                      paper_type: Optional[str] = None) -> str:
+                      paper_type: Optional[str] = None, mode: str = "STANDARD", **kwargs) -> CritiqueSession:
         """Create a new critique session."""
         session_id = str(uuid.uuid4())
 
@@ -117,11 +118,19 @@ class SessionManager:
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
+        
+        # Add mode as a custom attribute
+        session.mode = mode
+        
+        # Handle any additional kwargs
+        for key, value in kwargs.items():
+            if hasattr(session, key):
+                setattr(session, key, value)
 
         self.sessions[session_id] = session
-        logger.info(f"Created session {session_id} with title: {paper_title}")
+        logger.info(f"Created session {session_id} with title: {paper_title}, mode: {mode}")
 
-        return session_id
+        return session
 
     def get_session(self, session_id: str) -> Optional[CritiqueSession]:
         """Get a session by ID."""
@@ -294,6 +303,7 @@ class SessionManager:
         session_data['status'] = session.status.value
         session_data['created_at'] = session.created_at.isoformat()
         session_data['updated_at'] = session.updated_at.isoformat()
+        session_data['mode'] = getattr(session, 'mode', 'STANDARD')
 
         # Convert agent data - handle both AgentProgress objects and other types
         for agent_id, agent in session_data['agents'].items():
@@ -329,6 +339,7 @@ class SessionManager:
                 data['status'] = CritiqueStatus(data['status'])
                 data['created_at'] = datetime.fromisoformat(data['created_at'])
                 data['updated_at'] = datetime.fromisoformat(data['updated_at'])
+                data['mode'] = data.get('mode', 'STANDARD')
 
                 # Convert agent data
                 agents = {}

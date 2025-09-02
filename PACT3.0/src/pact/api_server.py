@@ -106,8 +106,9 @@ if MOCK_MODE:
         def __init__(self):
             self.sessions = {}
 
-        def create_session(self, session_id: str, paper_title: str, mode: str, paper_content: str = None, paper_type: str = None):
-            self.sessions[session_id] = {
+        def create_session(self, paper_content: str, paper_title: str = None, paper_type: str = None, mode: str = "STANDARD", **kwargs):
+            session_id = str(uuid.uuid4())
+            session_dict = {
                 "session_id": session_id,
                 "paper_title": paper_title,
                 "mode": mode,
@@ -120,7 +121,20 @@ if MOCK_MODE:
                 "created_at": datetime.now().isoformat(),
                 "updated_at": datetime.now().isoformat()
             }
-            return self.sessions[session_id]
+            self.sessions[session_id] = session_dict
+            
+            # Create a mock session object with dict-like access
+            class MockSession:
+                def __init__(self, data):
+                    self.__dict__.update(data)
+                def __getitem__(self, key):
+                    return getattr(self, key)
+                def __setitem__(self, key, value):
+                    setattr(self, key, value)
+                def get(self, key, default=None):
+                    return getattr(self, key, default)
+            
+            return MockSession(session_dict)
 
         def get_session(self, session_id: str):
             return self.sessions.get(session_id)
@@ -547,7 +561,7 @@ async def start_critique(request: CritiqueRequest):
             paper_content=request.content,
             paper_title=request.title,
             paper_type=request.paper_type,
-            mode=request.mode
+            mode=mode
         )
 
         # Broadcast initial status
@@ -558,7 +572,7 @@ async def start_critique(request: CritiqueRequest):
         })
 
         # Start critique processing in background
-        asyncio.create_task(run_critique_analysis(session.session_id, request.content, request.title, mode), name=f"critique-{session.session_id}")
+        asyncio.create_task(run_critique_analysis(session.session_id, request.content, request.title, session.mode), name=f"critique-{session.session_id}")
 
         return CritiqueResponse(
             session_id=session.session_id,
@@ -584,6 +598,7 @@ async def get_critique_status(session_id: str):
         "session_id": session_id,
         "state": status,  # Use 'state' for consistency
         "paper_title": session.paper_title,
+        "mode": getattr(session, 'mode', 'STANDARD'),
         "created_at": session.created_at.isoformat() if session.created_at else None,
         "updated_at": session.updated_at.isoformat() if session.updated_at else None,
         "error": session.error_message
