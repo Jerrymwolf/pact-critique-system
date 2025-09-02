@@ -17,7 +17,7 @@ from .enhanced_schemas import DetailedDimensionCritique, PACT_DIMENSIONS, get_di
 # Initialize model for critique agents with environment configuration
 # ChatGPT 5 doesn't support custom temperature settings
 critique_model = ChatOpenAI(
-    model=os.getenv("OPENAI_MODEL", "chatgpt-5"),
+    model=os.getenv("OPENAI_MODEL", "gpt-5"),
     max_tokens=int(os.getenv("OPENAI_MAX_TOKENS", "4000")),
     timeout=int(os.getenv("OPENAI_TIMEOUT", "120"))
 )
@@ -29,11 +29,11 @@ def create_enhanced_dimension_critique_prompt(paper_content: str, dimension_id: 
     dimension_info = PACT_DIMENSIONS.get(dimension_id, {})
     dimension_name = dimension_info.get('name', '')
     subsections = dimension_info.get('subsections', {})
-    
+
     subsection_details = ""
     for code, name in subsections.items():
         subsection_details += f"\n{code}: {name}\n"
-    
+
     return f"""
 You are an expert academic reviewer conducting a comprehensive evaluation of the '{dimension_name}' dimension of academic papers using the PACT (PennCLO Academic Critique Taxonomy).
 
@@ -88,45 +88,45 @@ def format_dimension_criteria(dimension_data: Dict[str, Any]) -> str:
     """
     criteria = []
     sections = dimension_data.get('sections', {})
-    
+
     for section_id, section_data in sections.items():
         criteria.append(f"\n{section_id}: {section_data.get('name')}")
-        
+
         # Add subsections if available
         subsections = section_data.get('subsections', {})
         for subsection_id, subsection_data in subsections.items():
             criteria.append(f"  - {subsection_id}: {subsection_data.get('name')}")
-            
+
             # Add detection patterns if available
             patterns = subsection_data.get('detection_patterns', [])
             if patterns:
                 criteria.append(f"    Detection patterns: {', '.join(patterns[:3])}")
-    
+
     return '\n'.join(criteria)
 
 async def critique_dimension_enhanced(state: PaperCritiqueState, dimension_id: str) -> Dict[str, Any]:
     """
     Enhanced critique for a PACT dimension with detailed subsection analysis.
-    
+
     Args:
         state: The current critique state
         dimension_id: The PACT dimension to evaluate (e.g., "1.0.0")
-    
+
     Returns:
         Dictionary with the detailed dimension critique
     """
     # Create enhanced critique prompt
     prompt = create_enhanced_dimension_critique_prompt(state['paper_content'], dimension_id)
-    
+
     # Get detailed critique from model
     structured_model = critique_model.with_structured_output(DetailedDimensionCritique)
     critique = await structured_model.ainvoke([HumanMessage(content=prompt)])
-    
+
     # Ensure dimension info is set
     critique.dimension_id = dimension_id
     if dimension_id in PACT_DIMENSIONS:
         critique.dimension_name = PACT_DIMENSIONS[dimension_id]['name']
-    
+
     return critique.dict()
 
 # Keep the original function for backward compatibility
