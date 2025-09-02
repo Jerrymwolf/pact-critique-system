@@ -60,7 +60,7 @@ if MOCK_MODE:
                 del self.event_queues[session_id]
             logger.info(f"WebSocket connected for session {session_id}")
 
-        def disconnect(self, session_id: str):
+        async def disconnect(self, session_id: str): # Changed method signature to be async
             if session_id in self.connections:
                 del self.connections[session_id]
             logger.info(f"WebSocket disconnected for session {session_id}")
@@ -71,7 +71,7 @@ if MOCK_MODE:
                     await self.connections[session_id].send_json(message)
                 except Exception as e:
                     logger.error(f"Error sending message to {session_id}: {e}")
-                    self.disconnect(session_id)
+                    await self.disconnect(session_id) # Changed to await disconnect
             else:
                 # Queue the message for when WebSocket connects
                 if session_id not in self.event_queues:
@@ -83,12 +83,14 @@ if MOCK_MODE:
         def __init__(self):
             self.sessions = {}
 
-        def create_session(self, session_id: str, paper_title: str, mode: str):
+        def create_session(self, session_id: str, paper_title: str, mode: str, paper_content: str = None, paper_type: str = None):
             self.sessions[session_id] = {
                 "session_id": session_id,
                 "paper_title": paper_title,
                 "mode": mode,
-                "status": "queued",
+                "status": "queued", # Default status
+                "paper_content": paper_content, # Added for completeness
+                "paper_type": paper_type, # Added for completeness
                 "agents": {},
                 "result": None,
                 "error": None,
@@ -102,6 +104,16 @@ if MOCK_MODE:
 
         def update_session_status(self, session_id: str, status: str, **kwargs):
             if session_id in self.sessions:
+                # Convert string status to enum if needed
+                if isinstance(status, str):
+                    status_enum_map = {
+                        "queued": "pending",
+                        "running": "processing",
+                        "complete": "completed",
+                        "error": "failed"
+                    }
+                    status = status_enum_map.get(status, status)
+
                 self.sessions[session_id]["status"] = status
                 self.sessions[session_id]["updated_at"] = datetime.now().isoformat()
                 for key, value in kwargs.items():
@@ -109,28 +121,6 @@ if MOCK_MODE:
 
         def cleanup_old_sessions(self, max_age_hours: int = 24) -> int:
             return 0
-
-    def create_critique_supervisor(mode: str, model_name: str = "gpt-5"):
-        """Create real or mock supervisor based on availability."""
-        if os.getenv("USE_MOCK", "false").lower() == "true":
-            class MockSupervisor:
-                async def ainvoke(self, state):
-                    await asyncio.sleep(2)
-                    return {
-                        "paper_title": state.get("paper_title", "Sample Paper"),
-                        "overall_score": 75.5,
-                        "recommendation": "Minor Revision",
-                        "final_critique": "Mock analysis result",
-                        "dimension_critiques": {}
-                    }
-            return MockSupervisor()
-        else:
-            # Return real supervisor - this should be imported from your actual implementation
-            return pact_critique_agent
-
-    def generate_pact_pdf_report_fallback(session_id: str, critique_data: dict) -> str:
-        filename = f"PACT_Analysis_Report_{session_id[:8]}.pdf"
-        return filename
 
     session_manager = MockSessionManager()
     websocket_manager = MockWebSocketManager()
@@ -544,10 +534,13 @@ async def start_critique(request: CritiqueRequest):
             mode = AgentMode.STANDARD
 
         # Create session using session_manager
-        session_id = session_manager.create_session(
+        session_id = str(uuid.uuid4()) # Generate a new UUID for each session
+        session_manager.create_session(
+            session_id=session_id, # Pass the generated session_id
             paper_content=request.content,
             paper_title=request.title,
-            paper_type=getattr(request, 'paper_type', None)
+            paper_type=getattr(request, 'paper_type', None),
+            mode=mode # Pass the validated mode
         )
 
         # Start critique process in background
@@ -556,7 +549,7 @@ async def start_critique(request: CritiqueRequest):
 
         return CritiqueResponse(
             session_id=session_id,
-            status="processing",
+            status="processing", # Initial status after submission
             message="Paper submitted successfully. Analysis started."
         )
 
@@ -571,7 +564,7 @@ async def get_critique_status(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    status = session.get("status", "unknown")
+    status = session.get("status", "unknown") # Default to 'unknown' if status is missing
     response = {
         "session_id": session_id,
         "state": status,  # Use 'state' for consistency
@@ -586,7 +579,7 @@ async def get_critique_status(session_id: str):
         response["progress"] = session["progress"]
 
     # Add result data if analysis is complete
-    if status == "complete":
+    if status == "completed": # Use the mapped status 'completed'
         result = session.get("result")
         if result:
             response["result"] = result
@@ -610,7 +603,7 @@ async def get_critique_results(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
 
     status = session.get("status")
-    if status != "complete":
+    if status != "completed": # Use the mapped status 'completed'
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
     result = session.get("result")
@@ -647,7 +640,7 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
                 "error": session.get("error"),
                 "progress": session.get("progress")
             }
-            if session.get("status") == "complete":
+            if session.get("status") == "completed": # Use the mapped status 'completed'
                 current_status["result"] = session.get("result")
             await websocket_manager.send_message(session_id, current_status)
 
@@ -678,7 +671,7 @@ async def download_critique_report(session_id: str, format: str = Query("pdf", d
         raise HTTPException(status_code=404, detail="Session not found")
 
     status = session.get("status")
-    if status != "complete":
+    if status != "completed": # Use the mapped status 'completed'
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
     report_filename = session.get("report_filename")
@@ -747,7 +740,7 @@ async def preview_critique_report(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
 
     status = session.get("status")
-    if status != "complete":
+    if status != "completed": # Use the mapped status 'completed'
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
     results_data = session.get("result")
@@ -768,7 +761,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
     """Background task to run the critique analysis."""
     try:
         logger.info(f"Starting critique analysis for session {session_id}")
-        session_manager.update_session_status(session_id, "running")
+        session_manager.update_session_status(session_id, "running") # Use string status
 
         # Send initial progress
         await websocket_manager.send_message(session_id, {
@@ -832,7 +825,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         # Update session with results
         session_manager.update_session_status(
             session_id,
-            "complete",
+            "complete", # Use string status
             result=result,
             overall_score=result.get("overall_score"),
             final_critique=result.get("final_critique")
@@ -849,7 +842,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             pdf_filename = generate_pact_pdf_report(session_id, result)
 
 
-        session_manager.update_session_status(session_id, "complete", report_filename=pdf_filename)
+        session_manager.update_session_status(session_id, "complete", report_filename=pdf_filename) # Use string status
 
         # Send completion message
         await websocket_manager.send_message(session_id, {
@@ -863,7 +856,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
 
     except Exception as e:
         logger.error(f"Error in critique analysis for session {session_id}: {e}")
-        session_manager.update_session_status(session_id, "error", error=str(e))
+        session_manager.update_session_status(session_id, "error", error=str(e)) # Use string status
 
         await websocket_manager.send_message(session_id, {
             "type": "error",

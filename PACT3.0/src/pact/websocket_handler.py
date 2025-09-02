@@ -29,9 +29,18 @@ class WebSocketManager:
         self.connections[session_id].append(websocket)
         print(f"WebSocket connected for session {session_id}. Total connections: {len(self.connections[session_id])}")
     
-    async def disconnect(self, websocket: WebSocket, session_id: str):
+    def disconnect(self, session_id: str):
         """
-        Remove a WebSocket connection.
+        Remove all WebSocket connections for a session.
+        """
+        if session_id in self.connections:
+            connection_count = len(self.connections[session_id])
+            del self.connections[session_id]
+            print(f"WebSocket disconnected for session {session_id}. Removed {connection_count} connections.")
+    
+    async def disconnect_websocket(self, websocket: WebSocket, session_id: str):
+        """
+        Remove a specific WebSocket connection.
         """
         if session_id in self.connections:
             if websocket in self.connections[session_id]:
@@ -107,3 +116,10 @@ class WebSocketManager:
         Get list of session IDs with active WebSocket connections.
         """
         return list(self.connections.keys())
+    
+    async def send_message(self, session_id: str, message: dict):
+        """
+        Send a message to all WebSocket connections for a session.
+        Alias for send_to_session for compatibility.
+        """
+        await self.send_to_session(session_id, message)
