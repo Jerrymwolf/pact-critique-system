@@ -191,8 +191,8 @@ class MockCritiqueSupervisor:
             await asyncio.sleep(0.2)
             if session_id:
                 await websocket_manager.send_message(session_id, {
-                    "type": "progress", 
-                    "progress": {"completed": pct, "total": 100}, 
+                    "event": "progress", 
+                    "progress": pct, 
                     "message": msg
                 })
         
@@ -201,16 +201,32 @@ class MockCritiqueSupervisor:
             "paper_title": state.get("paper_title", "Sample Paper"),
             "overall_score": 75.5,
             "recommendation": "Minor Revision", 
-            "final_critique": "Mock analysis result with detailed feedback",
+            "final_critique": "Mock analysis result with detailed feedback covering all PACT dimensions. The paper demonstrates adequate understanding but requires refinement in several areas.",
             "dimension_critiques": {
-                "1.0.0": {"dimension_score": 78, "strengths": ["Clear research question"], "weaknesses": ["Limited scope"]},
-                "2.0.0": {"dimension_score": 73, "strengths": ["Good methodology"], "weaknesses": ["Small sample size"]}
+                "1.0.0": {
+                    "dimension_score": 78, 
+                    "dimension_name": "Research Foundations",
+                    "strengths": ["Clear research question", "Relevant literature base"], 
+                    "weaknesses": ["Limited scope", "Missing key citations"]
+                },
+                "2.0.0": {
+                    "dimension_score": 73, 
+                    "dimension_name": "Methodological Rigor",
+                    "strengths": ["Good methodology description", "Appropriate data collection"], 
+                    "weaknesses": ["Small sample size", "Limited statistical analysis"]
+                },
+                "3.0.0": {
+                    "dimension_score": 80, 
+                    "dimension_name": "Structure & Coherence",
+                    "strengths": ["Logical flow", "Clear section organization"], 
+                    "weaknesses": ["Transitions could be smoother"]
+                }
             }
         }
         
         if session_id:
             await websocket_manager.send_message(session_id, {
-                "type": "summary", 
+                "event": "summary", 
                 "payload": result
             })
             
@@ -224,8 +240,8 @@ class RealCritiqueSupervisor:
         
         if session_id:
             await websocket_manager.send_message(session_id, {
-                "type": "progress",
-                "progress": {"completed": 5, "total": 100},
+                "event": "progress",
+                "progress": 5,
                 "message": "Calling LLM"
             })
         
@@ -243,13 +259,13 @@ class RealCritiqueSupervisor:
             
             if session_id:
                 await websocket_manager.send_message(session_id, {
-                    "type": "progress",
-                    "progress": {"completed": 90, "total": 100}, 
+                    "event": "progress",
+                    "progress": 90, 
                     "message": "Formatting results"
                 })
                 
                 await websocket_manager.send_message(session_id, {
-                    "type": "summary",
+                    "event": "summary",
                     "payload": result
                 })
             
@@ -259,7 +275,7 @@ class RealCritiqueSupervisor:
             logger.error(f"Real supervisor failed: {e}")
             if session_id:
                 await websocket_manager.send_message(session_id, {
-                    "type": "error",
+                    "event": "error",
                     "message": str(e)
                 })
             raise
@@ -274,7 +290,7 @@ def make_supervisor():
         logger.info("Creating real critique supervisor")
         try:
             return RealCritiqueSupervisor()
-        except Exception as e:
+        except Exception:
             logger.exception("Failed to create real supervisor; falling back to mock")
             logger.info("Creating mock critique supervisor...")
             return MockCritiqueSupervisor()
@@ -854,17 +870,17 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         # Create supervisor using single selection logic
         supervisor = make_supervisor()
 
-        # Store supervisor in session
+        # Get session object for proper status updates
         session = session_manager.get_session(session_id)
-        if session:
-            session.agents = {"supervisor": supervisor}
+        if not session:
+            raise Exception(f"Session {session_id} not found")
 
-        # Set initial status and broadcast
+        # Set status to running and broadcast
         session_manager.update_session_status(session_id, "running", overall_progress=1)
         await websocket_manager.send_message(session_id, {
-            "type": "status",
-            "status": "running", 
-            "progress": {"completed": 1, "total": 100}
+            "event": "status",
+            "status": "running",
+            "progress": 1
         })
 
         # Prepare initial state
@@ -876,24 +892,41 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
 
         logger.info(f"Running supervisor analysis with mode: {mode}")
 
-        # Run the analysis with session_id for progress tracking
-        result = await supervisor.ainvoke(initial_state, session_id=session_id)
+        try:
+            # Run the analysis with session_id for progress tracking
+            result = await supervisor.ainvoke(initial_state, session_id=session_id)
+            
+            # Update session with results and broadcast completion
+            session_manager.update_session_status(
+                session_id,
+                "completed",
+                result=result,
+                overall_score=result.get("overall_score"),
+                final_critique=result.get("final_critique"),
+                overall_progress=100
+            )
 
-        # Update session with results and broadcast completion
-        session_manager.update_session_status(
-            session_id,
-            "completed",
-            result=result,
-            overall_score=result.get("overall_score"),
-            final_critique=result.get("final_critique"),
-            overall_progress=100
-        )
+            await websocket_manager.send_message(session_id, {
+                "event": "status",
+                "status": "completed",
+                "progress": 100
+            })
 
-        await websocket_manager.send_message(session_id, {
-            "type": "status",
-            "status": "completed",
-            "progress": {"completed": 100, "total": 100}
-        })
+            # Send final summary
+            if result:
+                await websocket_manager.send_message(session_id, {
+                    "event": "summary",
+                    "payload": result
+                })
+
+        except Exception as e:
+            logger.exception("Critique failed")
+            session_manager.update_session_status(session_id, "error", error_message=str(e))
+            await websocket_manager.send_message(session_id, {
+                "event": "status",
+                "status": "error",
+                "message": str(e)
+            })
 
         # Generate PDF report
         use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
@@ -923,7 +956,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         session_manager.update_session_status(session_id, "error", error_message=str(e))
 
         await websocket_manager.send_message(session_id, {
-            "type": "status", 
+            "event": "status", 
             "status": "error",
             "message": str(e)
         })

@@ -29,7 +29,7 @@ class WebSocketManager:
         self.connections[session_id].append(websocket)
         print(f"WebSocket connected for session {session_id}. Total connections: {len(self.connections[session_id])}")
     
-    def disconnect(self, session_id: str):
+    async def disconnect(self, session_id: str):
         """
         Remove all WebSocket connections for a session.
         """
@@ -75,7 +75,7 @@ class WebSocketManager:
         
         # Clean up disconnected sockets
         for websocket in disconnected_sockets:
-            await self.disconnect(websocket, session_id)
+            await self.disconnect_websocket(websocket, session_id)
     
     async def broadcast(self, data: Dict[str, Any]):
         """
@@ -97,7 +97,7 @@ class WebSocketManager:
             
             # Clean up disconnected sockets
             for websocket in disconnected_sockets:
-                await self.disconnect(websocket, session_id)
+                await self.disconnect_websocket(websocket, session_id)
     
     def get_connection_count(self, session_id: str = None) -> int:
         """
