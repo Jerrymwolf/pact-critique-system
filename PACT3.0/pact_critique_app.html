@@ -835,8 +835,7 @@
 
             const textareaContent = document.getElementById('paper-content').value.trim();
             const content = uploadedFileContent || textareaContent;
-            const paperTitleElement = document.getElementById('paper-title'); // Ensure this element exists or is created
-            const paperTitle = paperTitleElement ? paperTitleElement.value.trim() : extractPaperTitle(content);
+            const paperTitle = extractPaperTitle(content);
             const paperType = document.getElementById('paper-type').value;
 
             if (!content) {
