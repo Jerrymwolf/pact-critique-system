@@ -191,7 +191,8 @@
                                 class="hidden"
                                 onchange="handleFileUpload(event)"
                             >
-                            <div id="upload-area" onclick="document.getElementById('file-upload').click()" class="cursor-pointer" 
+                            <div id="upload-area" class="cursor-pointer" 
+                                 onclick="triggerFileUpload()"
                                  ondragover="handleDragOver(event)" 
                                  ondrop="handleDrop(event)" 
                                  ondragleave="handleDragLeave(event)">
@@ -902,9 +903,17 @@
             return null;
         }
 
+        // Trigger file upload when upload area is clicked
+        function triggerFileUpload() {
+            const fileInput = document.getElementById('file-upload');
+            fileInput.click();
+        }
+
         // Submit paper for analysis via API
         async function submitPaperForAnalysis(content, title, type) {
             try {
+                const analysisMode = document.getElementById('analysisMode').value;
+                
                 const response = await fetch(`${API_BASE_URL}/api/critique/start`, {
                     method: 'POST',
                     headers: {
@@ -913,7 +922,8 @@
                     body: JSON.stringify({
                         content: content,
                         title: title,
-                        paper_type: type
+                        paper_type: type,
+                        mode: analysisMode
                     })
                 });
 
