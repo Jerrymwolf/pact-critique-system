@@ -102,7 +102,9 @@ async def critique_dimension_enhanced(state: PaperCritiqueState, dimension_id: s
     if dimension_id in PACT_DIMENSIONS:
         dimension_name = PACT_DIMENSIONS[dimension_id]['name']
         critique.dimension_label = dimension_name
-        critique.dimension_name = dimension_name  # Ensure both fields are set
+        # Only set dimension_name if the field exists in the schema
+        if hasattr(critique, 'dimension_name'):
+            critique.dimension_name = dimension_name
 
     return critique.dict()
 

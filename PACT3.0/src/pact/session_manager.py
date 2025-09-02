@@ -295,13 +295,25 @@ class SessionManager:
         session_data['created_at'] = session.created_at.isoformat()
         session_data['updated_at'] = session.updated_at.isoformat()
 
-        # Convert agent data
+        # Convert agent data - handle both AgentProgress objects and other types
         for agent_id, agent in session_data['agents'].items():
-            agent['status'] = agent['status'].value if hasattr(agent['status'], 'value') else agent['status']
-            if agent['start_time']:
-                agent['start_time'] = agent['start_time'].isoformat() if hasattr(agent['start_time'], 'isoformat') else agent['start_time']
-            if agent['end_time']:
-                agent['end_time'] = agent['end_time'].isoformat() if hasattr(agent['end_time'], 'isoformat') else agent['end_time']
+            if isinstance(agent, dict):
+                # Already a dict, just convert status and times
+                if 'status' in agent:
+                    agent['status'] = agent['status'].value if hasattr(agent['status'], 'value') else agent['status']
+                if agent.get('start_time'):
+                    agent['start_time'] = agent['start_time'].isoformat() if hasattr(agent['start_time'], 'isoformat') else agent['start_time']
+                if agent.get('end_time'):
+                    agent['end_time'] = agent['end_time'].isoformat() if hasattr(agent['end_time'], 'isoformat') else agent['end_time']
+            elif hasattr(agent, '__dict__'):
+                # Convert object to dict first if it's not already a dict
+                agent_dict = asdict(agent) if hasattr(agent, '__dataclass_fields__') else agent.__dict__
+                agent_dict['status'] = agent_dict['status'].value if hasattr(agent_dict['status'], 'value') else agent_dict['status']
+                if agent_dict.get('start_time'):
+                    agent_dict['start_time'] = agent_dict['start_time'].isoformat() if hasattr(agent_dict['start_time'], 'isoformat') else agent_dict['start_time']
+                if agent_dict.get('end_time'):
+                    agent_dict['end_time'] = agent_dict['end_time'].isoformat() if hasattr(agent_dict['end_time'], 'isoformat') else agent_dict['end_time']
+                session_data['agents'][agent_id] = agent_dict
 
         with open(session_file, 'w') as f:
             json.dump(session_data, f, indent=2)

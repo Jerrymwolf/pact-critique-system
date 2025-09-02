@@ -172,34 +172,115 @@ mode_config = {
     AgentMode.COMPREHENSIVE: {"agents": ["ClarityCheckerAgent", "CoherenceCheckerAgent", "MethodologyCheckerAgent", "ContributionCheckerAgent", "WritingStyleCheckerAgent"]},
 }
 
-# Mock create_critique_supervisor
-def create_critique_supervisor():
-    """Mock function to create a supervisor agent."""
-    logger.info("Creating mock critique supervisor...")
-    # In a real scenario, this would instantiate and configure the LangGraph supervisor
-    # For this mock, we return an object with an ainvoke method
-    class MockSupervisor:
-        async def ainvoke(self, initial_state: Dict[str, Any]) -> Dict[str, Any]:
-            logger.info("Mock supervisor ainvoke called with state: %s", initial_state)
-            # Simulate agent execution based on mode
-            mode = initial_state.get("mode", "STANDARD")
-            paper_content = initial_state.get("paper_content")
+class MockCritiqueSupervisor:
+    """Mock supervisor that emits progress events for testing."""
+    
+    async def ainvoke(self, state: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
+        logger.info("Mock supervisor ainvoke called with state: %s", state)
+        
+        # Simulate streaming progress with websocket updates
+        progress_steps = [
+            (5, "Parsing document"),
+            (25, "Extracting sections"), 
+            (55, "Scoring rubric"),
+            (85, "Drafting feedback"),
+            (100, "Finalizing")
+        ]
+        
+        for pct, msg in progress_steps:
+            await asyncio.sleep(0.2)
+            if session_id:
+                await websocket_manager.send_message(session_id, {
+                    "type": "progress", 
+                    "progress": {"completed": pct, "total": 100}, 
+                    "message": msg
+                })
+        
+        # Create mock result
+        result = {
+            "paper_title": state.get("paper_title", "Sample Paper"),
+            "overall_score": 75.5,
+            "recommendation": "Minor Revision", 
+            "final_critique": "Mock analysis result with detailed feedback",
+            "dimension_critiques": {
+                "1.0.0": {"dimension_score": 78, "strengths": ["Clear research question"], "weaknesses": ["Limited scope"]},
+                "2.0.0": {"dimension_score": 73, "strengths": ["Good methodology"], "weaknesses": ["Small sample size"]}
+            }
+        }
+        
+        if session_id:
+            await websocket_manager.send_message(session_id, {
+                "type": "summary", 
+                "payload": result
+            })
+            
+        return result
 
-            # Create a mock config similar to what the real system would use
+class RealCritiqueSupervisor:
+    """Real supervisor using PACT critique agent."""
+    
+    async def ainvoke(self, state: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
+        logger.info("Real supervisor ainvoke called")
+        
+        if session_id:
+            await websocket_manager.send_message(session_id, {
+                "type": "progress",
+                "progress": {"completed": 5, "total": 100},
+                "message": "Calling LLM"
+            })
+        
+        try:
+            # Use the real PACT critique agent
             mock_config = {
                 "configurable": {"thread_id": "supervisor_session"},
                 "recursion_limit": 20
             }
-
-            # Mock the behavior of pact_critique_agent.ainvoke directly
-            # This mock supervisor doesn't have complex internal logic,
-            # it just delegates to the mock pact_critique_agent
-            return await pact_critique_agent.ainvoke(
-                {"messages": [HumanMessage(content=paper_content)], "mode": mode},
+            
+            result = await pact_critique_agent.ainvoke(
+                {"messages": [HumanMessage(content=state.get("paper_content"))], "mode": state.get("mode", "STANDARD")},
                 mock_config
             )
+            
+            if session_id:
+                await websocket_manager.send_message(session_id, {
+                    "type": "progress",
+                    "progress": {"completed": 90, "total": 100}, 
+                    "message": "Formatting results"
+                })
+                
+                await websocket_manager.send_message(session_id, {
+                    "type": "summary",
+                    "payload": result
+                })
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Real supervisor failed: {e}")
+            if session_id:
+                await websocket_manager.send_message(session_id, {
+                    "type": "error",
+                    "message": str(e)
+                })
+            raise
 
-    return MockSupervisor()
+def make_supervisor():
+    """Create appropriate supervisor based on configuration."""
+    # Check if we should use real mode
+    use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
+    real_mode = not (use_mock or MOCK_MODE)
+    
+    if real_mode:
+        logger.info("Creating real critique supervisor")
+        try:
+            return RealCritiqueSupervisor()
+        except Exception as e:
+            logger.exception("Failed to create real supervisor; falling back to mock")
+            logger.info("Creating mock critique supervisor...")
+            return MockCritiqueSupervisor()
+    else:
+        logger.info("Creating mock critique supervisor...")
+        return MockCritiqueSupervisor()
 
 # Mock update_session_status
 async def update_session_status(session_id: str, status: str, progress: int, message: str = ""):
@@ -770,31 +851,21 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             "progress": {"completed": 0, "total": 5}
         })
 
-        # Create real supervisor
-        model_name = os.getenv("OPENAI_MODEL", "gpt-5")
-        use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
-
-        if use_mock or MOCK_MODE:
-            logger.info("Creating mock critique supervisor...")
-            class MockSupervisor:
-                async def ainvoke(self, state):
-                    await asyncio.sleep(2)
-                    return {
-                        "paper_title": state.get("paper_title", "Sample Paper"),
-                        "overall_score": 75.5,
-                        "recommendation": "Minor Revision",
-                        "final_critique": "Mock analysis result",
-                        "dimension_critiques": {}
-                    }
-            supervisor = MockSupervisor()
-        else:
-            logger.info(f"Creating real critique supervisor")
-            supervisor = create_critique_supervisor()
+        # Create supervisor using single selection logic
+        supervisor = make_supervisor()
 
         # Store supervisor in session
         session = session_manager.get_session(session_id)
         if session:
             session.agents = {"supervisor": supervisor}
+
+        # Set initial status and broadcast
+        session_manager.update_session_status(session_id, "running", overall_progress=1)
+        await websocket_manager.send_message(session_id, {
+            "type": "status",
+            "status": "running", 
+            "progress": {"completed": 1, "total": 100}
+        })
 
         # Prepare initial state
         initial_state = {
@@ -805,33 +876,27 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
 
         logger.info(f"Running supervisor analysis with mode: {mode}")
 
-        # Send progress updates
-        await websocket_manager.send_message(session_id, {
-            "type": "progress",
-            "message": "Analyzing paper structure...",
-            "progress": {"completed": 1, "total": 5}
-        })
+        # Run the analysis with session_id for progress tracking
+        result = await supervisor.ainvoke(initial_state, session_id=session_id)
 
-        # Run the analysis
-        result = await supervisor.ainvoke(initial_state)
-
-        # Send more progress
-        await websocket_manager.send_message(session_id, {
-            "type": "progress",
-            "message": "Generating report...",
-            "progress": {"completed": 4, "total": 5}
-        })
-
-        # Update session with results
+        # Update session with results and broadcast completion
         session_manager.update_session_status(
             session_id,
-            "complete", # Use string status
+            "completed",
             result=result,
             overall_score=result.get("overall_score"),
-            final_critique=result.get("final_critique")
+            final_critique=result.get("final_critique"),
+            overall_progress=100
         )
 
+        await websocket_manager.send_message(session_id, {
+            "type": "status",
+            "status": "completed",
+            "progress": {"completed": 100, "total": 100}
+        })
+
         # Generate PDF report
+        use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
         if use_mock or MOCK_MODE:
             pdf_filename = f"PACT_Analysis_Report_{session_id[:8]}.pdf"
             # Create a dummy file for the mock PDF
@@ -841,10 +906,9 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         else:
             pdf_filename = generate_pact_pdf_report(session_id, result)
 
+        session_manager.update_session_status(session_id, "completed", report_filename=pdf_filename)
 
-        session_manager.update_session_status(session_id, "complete", report_filename=pdf_filename) # Use string status
-
-        # Send completion message
+        # Send final completion message with results
         await websocket_manager.send_message(session_id, {
             "type": "complete",
             "session_id": session_id,
@@ -856,10 +920,11 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
 
     except Exception as e:
         logger.error(f"Error in critique analysis for session {session_id}: {e}")
-        session_manager.update_session_status(session_id, "error", error=str(e)) # Use string status
+        session_manager.update_session_status(session_id, "error", error_message=str(e))
 
         await websocket_manager.send_message(session_id, {
-            "type": "error",
+            "type": "status", 
+            "status": "error",
             "message": str(e)
         })
 
