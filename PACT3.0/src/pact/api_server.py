@@ -81,6 +81,26 @@ if MOCK_MODE:
                 self.event_queues[session_id].append(message)
                 logger.debug(f"Queued message for session {session_id}")
 
+        async def broadcast(self, session_id: str, message: dict):
+            """ Broadcast message to all connected clients except the sender if session_id is provided.
+                If session_id is None, broadcast to all clients.
+            """
+            if session_id:
+                for sess_id, conn in self.connections.items():
+                    if sess_id != session_id:
+                        try:
+                            await conn.send_json(message)
+                        except Exception as e:
+                            logger.error(f"Error broadcasting message to {sess_id}: {e}")
+                            await self.disconnect(sess_id)
+            else: # Broadcast to all
+                for sess_id, conn in self.connections.items():
+                    try:
+                        await conn.send_json(message)
+                    except Exception as e:
+                        logger.error(f"Error broadcasting message to {sess_id}: {e}")
+                        await self.disconnect(sess_id)
+
     class MockSessionManager:
         def __init__(self):
             self.sessions = {}
@@ -181,7 +201,7 @@ def make_supervisor():
     # Check if we should use real mode
     use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
     real_mode = not (use_mock or MOCK_MODE)
-    
+
     if real_mode:
         logger.info("Creating real critique supervisor")
         try:
@@ -540,7 +560,7 @@ async def start_critique(request: CritiqueRequest):
 
         # Set initial status and broadcast
         session_manager.update_session_status(session_id, "running", overall_progress=1)
-        await websocket_manager.send_message(session_id, {
+        await websocket_manager.broadcast(session_id, {
             "event": "status", 
             "status": "running", 
             "progress": 1
@@ -767,7 +787,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
     """Background task to run the critique analysis."""
     try:
         logger.info(f"Starting critique analysis for session {session_id}")
-        
+
         # Get session object for proper status updates
         session = session_manager.get_session(session_id)
         if not session:
@@ -778,7 +798,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
 
         # Before launching analysis - set initial status
         session_manager.update_session_status(session_id, "running", overall_progress=1)
-        await websocket_manager.send_message(session_id, {
+        await websocket_manager.broadcast(session_id, {
             "event": "status", 
             "status": "running", 
             "progress": 1
@@ -801,7 +821,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
                 try:
                     await asyncio.sleep(12)  # Send heartbeat every 12 seconds
                     if not stop.is_set():  # Check again before sending
-                        await websocket_manager.send_message(session_id, {
+                        await websocket_manager.broadcast(session_id, {
                             "event": "heartbeat", 
                             "timestamp": time.time(),
                             "message": "Analysis in progress..."
@@ -815,7 +835,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             try:
                 # Run the analysis with session_id for progress tracking
                 result = await supervisor.ainvoke(initial_state, session_id=session_id)
-                
+
                 # Update session with results and broadcast completion
                 session_manager.update_session_status(
                     session_id,
@@ -826,7 +846,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
                     overall_progress=100
                 )
 
-                await websocket_manager.send_message(session_id, {
+                await websocket_manager.broadcast(session_id, {
                     "event": "status",
                     "status": "completed",
                     "progress": 100
@@ -834,7 +854,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
 
                 # Send final summary
                 if result:
-                    await websocket_manager.send_message(session_id, {
+                    await websocket_manager.broadcast(session_id, {
                         "event": "summary",
                         "payload": result
                     })
@@ -844,7 +864,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             except Exception as e:
                 logger.exception("Critique failed")
                 session_manager.update_session_status(session_id, "error", error_message=str(e))
-                await websocket_manager.send_message(session_id, {
+                await websocket_manager.broadcast(session_id, {
                     "event": "status",
                     "status": "error",
                     "message": str(e)
@@ -854,7 +874,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         # Execute the analysis with heartbeat
         stop_heartbeat = asyncio.Event()
         heartbeat_task = asyncio.create_task(heartbeat(session_id, stop_heartbeat))
-        
+
         try:
             result = await run_analysis()
         finally:
@@ -880,7 +900,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         session_manager.update_session_status(session_id, "completed", report_filename=pdf_filename)
 
         # Send final completion message with results
-        await websocket_manager.send_message(session_id, {
+        await websocket_manager.broadcast(session_id, {
             "type": "complete",
             "session_id": session_id,
             "result": result,
@@ -893,7 +913,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         logger.error(f"Error in critique analysis for session {session_id}: {e}")
         session_manager.update_session_status(session_id, "error", error_message=str(e))
 
-        await websocket_manager.send_message(session_id, {
+        await websocket_manager.broadcast(session_id, {
             "event": "status", 
             "status": "error",
             "message": str(e)
@@ -970,7 +990,7 @@ async def notify_websocket_clients(session_id: str):
             "updated_at": session.updated_at.isoformat() if session.updated_at else None,
             "error_message": getattr(session, 'error_message', None)
         }
-        await websocket_manager.send_message(session_id, progress_data)
+        await websocket_manager.broadcast(session_id, progress_data)
 
 # ===== HEALTH CHECK =====
 

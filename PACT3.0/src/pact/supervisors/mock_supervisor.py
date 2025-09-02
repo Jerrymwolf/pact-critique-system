@@ -13,8 +13,8 @@ class MockCritiqueSupervisor:
         
         # Import websocket_manager here to avoid circular imports
         try:
-            from ..websocket_handler import WebSocketManager
-            websocket_manager = WebSocketManager()
+            from ..websocket_manager import manager as websocket_manager
+            logger.info("WS manager id (mock_supervisor)=%s", id(websocket_manager))
         except ImportError:
             websocket_manager = None
             logger.warning("WebSocket manager not available")
@@ -31,7 +31,7 @@ class MockCritiqueSupervisor:
         for pct, msg in progress_steps:
             await asyncio.sleep(0.2)
             if session_id and websocket_manager:
-                await websocket_manager.send_message(session_id, {
+                await websocket_manager.broadcast(session_id, {
                     "event": "progress", 
                     "progress": pct, 
                     "message": msg
@@ -65,7 +65,7 @@ class MockCritiqueSupervisor:
         }
         
         if session_id and websocket_manager:
-            await websocket_manager.send_message(session_id, {
+            await websocket_manager.broadcast(session_id, {
                 "event": "summary", 
                 "payload": result
             })

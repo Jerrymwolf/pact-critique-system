@@ -31,16 +31,15 @@ class RealCritiqueSupervisor:
     async def ainvoke(self, state: Dict[str, Any], session_id: Optional[str] = None) -> Dict[str, Any]:
         # Import websocket_manager here to avoid circular imports
         try:
-            from ..websocket_handler import WebSocketManager
-            # Create a temporary manager instance or use the global one
-            websocket_manager = WebSocketManager()
+            from ..websocket_manager import manager as websocket_manager
+            logger.info("WS manager id (real_supervisor)=%s", id(websocket_manager))
         except ImportError:
             websocket_manager = None
             logger.warning("WebSocket manager not available")
 
         # 1) Early progress ping
         if session_id and websocket_manager:
-            await websocket_manager.send_message(session_id, {
+            await websocket_manager.broadcast(session_id, {
                 "event": "progress", 
                 "progress": 5, 
                 "message": "Calling GPT-5"
@@ -102,7 +101,7 @@ Return **JSON only** with this exact structure:
             logger.info(f"Received response from OpenAI: {text[:200]}...")
 
             if session_id and websocket_manager:
-                await websocket_manager.send_message(session_id, {
+                await websocket_manager.broadcast(session_id, {
                     "event": "progress", 
                     "progress": 85, 
                     "message": "Formatting results"
@@ -152,7 +151,7 @@ Return **JSON only** with this exact structure:
 
             # 5) Final broadcast
             if session_id and websocket_manager:
-                await websocket_manager.send_message(session_id, {
+                await websocket_manager.broadcast(session_id, {
                     "event": "summary", 
                     "payload": result
                 })
@@ -163,7 +162,7 @@ Return **JSON only** with this exact structure:
         except (APIConnectionError, RateLimitError, BadRequestError, APIError) as e:
             logger.exception("OpenAI error during critique")
             if session_id and websocket_manager:
-                await websocket_manager.send_message(session_id, {
+                await websocket_manager.broadcast(session_id, {
                     "event": "status", 
                     "status": "error", 
                     "message": f"OpenAI API error: {str(e)}"
@@ -172,7 +171,7 @@ Return **JSON only** with this exact structure:
         except Exception as e:
             logger.exception("Unexpected error during critique")
             if session_id and websocket_manager:
-                await websocket_manager.send_message(session_id, {
+                await websocket_manager.broadcast(session_id, {
                     "event": "status", 
                     "status": "error", 
                     "message": f"Analysis error: {str(e)}"
