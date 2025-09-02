@@ -544,11 +544,10 @@ async def start_critique(request: CritiqueRequest):
             mode = AgentMode.STANDARD
 
         # Create session using session_manager
-        session_id = str(uuid.uuid4()) # Generate a new session ID
-        session_manager.create_session(
-            session_id=session_id,
+        session_id = session_manager.create_session(
+            paper_content=request.content,
             paper_title=request.title,
-            mode=mode
+            paper_type=getattr(request, 'paper_type', None)
         )
 
         # Start critique process in background
