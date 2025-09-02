@@ -1,0 +1,67 @@
+. Your OpenAI response_format schema is requiring a key named subsections at the wrong object level (or listing it in required without defining it in properties). In your taxonomy JSON, the nesting is:
+dimensions → each dimension has sections
+each section then has subsections
+So if your schema for a dimension-level object lists subsections in required, that’s a mismatch—dimension objects have sections, not subsections. 
+What to change (two safe options)
+Option A — Fix the schema to mirror the JSON (recommended)
+Model the hierarchy exactly as your taxonomy uses it:
+export const DetailedDimensionCritique = {
+  name: "DetailedDimensionCritique",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      dimension_id: { type: "string" },
+      dimension_label: { type: "string" },
+      overall_score: { type: "number" },
+      rationale: { type: "string" },
+
+      // Dimension level has SECTIONS (not subsections)
+      sections: {
+        type: "object",
+        additionalProperties: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            section_id: { type: "string" },
+            section_label: { type: "string" },
+            score: { type: "number" },
+            rationale: { type: "string" },
+
+            // Inside each section you have SUBSECTIONS
+            subsections: {
+              type: "object",
+              additionalProperties: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  subsection_id: { type: "string" },
+                  subsection_label: { type: "string" },
+                  score: { type: "number" },
+                  strengths: { type: "array", items: { type: "string" } },
+                  improvements: { type: "array", items: { type: "string" } }
+                },
+                required: [
+                  "subsection_id",
+                  "subsection_label",
+                  "score",
+                  "strengths",
+                  "improvements"
+                ]
+              }
+            }
+          },
+          required: ["section_id", "section_label", "score", "rationale", "subsections"]
+        }
+      }
+    },
+    required: [
+      "dimension_id",
+      "dimension_label",
+      "overall_score",
+      "rationale",
+      "sections" // <-- must be 'sections' here
+    ]
+  },
+  strict: true
+};
