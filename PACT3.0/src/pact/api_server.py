@@ -379,6 +379,11 @@ class CritiqueRequest(BaseModel):
     paper_type: Optional[str] = Field(default=None, description="Type of the paper")
     mode: Optional[str] = Field(default="STANDARD", description="Analysis mode: APA7, STANDARD, or COMPREHENSIVE")
 
+class StartCritiqueRequest(BaseModel):
+    title: str                     # ✅ required
+    paper_text: str                # extracted text you'll analyze
+    mode: str = "STANDARD"         # optional
+
 class CritiqueResponse(BaseModel):
     session_id: str
     status: str
@@ -542,7 +547,7 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
 
 @app.post("/api/critique/start", response_model=CritiqueResponse)
-async def start_critique(request: CritiqueRequest):
+async def start_critique(request: StartCritiqueRequest):
     """
     Submit a paper for PACT critique analysis.
     """
@@ -556,12 +561,14 @@ async def start_critique(request: CritiqueRequest):
             logger.warning(f"Unrecognized mode '{mode}'. Defaulting to STANDARD.")
             mode = AgentMode.STANDARD
 
-        # Create new session
+        # robust fallback if client forgets title
+        title = (request.title or "").strip() or "Untitled"
+
+        # Create new session with title as first parameter
         session = session_manager.create_session(
-            paper_content=request.content,
-            paper_title=request.title,
-            paper_type=request.paper_type,
-            mode=mode
+            title=title,
+            mode=mode,
+            paper_content=request.paper_text
         )
 
         # Broadcast initial status
@@ -572,7 +579,7 @@ async def start_critique(request: CritiqueRequest):
         })
 
         # Start critique processing in background
-        asyncio.create_task(run_critique_analysis(session.session_id, request.content, request.title, session.mode), name=f"critique-{session.session_id}")
+        asyncio.create_task(run_critique_analysis(session.session_id, request.paper_text, title, session.mode), name=f"critique-{session.session_id}")
 
         return CritiqueResponse(
             session_id=session.session_id,
