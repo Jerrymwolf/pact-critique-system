@@ -526,10 +526,14 @@ def generate_dimension_markdown(dimension_critiques: Dict[str, Any]) -> str:
     """Generate Markdown for dimension critiques."""
     md = ""
     for dim_id, critique in dimension_critiques.items():
+        # Handle both dimension_name and dimension_label for compatibility
+        dimension_name = critique.get('dimension_name') or critique.get('dimension_label', dim_id)
+        score = critique.get('dimension_score') or critique.get('overall_score', 'N/A')
+        
         md += f"""
-### {critique.get('dimension_name', dim_id)}
+### {dimension_name}
 
-**Score:** {critique.get('dimension_score', 'N/A')}/100
+**Score:** {score}/100
 
 **Strengths:**
 {generate_list_markdown(critique.get('strengths', []))}

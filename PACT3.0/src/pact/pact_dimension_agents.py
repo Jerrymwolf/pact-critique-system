@@ -101,6 +101,8 @@ async def critique_dimension_enhanced(state: PaperCritiqueState, dimension_id: s
     critique.dimension_id = dimension_id
     if dimension_id in PACT_DIMENSIONS:
         critique.dimension_label = PACT_DIMENSIONS[dimension_id]['name']
+        # Also set dimension_name for backward compatibility
+        critique.dimension_name = PACT_DIMENSIONS[dimension_id]['name']
 
     return critique.dict()
 

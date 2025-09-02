@@ -56,7 +56,7 @@ class DetailedDimensionCritique(BaseModel):
     dimension_label: str = Field(description="Full dimension name")
     overall_score: float = Field(description="Overall dimension score (0-100)", ge=0, le=100)
     rationale: str = Field(description="Overall rationale for this dimension")
-    
+
     # Proper hierarchy: dimensions have sections, sections have subsections
     sections: Dict[str, SectionAnalysis] = Field(
         description="Analysis of sections within this dimension",
@@ -83,31 +83,31 @@ class SubmissionReadiness(BaseModel):
 
 class ComprehensiveCritique(BaseModel):
     """Complete comprehensive critique matching the PDF report structure."""
-    
+
     # Document metadata
     document_title: Optional[str] = Field(description="Paper title")
     analysis_date: str = Field(description="Analysis completion date")
     analysis_type: str = Field(default="Comprehensive", description="Type of analysis")
-    
+
     # Overall assessment
     overall_assessment: AssessmentLevel = Field(description="Overall paper assessment")
     overall_score: float = Field(description="Overall score (0-100)", ge=0, le=100)
     submission_readiness: SubmissionReadiness = Field(description="Submission readiness assessment")
-    
+
     # Dimension analyses
     dimension_analyses: Dict[str, DetailedDimensionCritique] = Field(
         description="Detailed analysis for each PACT dimension",
         default_factory=dict
     )
-    
+
     # Summary sections
     executive_summary: str = Field(description="Executive summary of the entire critique")
     key_findings: List[str] = Field(description="Key findings across all dimensions")
-    
+
     # Actionable elements
     checklist_items: List[PACTChecklistItem] = Field(description="Revision checklist", default_factory=list)
     next_steps: List[str] = Field(description="Prioritized next steps", default_factory=list)
-    
+
     # Statistics
     total_strengths_identified: int = Field(description="Total number of strengths found")
     total_improvements_needed: int = Field(description="Total number of improvements needed")
