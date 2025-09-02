@@ -12,6 +12,12 @@ from typing_extensions import Annotated
 from pydantic import BaseModel, Field
 from langgraph.graph import MessagesState
 
+def merge_dicts(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
+    """Merge two dictionaries, with b taking precedence over a."""
+    result = dict(a)
+    result.update(b)
+    return result
+
 # ===== STATE DEFINITIONS =====
 
 class PaperCritiqueState(MessagesState):
@@ -29,7 +35,7 @@ class PaperCritiqueState(MessagesState):
     paper_type: Optional[str] = None  # thesis, dissertation, article, etc.
     
     # Individual dimension critiques from specialized agents
-    dimension_critiques: Annotated[Dict[str, Any], operator.add] = {}
+    dimension_critiques: Annotated[Dict[str, Any], merge_dicts] = {}
     
     # Supervisor's analysis plan
     critique_plan: Optional[str] = None
