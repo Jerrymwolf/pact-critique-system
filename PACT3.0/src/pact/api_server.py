@@ -563,43 +563,45 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
 
 @app.post("/api/critique/start", response_model=CritiqueResponse)
-async def start_critique(request: StartCritiqueRequest):
+async def start_critique(req: StartCritiqueRequest):
     """
     Submit a paper for PACT critique analysis.
     """
     try:
-        # Get mode from request (default to STANDARD)
-        mode = getattr(request, 'mode', 'STANDARD')
+        title = (req.title or "").strip() or "Untitled"
+        text = req.text
+        if not text:
+            # Fallback guard; should be caught by validator already
+            raise HTTPException(status_code=422, detail="paper_text or paper_content is required")
 
-        # Validate mode if it's not recognized, default to STANDARD
-        valid_modes = [AgentMode.APA7, AgentMode.STANDARD, AgentMode.COMPREHENSIVE]
-        if mode not in valid_modes:
-            logger.warning(f"Unrecognized mode '{mode}'. Defaulting to STANDARD.")
-            mode = AgentMode.STANDARD
+        # create the session (whichever signature you use)
+        session = session_manager.create_session(title=title, mode=req.mode or "STANDARD")
 
-        # robust fallback if client forgets title
-        title = (request.title or "").strip() or "Untitled"
+        # initial status -> broadcast
+        session.status = "running"
+        session.progress = 1
+        await manager.broadcast(session.session_id, {"event":"status","status":"running","progress":1})
 
-        # Create new session with title as first parameter
-        session = session_manager.create_session(
-            title=title,
-            mode=mode,
-            paper_content=request.text
-        )
+        # launch background task
+        async def run():
+            try:
+                supervisor = make_supervisor()
+                result = await supervisor.ainvoke(
+                    {"paper_title": title, "paper_content": text, "mode": session.mode},
+                    session_id=session.session_id
+                )
+                session_manager.update_session_results(session.session_id, result)
+                session_manager.update_progress(session.session_id, 100, status="completed")
+                await manager.broadcast(session.session_id, {"event":"status","status":"completed","progress":100})
+                await manager.broadcast(session.session_id, {"event":"summary","payload":result})
+            except Exception as e:
+                session_manager.update_progress(session.session_id, session.progress, status="error")
+                await manager.broadcast(session.session_id, {"event":"status","status":"error","message":str(e)})
 
-        # Broadcast initial status
-        await manager.broadcast(session.session_id, {
-            "event": "status",
-            "status": "running",
-            "progress": 1
-        })
-
-        # Start critique processing in background
-        asyncio.create_task(run_critique_analysis(session.session_id, request.text, title, session.mode), name=f"critique-{session.session_id}")
-
+        asyncio.create_task(run(), name=f"critique-{session.session_id}")
         return CritiqueResponse(
             session_id=session.session_id,
-            status="processing", # Initial status after submission
+            status="processing",
             message="Paper submitted successfully. Analysis started."
         )
 
