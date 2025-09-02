@@ -28,241 +28,115 @@ from langchain_core.messages import HumanMessage
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Assume these are defined in a separate pact module
-# from .session_manager import session_manager, CritiqueStatus, AgentStatus
-# from .pact_critique_agent import pact_critique_agent
-# from .websocket_handler import WebSocketManager
-# from .pdf_generator import generate_pact_pdf_report
-# from .enhanced_schemas import ComprehensiveCritique
-# from .mode_config import AgentMode, mode_config # Added for mode support
+# Import real PACT components
+try:
+    from .pact_critique_agent import pact_critique_agent
+    from .session_manager import session_manager
+    from .websocket_handler import WebSocketManager
+    from .pdf_generator import generate_pact_pdf_report
+    from .mode_config import AgentMode, mode_config
+    MOCK_MODE = False
+except ImportError:
+    logger.warning("PACT modules not available, using mock mode")
+    MOCK_MODE = True
 
-# Mock implementations for demonstration purposes if pact module is not available
-class MockSessionManager:
-    def __init__(self):
-        self.sessions = {}
-        self.critique_status = {
-            "processing": "PROCESSING",
-            "running": "RUNNING",
-            "completed": "COMPLETED",
-            "failed": "FAILED",
-            "planning": "PLANNING",
-            "evaluating": "EVALUATING",
-            "synthesizing": "SYNTHESIZING"
-        }
-        self.agent_status = {
-            "active": "ACTIVE",
-            "completed": "COMPLETED"
-        }
+if MOCK_MODE:
+    # Fallback mock implementations
+    class MockWebSocketManager:
+        def __init__(self):
+            self.connections = {}
+            self.event_queues = {}
 
-    def create_session(self, paper_content: str, paper_title: str = None, paper_type: str = None, mode: str = "STANDARD"):
-        session_id = str(uuid.uuid4())
-        self.sessions[session_id] = {
-            "id": session_id,
-            "status": self.critique_status["processing"],
-            "created_at": datetime.now().isoformat(),
-            "paper_content": paper_content,
-            "paper_title": paper_title,
-            "paper_type": paper_type,
-            "mode": mode,
-            "progress": 0,
-            "agents": {},
-            "error_message": None
-        }
-        return session_id
+        async def connect(self, websocket: WebSocket, session_id: str):
+            await websocket.accept()
+            self.connections[session_id] = websocket
+            # Flush any queued events
+            if session_id in self.event_queues:
+                for event in self.event_queues[session_id]:
+                    try:
+                        await websocket.send_json(event)
+                    except Exception as e:
+                        logger.error(f"Error flushing event: {e}")
+                del self.event_queues[session_id]
+            logger.info(f"WebSocket connected for session {session_id}")
 
-    def get_session(self, session_id: str):
-        return self.sessions.get(session_id)
+        def disconnect(self, session_id: str):
+            if session_id in self.connections:
+                del self.connections[session_id]
+            logger.info(f"WebSocket disconnected for session {session_id}")
 
-    def update_session_status(self, session_id: str, status: str, progress: int, message: str = ""):
-        if session_id in self.sessions:
-            self.sessions[session_id]["status"] = self.critique_status.get(status, status)
-            self.sessions[session_id]["progress"] = progress
-            if message:
-                self.sessions[session_id]["current_stage"] = message
-            self.sessions[session_id]["updated_at"] = datetime.now().isoformat()
-
-    def update_agent_status(self, session_id: str, agent_id: str, status: str, message: str, progress: int = 100):
-        if session_id in self.sessions:
-            self.sessions[session_id]["agents"][agent_id] = {
-                "status": self.agent_status.get(status, status),
-                "message": message,
-                "progress": progress
-            }
-
-    def get_session_progress(self, session_id: str):
-        session = self.sessions.get(session_id)
-        if not session:
-            return {"error": "Session not found"}
-        return {
-            "session_id": session_id,
-            "status": session.get("status"),
-            "overall_progress": session.get("progress", 0),
-            "current_stage": session.get("current_stage", "Initializing"),
-            "agents": session.get("agents", {}),
-            "created_at": session.get("created_at"),
-            "updated_at": session.get("updated_at"),
-            "error_message": session.get("error_message")
-        }
-
-    def get_session_results(self, session_id: str):
-        session = self.sessions.get(session_id)
-        if not session:
-            return {"error": "Session not found"}
-        if session.get("status") != self.critique_status["completed"]:
-            return {"error": "Session not yet completed"}
-
-        # Mock results
-        return {
-            "session_id": session_id,
-            "paper_title": session.get("paper_title"),
-            "overall_score": 85.5,
-            "final_critique": "This is a mock final critique based on the paper content.",
-            "dimension_critiques": {
-                "clarity": {"dimension_name": "Clarity", "dimension_score": 90, "strengths": ["Well-organized."], "weaknesses": ["Some jargon could be simplified."]},
-                "coherence": {"dimension_name": "Coherence", "dimension_score": 80, "strengths": ["Logical flow is good."], "weaknesses": ["Transitions between sections could be smoother."]}
-            },
-            "created_at": session.get("created_at"),
-            "updated_at": session.get("updated_at")
-        }
-
-    def set_critique_results(self, session_id: str, dimension_critiques: Dict[str, Any], final_critique: str, overall_score: float):
-        if session_id in self.sessions:
-            self.sessions[session_id]["dimension_critiques"] = dimension_critiques
-            self.sessions[session_id]["final_critique"] = final_critique
-            self.sessions[session_id]["overall_score"] = overall_score
-            self.sessions[session_id]["updated_at"] = datetime.now().isoformat()
-
-    def set_error(self, session_id: str, error_message: str):
-        if session_id in self.sessions:
-            self.sessions[session_id]["error_message"] = error_message
-            self.sessions[session_id]["status"] = self.critique_status["failed"]
-            self.sessions[session_id]["updated_at"] = datetime.now().isoformat()
-
-    def cleanup_old_sessions(self, max_age_hours: int):
-        removed_count = 0
-        current_time = datetime.now()
-        sessions_to_remove = []
-        for session_id, session_data in self.sessions.items():
-            created_at = datetime.fromisoformat(session_data.get("created_at"))
-            if (current_time - created_at).total_seconds() > max_age_hours * 3600:
-                sessions_to_remove.append(session_id)
-
-        for session_id in sessions_to_remove:
-            del self.sessions[session_id]
-            removed_count += 1
-        return removed_count
-
-session_manager = MockSessionManager()
-
-class MockWebSocketManager:
-    def __init__(self):
-        self.active_connections: Dict[str, list[WebSocket]] = {}
-
-    async def connect(self, websocket: WebSocket, session_id: str):
-        await websocket.accept()
-        if session_id not in self.active_connections:
-            self.active_connections[session_id] = []
-        self.active_connections[session_id].append(websocket)
-        logger.info(f"WebSocket connected for session {session_id}")
-
-    async def disconnect(self, websocket: WebSocket, session_id: str):
-        if session_id in self.active_connections and websocket in self.active_connections[session_id]:
-            self.active_connections[session_id].remove(websocket)
-            if not self.active_connections[session_id]:
-                del self.active_connections[session_id]
-        logger.info(f"WebSocket disconnected for session {session_id}")
-
-    async def send_to_session(self, session_id: str, message: Any):
-        if session_id in self.active_connections:
-            disconnected_websockets = []
-            for connection in self.active_connections[session_id]:
+        async def send_message(self, session_id: str, message: dict):
+            if session_id in self.connections:
                 try:
-                    await connection.send_json(message)
-                except RuntimeError as e:
-                    logger.error(f"Error sending to WebSocket for session {session_id}: {e}")
-                    disconnected_websockets.append(connection)
+                    await self.connections[session_id].send_json(message)
+                except Exception as e:
+                    logger.error(f"Error sending message to {session_id}: {e}")
+                    self.disconnect(session_id)
+            else:
+                # Queue the message for when WebSocket connects
+                if session_id not in self.event_queues:
+                    self.event_queues[session_id] = []
+                self.event_queues[session_id].append(message)
+                logger.debug(f"Queued message for session {session_id}")
 
-            # Remove disconnected websockets
-            for ws in disconnected_websockets:
-                if ws in self.active_connections[session_id]:
-                    self.active_connections[session_id].remove(ws)
-            if not self.active_connections[session_id]:
-                del self.active_connections[session_id]
+    class MockSessionManager:
+        def __init__(self):
+            self.sessions = {}
+
+        def create_session(self, session_id: str, paper_title: str, mode: str):
+            self.sessions[session_id] = {
+                "session_id": session_id,
+                "paper_title": paper_title,
+                "mode": mode,
+                "status": "queued",
+                "agents": {},
+                "result": None,
+                "error": None,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }
+            return self.sessions[session_id]
+
+        def get_session(self, session_id: str):
+            return self.sessions.get(session_id)
+
+        def update_session_status(self, session_id: str, status: str, **kwargs):
+            if session_id in self.sessions:
+                self.sessions[session_id]["status"] = status
+                self.sessions[session_id]["updated_at"] = datetime.now().isoformat()
+                for key, value in kwargs.items():
+                    self.sessions[session_id][key] = value
+
+        def cleanup_old_sessions(self, max_age_hours: int = 24) -> int:
+            return 0
+
+    def create_critique_supervisor(mode: str, model_name: str = "gpt-5"):
+        """Create real or mock supervisor based on availability."""
+        if os.getenv("USE_MOCK", "false").lower() == "true":
+            class MockSupervisor:
+                async def ainvoke(self, state):
+                    await asyncio.sleep(2)
+                    return {
+                        "paper_title": state.get("paper_title", "Sample Paper"),
+                        "overall_score": 75.5,
+                        "recommendation": "Minor Revision",
+                        "final_critique": "Mock analysis result",
+                        "dimension_critiques": {}
+                    }
+            return MockSupervisor()
         else:
-            logger.warning(f"No active WebSocket connections for session {session_id} to send message.")
+            # Return real supervisor - this should be imported from your actual implementation
+            return pact_critique_agent
 
-websocket_manager = MockWebSocketManager()
+    def generate_pact_pdf_report_fallback(session_id: str, critique_data: dict) -> str:
+        filename = f"PACT_Analysis_Report_{session_id[:8]}.pdf"
+        return filename
 
-# Mocking pact_critique_agent and its components
-class MockPactCritiqueAgent:
-    async def ainvoke(self, input_data: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
-        await asyncio.sleep(2) # Simulate work
-        session_id = config.get("configurable", {}).get("thread_id", "mock_session")
-        mode = input_data.get("mode", "STANDARD")
+    session_manager = MockSessionManager()
+    websocket_manager = MockWebSocketManager()
+else:
+    websocket_manager = WebSocketManager()
 
-        if mode == "COMPREHENSIVE":
-            return {
-                "dimension_critiques": {
-                    "clarity": {"dimension_name": "Clarity", "dimension_score": 92, "strengths": ["Excellent focus.", "Clear research question."], "weaknesses": ["Minor grammatical errors noted."]},
-                    "coherence": {"dimension_name": "Coherence", "dimension_score": 88, "strengths": ["Logical progression of ideas.", "Well-structured arguments."], "weaknesses": ["Some paragraph transitions could be smoother."]},
-                    "methodology": {"dimension_name": "Methodology", "dimension_score": 95, "strengths": ["Appropriate methods chosen.", "Detailed explanation of procedures."], "weaknesses": []},
-                    "contribution": {"dimension_name": "Contribution", "dimension_score": 85, "strengths": ["Addresses a relevant gap.", "Novel approach."], "weaknesses": ["Impact on the field could be elaborated."]},
-                    "writing_style": {"dimension_name": "Writing Style", "dimension_score": 90, "strengths": ["Professional tone.", "Concise language."], "weaknesses": ["Occasional use of passive voice."]}
-                },
-                "final_critique": "The paper demonstrates strong clarity, coherence, and methodology. The contribution is significant, and the writing style is professional. Minor revisions are recommended for improved transitions and elaboration on the impact.",
-                "overall_score": 90.0,
-                "agents_status": {
-                    "supervisor": "COMPLETED",
-                    "dimension_analyzer_clarity": "COMPLETED",
-                    "dimension_analyzer_coherence": "COMPLETED",
-                    "dimension_analyzer_methodology": "COMPLETED",
-                    "dimension_analyzer_contribution": "COMPLETED",
-                    "dimension_analyzer_writing_style": "COMPLETED",
-                    "synthesizer": "COMPLETED"
-                }
-            }
-        elif mode == "APA7":
-             return {
-                "dimension_critiques": {
-                    "apa_formatting": {"dimension_name": "APA Formatting", "dimension_score": 95, "strengths": ["Correct citation style.", "Proper heading structure."], "weaknesses": ["Minor inconsistencies in reference list formatting."]},
-                    "clarity": {"dimension_name": "Clarity", "dimension_score": 85, "strengths": ["Clear communication of ideas."], "weaknesses": ["Some sentences are a bit long."]}
-                },
-                "final_critique": "The paper generally adheres to APA 7th edition guidelines, with excellent citation and heading structure. Minor improvements are needed in the reference list. Clarity of communication is good, though sentence length could be optimized.",
-                "overall_score": 88.0,
-                "agents_status": {
-                    "supervisor": "COMPLETED",
-                    "dimension_analyzer_apa_formatting": "COMPLETED",
-                    "dimension_analyzer_clarity": "COMPLETED",
-                    "synthesizer": "COMPLETED"
-                }
-            }
-        else: # STANDARD mode
-            return {
-                "dimension_critiques": {
-                    "clarity": {"dimension_name": "Clarity", "dimension_score": 85, "strengths": ["Easy to understand."], "weaknesses": ["Could use more examples."]},
-                    "coherence": {"dimension_name": "Coherence", "dimension_score": 80, "strengths": ["Logical flow."], "weaknesses": ["Some connections between paragraphs are weak."]}
-                },
-                "final_critique": "The paper is clear and coherent, though some areas could benefit from further development and smoother transitions.",
-                "overall_score": 82.5,
-                "agents_status": {
-                    "supervisor": "COMPLETED",
-                    "dimension_analyzer_clarity": "COMPLETED",
-                    "dimension_analyzer_coherence": "COMPLETED",
-                    "synthesizer": "COMPLETED"
-                }
-            }
-
-pact_critique_agent = MockPactCritiqueAgent()
-
-async def generate_pdf_report(comprehensive_critique: Dict[str, Any], session_id: str) -> Optional[str]:
-    """Mock PDF generation function."""
-    logger.info(f"Generating PDF for session {session_id}...")
-    await asyncio.sleep(1)
-    pdf_filename = f"PACT_Analysis_Report_{session_id[:8]}.pdf"
-    # In a real scenario, this would create a PDF file.
-    # For now, just return a mock path.
-    logger.info(f"Mock PDF report generated: {pdf_filename}")
-    return pdf_filename
 
 def create_comprehensive_critique(result: Dict[str, Any]) -> Dict[str, Any]:
     """Mock function to create comprehensive critique."""
@@ -328,10 +202,10 @@ def create_critique_supervisor():
             }
 
             # Mock the behavior of pact_critique_agent.ainvoke directly
-            # This mock supervisor doesn't have complex internal logic, 
+            # This mock supervisor doesn't have complex internal logic,
             # it just delegates to the mock pact_critique_agent
             return await pact_critique_agent.ainvoke(
-                {"messages": [HumanMessage(content=paper_content)], "mode": mode}, 
+                {"messages": [HumanMessage(content=paper_content)], "mode": mode},
                 mock_config
             )
 
@@ -340,7 +214,7 @@ def create_critique_supervisor():
 # Mock update_session_status
 async def update_session_status(session_id: str, status: str, progress: int, message: str = ""):
     """Mock function to update session status and notify clients."""
-    session_manager.update_session_status(session_id, status, progress, message)
+    session_manager.update_session_status(session_id, status, progress=progress, current_stage=message)
     await notify_websocket_clients(session_id)
 
 # Mock generate_html_report and generate_markdown_report for compatibility
@@ -458,7 +332,7 @@ def convert_to_comprehensive_critique(results_data: Dict[str, Any]) -> Dict[str,
     """Convert API results to comprehensive critique format."""
     from datetime import datetime
 
-    # This is a simplified conversion - in practice, you'd want to 
+    # This is a simplified conversion - in practice, you'd want to
     # map all the detailed fields from the enhanced analysis
     return {
         "document_title": results_data.get("paper_title"),
@@ -482,6 +356,7 @@ def convert_to_comprehensive_critique(results_data: Dict[str, Any]) -> Dict[str,
         "total_improvements_needed": 3,
         "critical_issues_count": 0
     }
+
 
 # ===== API MODELS =====
 
@@ -669,16 +544,16 @@ async def start_critique(request: CritiqueRequest):
             mode = AgentMode.STANDARD
 
         # Create session using session_manager
-        session_id = session_manager.create_session(
-            paper_content=request.content,
+        session_id = str(uuid.uuid4()) # Generate a new session ID
+        session_manager.create_session(
+            session_id=session_id,
             paper_title=request.title,
-            paper_type=request.paper_type,
             mode=mode
         )
 
         # Start critique process in background
         # Pass the mode to the workflow
-        asyncio.create_task(run_critique_workflow(session_id, request.content, request.title, mode))
+        asyncio.create_task(run_critique_analysis(session_id, request.content, request.title, mode))
 
         return CritiqueResponse(
             session_id=session_id,
@@ -690,35 +565,68 @@ async def start_critique(request: CritiqueRequest):
         logger.error(f"Error starting critique: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to start critique: {str(e)}")
 
-@app.get("/api/critique/status/{session_id}", response_model=ProgressResponse)
+@app.get("/api/critique/status/{session_id}")
 async def get_critique_status(session_id: str):
-    """
-    Get the current status and progress of a critique session.
-    """
-    progress_data = session_manager.get_session_progress(session_id)
+    """Get the current status of a critique session."""
+    session = session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
 
-    if "error" in progress_data:
-        status_code = 404 if progress_data["error"] == "Session not found" else 400
-        raise HTTPException(status_code=status_code, detail=progress_data["error"])
+    status = session.get("status", "unknown")
+    response = {
+        "session_id": session_id,
+        "state": status,  # Use 'state' for consistency
+        "paper_title": session.get("paper_title"),
+        "created_at": session.get("created_at"),
+        "updated_at": session.get("updated_at"),
+        "error": session.get("error")
+    }
 
-    return ProgressResponse(**progress_data)
+    # Add progress information if available
+    if "progress" in session:
+        response["progress"] = session["progress"]
+
+    # Add result data if analysis is complete
+    if status == "complete":
+        result = session.get("result")
+        if result:
+            response["result"] = result
+            response["overall_score"] = result.get("overall_score")
+            response["final_critique"] = result.get("final_critique")
+            response["dimension_critiques"] = result.get("dimension_critiques", {})
+
+        # Add report URL if available
+        if session.get("report_filename"):
+            response["report_url"] = f"/api/critique/report/{session['report_filename']}"
+
+    return response
 
 @app.get("/api/critique/results/{session_id}", response_model=ResultsResponse)
 async def get_critique_results(session_id: str):
     """
     Get the final results of a completed critique session.
     """
-    results_data = session_manager.get_session_results(session_id)
+    session = session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
 
-    if "error" in results_data:
-        if results_data["error"] == "Session not found":
-            raise HTTPException(status_code=404, detail=results_data["error"])
-        elif "not yet completed" in results_data["error"]:
-             raise HTTPException(status_code=400, detail=results_data["error"])
-        else:
-            raise HTTPException(status_code=500, detail=results_data["error"])
+    status = session.get("status")
+    if status != "complete":
+        raise HTTPException(status_code=400, detail="Session not yet completed")
 
-    return ResultsResponse(**results_data)
+    result = session.get("result")
+    if not result:
+        raise HTTPException(status_code=500, detail="Results not found for completed session")
+
+    return ResultsResponse(**{
+        "session_id": session_id,
+        "paper_title": session.get("paper_title"),
+        "overall_score": result.get("overall_score"),
+        "final_critique": result.get("final_critique"),
+        "dimension_critiques": result.get("dimension_critiques", {}),
+        "created_at": session.get("created_at"),
+        "updated_at": session.get("updated_at")
+    })
 
 @app.websocket("/api/critique/live/{session_id}")
 async def critique_progress_websocket(websocket: WebSocket, session_id: str):
@@ -729,17 +637,26 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
 
     try:
         # Send initial status
-        progress_data = session_manager.get_session_progress(session_id)
-        if "error" not in progress_data:
-            await websocket_manager.send_to_session(session_id, progress_data)
+        session = session_manager.get_session(session_id)
+        if session:
+            current_status = {
+                "session_id": session_id,
+                "state": session.get("status", "unknown"),
+                "paper_title": session.get("paper_title"),
+                "created_at": session.get("created_at"),
+                "updated_at": session.get("updated_at"),
+                "error": session.get("error"),
+                "progress": session.get("progress")
+            }
+            if session.get("status") == "complete":
+                current_status["result"] = session.get("result")
+            await websocket_manager.send_message(session_id, current_status)
 
         # Keep connection alive and handle any messages
         while True:
             try:
                 # Receive messages to keep the connection alive or process client commands
-                data = await websocket.receive_json() # Use receive_json for structured data
-                logger.debug(f"Received message from WebSocket for session {session_id}: {data}")
-                # Add logic here to handle messages from the client if needed
+                await websocket.receive_json() # Use receive_json for structured data
             except WebSocketDisconnect:
                 logger.info(f"WebSocket disconnected for session {session_id}")
                 break
@@ -750,44 +667,49 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
     except Exception as e:
         logger.error(f"WebSocket error for session {session_id}: {e}")
     finally:
-        await websocket_manager.disconnect(websocket, session_id)
+        await websocket_manager.disconnect(session_id)
 
 @app.get("/api/critique/download/{session_id}")
 async def download_critique_report(session_id: str, format: str = Query("pdf", description="Report format: pdf, html, md")):
     """
     Download the critique report in the specified format.
     """
-    # Get session results
-    results_data = session_manager.get_session_results(session_id)
+    session = session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
 
-    if "error" in results_data:
-        if results_data["error"] == "Session not found":
-            raise HTTPException(status_code=404, detail=results_data["error"])
-        elif "not yet completed" in results_data["error"]:
-             raise HTTPException(status_code=400, detail=results_data["error"])
-        else:
-            raise HTTPException(status_code=500, detail=results_data["error"])
+    status = session.get("status")
+    if status != "complete":
+        raise HTTPException(status_code=400, detail="Session not yet completed")
+
+    report_filename = session.get("report_filename")
+    if not report_filename:
+        raise HTTPException(status_code=500, detail="Report filename not found for completed session")
 
     try:
         if format.lower() == "pdf":
-            # Generate PDF report
-            # Ensure results_data is converted to the format expected by generate_pact_pdf_report
-            # For now, using the mock comprehensive critique conversion
-            comprehensive_critique = convert_to_comprehensive_critique(results_data)
-            pdf_path = await generate_pdf_report(comprehensive_critique, session_id)
+            # For PDF, we assume the report is already generated and its path is known
+            # In a more complex system, you might regenerate it here or fetch it from storage
+            pdf_path = os.path.join("/tmp", report_filename) # Assuming reports are stored in /tmp
+            if not os.path.exists(pdf_path):
+                 # Fallback to mock generation if file not found
+                 if MOCK_MODE:
+                     pdf_filename_mock = generate_pact_pdf_report_fallback(session_id, {})
+                     pdf_path = os.path.join("/tmp", pdf_filename_mock)
+                 else:
+                    raise HTTPException(status_code=500, detail="PDF report file not found.")
 
-            if pdf_path:
-                # Return the PDF file
-                return FileResponse(
-                    path=pdf_path,
-                    filename=f"PACT_Analysis_Report_{session_id[:8]}.pdf",
-                    media_type="application/pdf"
-                )
-            else:
-                raise HTTPException(status_code=500, detail="Failed to generate PDF report.")
+            return FileResponse(
+                path=pdf_path,
+                filename=report_filename,
+                media_type="application/pdf"
+            )
 
         elif format.lower() == "html":
             # Generate HTML report
+            results_data = session.get("result")
+            if not results_data:
+                 raise HTTPException(status_code=500, detail="Result data missing for HTML report generation.")
             html_content = generate_html_report(results_data)
 
             return StreamingResponse(
@@ -797,7 +719,10 @@ async def download_critique_report(session_id: str, format: str = Query("pdf", d
             )
 
         elif format.lower() == "md":
-            # Generate Markdown report  
+            # Generate Markdown report
+            results_data = session.get("result")
+            if not results_data:
+                 raise HTTPException(status_code=500, detail="Result data missing for Markdown report generation.")
             md_content = generate_markdown_report(results_data)
 
             return StreamingResponse(
@@ -818,15 +743,17 @@ async def preview_critique_report(session_id: str):
     """
     Get a preview of the critique report (HTML format).
     """
-    results_data = session_manager.get_session_results(session_id)
+    session = session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
 
-    if "error" in results_data:
-        if results_data["error"] == "Session not found":
-            raise HTTPException(status_code=404, detail=results_data["error"])
-        elif "not yet completed" in results_data["error"]:
-             raise HTTPException(status_code=400, detail=results_data["error"])
-        else:
-            raise HTTPException(status_code=500, detail=results_data["error"])
+    status = session.get("status")
+    if status != "complete":
+        raise HTTPException(status_code=400, detail="Session not yet completed")
+
+    results_data = session.get("result")
+    if not results_data:
+        raise HTTPException(status_code=500, detail="Results not found for completed session")
 
     try:
         html_content = generate_html_report(results_data)
@@ -838,107 +765,111 @@ async def preview_critique_report(session_id: str):
 
 # ===== BACKGROUND TASK FUNCTIONS =====
 
-async def run_critique_workflow(session_id: str, paper_content: str, paper_title: str = None, mode: str = "STANDARD"):
-    """Run the critique workflow asynchronously."""
+async def run_critique_analysis(session_id: str, paper_content: str, paper_title: str, mode: str):
+    """Background task to run the critique analysis."""
     try:
-        # Import mode config and AgentMode if not already done globally
-        # from pact.mode_config import AgentMode, mode_config
+        logger.info(f"Starting critique analysis for session {session_id}")
+        session_manager.update_session_status(session_id, "running")
 
-        # Validate mode
-        if mode not in AgentMode.values():
-            logger.warning(f"Invalid mode '{mode}' received in workflow. Defaulting to STANDARD.")
-            mode = AgentMode.STANDARD
-        agent_mode = mode
+        # Send initial progress
+        await websocket_manager.send_message(session_id, {
+            "type": "progress",
+            "message": "Starting analysis...",
+            "progress": {"completed": 0, "total": 5}
+        })
 
-        # Update session status to running and initialize progress
-        await update_session_status(session_id, "running", 10, "Initializing critique workflow")
+        # Create real supervisor
+        model_name = os.getenv("OPENAI_MODEL", "gpt-5")
+        use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
 
-        # Truncate paper content to prevent token limit issues based on the selected mode
-        # These limits are examples and might need tuning based on the LLM's actual token window
-        max_content_length = 0
-        if agent_mode == AgentMode.COMPREHENSIVE:
-            max_content_length = 8000  # Generous limit for comprehensive mode
-        elif agent_mode == AgentMode.APA7:
-            max_content_length = 7000  # Moderate limit for APA7 mode
-        else: # STANDARD mode
-            max_content_length = 6000  # Standard limit
+        if use_mock or MOCK_MODE:
+            logger.info("Creating mock critique supervisor...")
+            class MockSupervisor:
+                async def ainvoke(self, state):
+                    await asyncio.sleep(2)
+                    return {
+                        "paper_title": state.get("paper_title", "Sample Paper"),
+                        "overall_score": 75.5,
+                        "recommendation": "Minor Revision",
+                        "final_critique": "Mock analysis result",
+                        "dimension_critiques": {}
+                    }
+            supervisor = MockSupervisor()
+        else:
+            logger.info(f"Creating real critique supervisor with model: {model_name}")
+            supervisor = create_critique_supervisor(mode=mode, model_name=model_name)
 
-        truncated_content = paper_content[:max_content_length]
-        if len(paper_content) > max_content_length:
-            logger.warning(f"Paper content truncated for session {session_id} due to token limits. Original length: {len(paper_content)}, Truncated length: {max_content_length}")
+        # Store supervisor in session
+        session = session_manager.get_session(session_id)
+        if session:
+            session["agents"] = {"supervisor": supervisor}
 
-        # Create the supervisor agent
-        supervisor = create_critique_supervisor()
-
-        # Initial state for the LangGraph workflow
+        # Prepare initial state
         initial_state = {
-            "paper_content": truncated_content,
+            "paper_content": paper_content,
             "paper_title": paper_title,
-            "mode": mode, # Include mode in the state
-            "dimension_critiques": {},
-            "messages": [HumanMessage(content=truncated_content)], # Use truncated content
-            "agents": {} # Placeholder for agent statuses if needed internally
+            "mode": mode
         }
 
-        # Update progress to indicate planning phase
-        await update_session_status(session_id, "planning", 25, "Planning critique approach")
-        # Mock updating agent status for supervisor
-        session_manager.update_agent_status(session_id, "supervisor", "ACTIVE", "Planning critique approach", 25)
+        logger.info(f"Running supervisor analysis with mode: {mode}")
 
+        # Send progress updates
+        await websocket_manager.send_message(session_id, {
+            "type": "progress",
+            "message": "Analyzing paper structure...",
+            "progress": {"completed": 1, "total": 5}
+        })
 
-        # Run the critique workflow via the supervisor agent
-        # The ainvoke method will orchestrate the agents based on the initial_state
+        # Run the analysis
         result = await supervisor.ainvoke(initial_state)
 
-        # Update progress to indicate evaluation/synthesis phase
-        await update_session_status(session_id, "evaluating", 75, "Evaluating dimensions and synthesizing results")
+        # Send more progress
+        await websocket_manager.send_message(session_id, {
+            "type": "progress",
+            "message": "Generating report...",
+            "progress": {"completed": 4, "total": 5}
+        })
 
-        # Update agent statuses based on mock result
-        for agent_id, status in result.get("agents_status", {}).items():
-             session_manager.update_agent_status(session_id, agent_id, status, f"Agent {status.lower()}", 100)
+        # Update session with results
+        session_manager.update_session_status(
+            session_id,
+            "complete",
+            result=result,
+            overall_score=result.get("overall_score"),
+            final_critique=result.get("final_critique")
+        )
 
-        # Process the results from the agent execution
-        if result.get("dimension_critiques"):
-            # Create comprehensive critique using enhanced schemas (or relevant schema based on mode)
-            # For simplicity, we use convert_to_comprehensive_critique for all modes here.
-            # A more robust implementation would tailor this based on the 'mode'.
-            comprehensive_critique = create_comprehensive_critique(result)
-
-            # Generate markdown report
-            markdown_report = generate_markdown_report(comprehensive_critique)
-
-            # Generate PDF report
-            pdf_path = await generate_pdf_report(comprehensive_critique, session_id)
-
-            # Save final results to the session manager
-            # This part needs to map correctly to how session_manager stores results
-            # Assuming set_critique_results and then updating status to completed
-            session_manager.set_critique_results(
-                session_id=session_id,
-                dimension_critiques=comprehensive_critique.get("dimension_analyses", {}),
-                final_critique=comprehensive_critique.get("executive_summary", ""),
-                overall_score=comprehensive_critique.get("overall_score", 0)
-            )
-
-            # Mark all agents as completed if they were tracked
-            for agent_id in result.get("agents_status", {}):
-                 session_manager.update_agent_status(session_id, agent_id, "COMPLETED", "Analysis complete", 100)
-
-            # Mark session as completed
-            await update_session_status(session_id, "completed", 100, "Critique completed successfully")
-
+        # Generate PDF report
+        if use_mock or MOCK_MODE:
+            pdf_filename = f"PACT_Analysis_Report_{session_id[:8]}.pdf"
+            # Create a dummy file for the mock PDF
+            dummy_pdf_path = os.path.join("/tmp", pdf_filename)
+            with open(dummy_pdf_path, "w") as f:
+                f.write("Mock PDF content")
         else:
-            # Handle cases where no critiques were generated
-            error_message = "No critiques generated by the agent."
-            logger.error(f"Critique workflow failed for session {session_id}: {error_message}")
-            session_manager.set_error(session_id, error_message)
-            await update_session_status(session_id, "failed", 0, error_message)
+            pdf_filename = generate_pact_pdf_report(session_id, result)
+
+
+        session_manager.update_session_status(session_id, "complete", report_filename=pdf_filename)
+
+        # Send completion message
+        await websocket_manager.send_message(session_id, {
+            "type": "complete",
+            "session_id": session_id,
+            "result": result,
+            "report_url": f"/api/critique/report/{pdf_filename}"
+        })
+
+        logger.info(f"Critique analysis completed for session {session_id}")
 
     except Exception as e:
-        # Catch any unexpected errors during the workflow execution
-        logger.error(f"Unexpected error in critique workflow for session {session_id}: {e}", exc_info=True)
-        session_manager.set_error(session_id, f"Workflow execution failed: {str(e)}")
-        await update_session_status(session_id, "failed", 0, f"Workflow execution failed: {str(e)}")
+        logger.error(f"Error in critique analysis for session {session_id}: {e}")
+        session_manager.update_session_status(session_id, "error", error=str(e))
+
+        await websocket_manager.send_message(session_id, {
+            "type": "error",
+            "message": str(e)
+        })
 
 
 # Progress callback class (can be used if LangGraph is integrated more deeply)
@@ -996,9 +927,21 @@ class CritiqueProgressCallback:
 
 async def notify_websocket_clients(session_id: str):
     """Send progress updates to WebSocket clients."""
-    progress_data = session_manager.get_session_progress(session_id)
-    if progress_data and "error" not in progress_data:
-        await websocket_manager.send_to_session(session_id, progress_data)
+    session = session_manager.get_session(session_id)
+    if session:
+        progress_data = {
+            "session_id": session_id,
+            "state": session.get("status", "unknown"),
+            "progress": {
+                "overall_progress": session.get("progress", 0),
+                "current_stage": session.get("current_stage", "Initializing"),
+            },
+            "agents": session.get("agents", {}),
+            "created_at": session.get("created_at"),
+            "updated_at": session.get("updated_at"),
+            "error_message": session.get("error")
+        }
+        await websocket_manager.send_message(session_id, progress_data)
 
 # ===== HEALTH CHECK =====
 

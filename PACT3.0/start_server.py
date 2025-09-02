@@ -46,6 +46,13 @@ if tavily_key:
 else:
     print("⚠️  Tavily API key not found - web search functionality will be limited")
 
+# Check mock mode
+use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
+if use_mock:
+    print("🎭 Running in MOCK mode - no real LLM analysis")
+else:
+    print("🤖 Running in REAL mode - using LLM for analysis")
+
 # Start the server
 if __name__ == "__main__":
     import uvicorn
