@@ -793,6 +793,23 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
 
         logger.info(f"Running supervisor analysis with mode: {mode}")
 
+        # Add heartbeat to keep connections alive during long analysis
+        async def heartbeat(session_id: str, stop: asyncio.Event):
+            """Send periodic heartbeat messages during long-running analysis."""
+            import time
+            while not stop.is_set():
+                try:
+                    await asyncio.sleep(12)  # Send heartbeat every 12 seconds
+                    if not stop.is_set():  # Check again before sending
+                        await websocket_manager.send_message(session_id, {
+                            "event": "heartbeat", 
+                            "timestamp": time.time(),
+                            "message": "Analysis in progress..."
+                        })
+                except Exception as e:
+                    logger.warning(f"Heartbeat failed for session {session_id}: {e}")
+                    break
+
         # Define the analysis execution as a separate async function
         async def run_analysis():
             try:
@@ -834,8 +851,20 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
                 })
                 raise
 
-        # Execute the analysis
-        result = await run_analysis()
+        # Execute the analysis with heartbeat
+        stop_heartbeat = asyncio.Event()
+        heartbeat_task = asyncio.create_task(heartbeat(session_id, stop_heartbeat))
+        
+        try:
+            result = await run_analysis()
+        finally:
+            # Stop heartbeat and cleanup
+            stop_heartbeat.set()
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass  # Expected when cancelling
 
         # Generate PDF report
         use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
