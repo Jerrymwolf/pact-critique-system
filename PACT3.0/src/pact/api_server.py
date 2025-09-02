@@ -35,6 +35,8 @@ try:
     from .websocket_handler import WebSocketManager
     from .pdf_generator import generate_pact_pdf_report
     from .mode_config import AgentMode, mode_config
+    from .supervisors.real_supervisor import RealCritiqueSupervisor
+    from .supervisors.mock_supervisor import MockCritiqueSupervisor
     MOCK_MODE = False
 except ImportError:
     logger.warning("PACT modules not available, using mock mode")
@@ -172,113 +174,7 @@ mode_config = {
     AgentMode.COMPREHENSIVE: {"agents": ["ClarityCheckerAgent", "CoherenceCheckerAgent", "MethodologyCheckerAgent", "ContributionCheckerAgent", "WritingStyleCheckerAgent"]},
 }
 
-class MockCritiqueSupervisor:
-    """Mock supervisor that emits progress events for testing."""
-    
-    async def ainvoke(self, state: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
-        logger.info("Mock supervisor ainvoke called with state: %s", state)
-        
-        # Simulate streaming progress with websocket updates
-        progress_steps = [
-            (5, "Parsing document"),
-            (25, "Extracting sections"), 
-            (55, "Scoring rubric"),
-            (85, "Drafting feedback"),
-            (100, "Finalizing")
-        ]
-        
-        for pct, msg in progress_steps:
-            await asyncio.sleep(0.2)
-            if session_id:
-                await websocket_manager.send_message(session_id, {
-                    "event": "progress", 
-                    "progress": pct, 
-                    "message": msg
-                })
-        
-        # Create mock result
-        result = {
-            "paper_title": state.get("paper_title", "Sample Paper"),
-            "overall_score": 75.5,
-            "recommendation": "Minor Revision", 
-            "final_critique": "Mock analysis result with detailed feedback covering all PACT dimensions. The paper demonstrates adequate understanding but requires refinement in several areas.",
-            "dimension_critiques": {
-                "1.0.0": {
-                    "dimension_score": 78, 
-                    "dimension_name": "Research Foundations",
-                    "strengths": ["Clear research question", "Relevant literature base"], 
-                    "weaknesses": ["Limited scope", "Missing key citations"]
-                },
-                "2.0.0": {
-                    "dimension_score": 73, 
-                    "dimension_name": "Methodological Rigor",
-                    "strengths": ["Good methodology description", "Appropriate data collection"], 
-                    "weaknesses": ["Small sample size", "Limited statistical analysis"]
-                },
-                "3.0.0": {
-                    "dimension_score": 80, 
-                    "dimension_name": "Structure & Coherence",
-                    "strengths": ["Logical flow", "Clear section organization"], 
-                    "weaknesses": ["Transitions could be smoother"]
-                }
-            }
-        }
-        
-        if session_id:
-            await websocket_manager.send_message(session_id, {
-                "event": "summary", 
-                "payload": result
-            })
-            
-        return result
-
-class RealCritiqueSupervisor:
-    """Real supervisor using PACT critique agent."""
-    
-    async def ainvoke(self, state: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
-        logger.info("Real supervisor ainvoke called")
-        
-        if session_id:
-            await websocket_manager.send_message(session_id, {
-                "event": "progress",
-                "progress": 5,
-                "message": "Calling LLM"
-            })
-        
-        try:
-            # Use the real PACT critique agent
-            mock_config = {
-                "configurable": {"thread_id": "supervisor_session"},
-                "recursion_limit": 20
-            }
-            
-            result = await pact_critique_agent.ainvoke(
-                {"messages": [HumanMessage(content=state.get("paper_content"))], "mode": state.get("mode", "STANDARD")},
-                mock_config
-            )
-            
-            if session_id:
-                await websocket_manager.send_message(session_id, {
-                    "event": "progress",
-                    "progress": 90, 
-                    "message": "Formatting results"
-                })
-                
-                await websocket_manager.send_message(session_id, {
-                    "event": "summary",
-                    "payload": result
-                })
-            
-            return result
-            
-        except Exception as e:
-            logger.error(f"Real supervisor failed: {e}")
-            if session_id:
-                await websocket_manager.send_message(session_id, {
-                    "event": "error",
-                    "message": str(e)
-                })
-            raise
+# Supervisor classes are now imported from separate modules
 
 def make_supervisor():
     """Create appropriate supervisor based on configuration."""
