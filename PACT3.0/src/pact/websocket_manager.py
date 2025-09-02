@@ -30,6 +30,10 @@ class WebSocketConnectionManager:
             except Exception:
                 self.disconnect(session_id, ws)
 
+    # ✅ Legacy alias so existing calls keep working
+    async def send_message(self, session_id: str, message: dict):
+        await self.broadcast(session_id, message)
+
 # Create ONE singleton here
 manager = WebSocketConnectionManager()
 logger.info("WS manager singleton created id=%s", id(manager))
