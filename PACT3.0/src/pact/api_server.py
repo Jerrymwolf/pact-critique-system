@@ -472,8 +472,9 @@ def convert_to_comprehensive_critique(results_data: Dict[str, Any]) -> Dict[str,
 # ===== API MODELS =====
 
 class CritiqueRequest(BaseModel):
-    paper_content: str = Field(description="The academic paper content to critique")
-    paper_title: Optional[str] = Field(default=None, description="Title of the paper")
+    content: str = Field(description="The academic paper content to critique")
+    title: Optional[str] = Field(default=None, description="Title of the paper")
+    paper_type: Optional[str] = Field(default=None, description="Type of the paper")
     mode: Optional[str] = Field(default="STANDARD", description="Analysis mode: APA7, STANDARD, or COMPREHENSIVE")
 
 class CritiqueResponse(BaseModel):
@@ -627,15 +628,15 @@ async def start_critique(request: CritiqueRequest):
 
         # Create session using session_manager
         session_id = session_manager.create_session(
-            paper_content=request.paper_content,
-            paper_title=request.paper_title,
-            paper_type=request.paper_type, # Assuming paper_type might be added to CritiqueRequest
+            paper_content=request.content,
+            paper_title=request.title,
+            paper_type=request.paper_type,
             mode=mode
         )
 
         # Start critique process in background
         # Pass the mode to the workflow
-        asyncio.create_task(run_critique_workflow(session_id, request.paper_content, request.paper_title, mode))
+        asyncio.create_task(run_critique_workflow(session_id, request.content, request.title, mode))
 
         return CritiqueResponse(
             session_id=session_id,
