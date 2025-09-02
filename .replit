@@ -9,13 +9,12 @@ channel = "stable-25_05"
 run = ["python", "PACT3.0/start_server.py"]
 
 [workflows]
-runButton = "Start PACT Server"
 
 [[workflows.workflow]]
-name = "Start PACT Server"
+name = "Install Dependencies"
 author = 43152860
 mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd PACT3.0 && python start_server.py"
+args = "python install.py"
