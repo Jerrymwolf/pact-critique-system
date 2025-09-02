@@ -1,0 +1,89 @@
+1) Make the real supervisor non-blocking + chat call robust
+pact/supervisors/real_supervisor.py
+import asyncio, json, logging, re
+from typing import Optional, Dict, Any
+from openai import OpenAI
+from openai import APIError, APIConnectionError, RateLimitError, BadRequestError
+
+from pact.settings import settings
+from pact.websocket_manager import manager  # wherever your broadcast manager lives
+
+logger = logging.getLogger(__name__)
+
+client = OpenAI(timeout=60)  # hard timeout for network stall
+MODEL = getattr(settings, "openai_model", None) or "gpt-5"
+
+def _safe_extract_json(text: str) -> Optional[Dict[str, Any]]:
+    """Try to pull the first JSON object out of an LLM reply."""
+    m = re.search(r"\{[\s\S]*\}", text)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(0))
+    except Exception:
+        return None
+
+class RealCritiqueSupervisor:
+    async def ainvoke(self, state: dict, session_id: Optional[str] = None):
+        # 1) Early progress ping
+        if session_id:
+            await manager.broadcast(session_id, {"event": "progress", "progress": 5, "message": "Calling GPT-5"})
+
+        paper_title = state.get("paper_title") or "Untitled Paper"
+        paper_content = state.get("paper_content") or ""
+
+        prompt = f"""
+You are PACT, an academic critique engine.
+Critique the paper titled "{paper_title}" below.
+Return **JSON only** with keys: scores, findings, recommendations.
+
+--- PAPER START ---
+{paper_content}
+--- PAPER END ---
+"""
+
+        try:
+            # 2) Run the sync OpenAI call off the event loop so we don't block.
+            resp = await asyncio.to_thread(
+                client.chat.completions.create,
+                model=MODEL,
+                messages=[
+                    {"role": "system", "content": "You are PACT, a precise academic critique engine."},
+                    {"role": "user", "content": prompt},
+                ],
+            )
+
+            # 3) Extract content
+            text = (resp.choices[0].message.content or "").strip()
+
+            if session_id:
+                await manager.broadcast(session_id, {"event": "progress", "progress": 85, "message": "Formatting results"})
+
+            # 4) Try to parse JSON; if not, wrap a fallback
+            result = _safe_extract_json(text) or {
+                "raw_response": text[:4000],
+                "scores": {"Clarity": 0, "Evidence": 0, "Structure": 0, "Originality": 0},
+                "findings": ["Could not parse structured JSON, returned raw text instead."],
+                "recommendations": ["Ensure the model returns valid JSON per the instructions."],
+            }
+
+            # 5) Final broadcast
+            if session_id:
+                await manager.broadcast(session_id, {"event": "summary", "payload": result})
+
+            return result
+
+        except (APIConnectionError, RateLimitError, BadRequestError, APIError) as e:
+            logger.exception("OpenAI error during critique")
+            if session_id:
+                await manager.broadcast(session_id, {"event": "status", "status": "error", "message": str(e)})
+            raise
+        except Exception as e:
+            logger.exception("Unexpected error during critique")
+            if session_id:
+                await manager.broadcast(session_id, {"event": "status", "status": "error", "message": str(e)})
+            raise
+Why this helps
+asyncio.to_thread(...) keeps your FastAPI event loop responsive.
+We always broadcast progress and a summary (even with a fallback) so the UI won’t spin endlessly.
+Errors are broadcasted instead of dying silently.
