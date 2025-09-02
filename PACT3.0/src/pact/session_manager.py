@@ -114,12 +114,28 @@ class SessionManager:
         """Get a session by ID."""
         return self.sessions.get(session_id)
     
-    def update_session_status(self, session_id: str, status: CritiqueStatus, 
-                            current_stage: str = "", overall_progress: float = None) -> bool:
+    def update_session_status(self, session_id: str, status, 
+                            current_stage: str = "", overall_progress: float = None, **kwargs) -> bool:
         """Update session status and progress."""
         session = self.sessions.get(session_id)
         if not session:
             return False
+        
+        # Handle both string and enum status values
+        if isinstance(status, str):
+            status_map = {
+                "pending": CritiqueStatus.PENDING,
+                "processing": CritiqueStatus.PROCESSING,
+                "running": CritiqueStatus.PROCESSING,
+                "planning": CritiqueStatus.PLANNING,
+                "evaluating": CritiqueStatus.EVALUATING,
+                "synthesizing": CritiqueStatus.SYNTHESIZING,
+                "completed": CritiqueStatus.COMPLETED,
+                "complete": CritiqueStatus.COMPLETED,
+                "failed": CritiqueStatus.FAILED,
+                "error": CritiqueStatus.FAILED
+            }
+            status = status_map.get(status, CritiqueStatus.PENDING)
         
         session.status = status
         session.updated_at = datetime.now()
@@ -129,6 +145,11 @@ class SessionManager:
         
         if overall_progress is not None:
             session.overall_progress = overall_progress
+            
+        # Handle additional keyword arguments
+        for key, value in kwargs.items():
+            if hasattr(session, key):
+                setattr(session, key, value)
         
         self.save_session(session)
         return True

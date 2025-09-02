@@ -534,13 +534,10 @@ async def start_critique(request: CritiqueRequest):
             mode = AgentMode.STANDARD
 
         # Create session using session_manager
-        session_id = str(uuid.uuid4()) # Generate a new UUID for each session
-        session_manager.create_session(
-            session_id=session_id, # Pass the generated session_id
+        session_id = session_manager.create_session(
             paper_content=request.content,
             paper_title=request.title,
-            paper_type=getattr(request, 'paper_type', None),
-            mode=mode # Pass the validated mode
+            paper_type=getattr(request, 'paper_type', None)
         )
 
         # Start critique process in background
@@ -564,32 +561,31 @@ async def get_critique_status(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    status = session.get("status", "unknown") # Default to 'unknown' if status is missing
+    # Convert status enum to string
+    status = session.status.value if hasattr(session.status, 'value') else str(session.status)
+    
     response = {
         "session_id": session_id,
         "state": status,  # Use 'state' for consistency
-        "paper_title": session.get("paper_title"),
-        "created_at": session.get("created_at"),
-        "updated_at": session.get("updated_at"),
-        "error": session.get("error")
+        "paper_title": session.paper_title,
+        "created_at": session.created_at.isoformat() if session.created_at else None,
+        "updated_at": session.updated_at.isoformat() if session.updated_at else None,
+        "error": session.error_message
     }
 
     # Add progress information if available
-    if "progress" in session:
-        response["progress"] = session["progress"]
+    response["progress"] = session.overall_progress
 
     # Add result data if analysis is complete
-    if status == "completed": # Use the mapped status 'completed'
-        result = session.get("result")
-        if result:
-            response["result"] = result
-            response["overall_score"] = result.get("overall_score")
-            response["final_critique"] = result.get("final_critique")
-            response["dimension_critiques"] = result.get("dimension_critiques", {})
-
-        # Add report URL if available
-        if session.get("report_filename"):
-            response["report_url"] = f"/api/critique/report/{session['report_filename']}"
+    if status == "completed":
+        response["result"] = {
+            "overall_score": session.overall_score,
+            "final_critique": session.final_critique,
+            "dimension_critiques": session.dimension_critiques
+        }
+        response["overall_score"] = session.overall_score
+        response["final_critique"] = session.final_critique
+        response["dimension_critiques"] = session.dimension_critiques
 
     return response
 
@@ -602,22 +598,21 @@ async def get_critique_results(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    status = session.get("status")
-    if status != "completed": # Use the mapped status 'completed'
+    status = session.status.value if hasattr(session.status, 'value') else str(session.status)
+    if status != "completed":
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
-    result = session.get("result")
-    if not result:
+    if not session.overall_score and not session.final_critique:
         raise HTTPException(status_code=500, detail="Results not found for completed session")
 
     return ResultsResponse(**{
         "session_id": session_id,
-        "paper_title": session.get("paper_title"),
-        "overall_score": result.get("overall_score"),
-        "final_critique": result.get("final_critique"),
-        "dimension_critiques": result.get("dimension_critiques", {}),
-        "created_at": session.get("created_at"),
-        "updated_at": session.get("updated_at")
+        "paper_title": session.paper_title,
+        "overall_score": session.overall_score,
+        "final_critique": session.final_critique,
+        "dimension_critiques": session.dimension_critiques or {},
+        "created_at": session.created_at.isoformat() if session.created_at else None,
+        "updated_at": session.updated_at.isoformat() if session.updated_at else None
     })
 
 @app.websocket("/api/critique/live/{session_id}")
@@ -631,17 +626,22 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
         # Send initial status
         session = session_manager.get_session(session_id)
         if session:
+            status = session.status.value if hasattr(session.status, 'value') else str(session.status)
             current_status = {
                 "session_id": session_id,
-                "state": session.get("status", "unknown"),
-                "paper_title": session.get("paper_title"),
-                "created_at": session.get("created_at"),
-                "updated_at": session.get("updated_at"),
-                "error": session.get("error"),
-                "progress": session.get("progress")
+                "state": status,
+                "paper_title": session.paper_title,
+                "created_at": session.created_at.isoformat() if session.created_at else None,
+                "updated_at": session.updated_at.isoformat() if session.updated_at else None,
+                "error": session.error_message,
+                "progress": session.overall_progress
             }
-            if session.get("status") == "completed": # Use the mapped status 'completed'
-                current_status["result"] = session.get("result")
+            if status == "completed":
+                current_status["result"] = {
+                    "overall_score": session.overall_score,
+                    "final_critique": session.final_critique,
+                    "dimension_critiques": session.dimension_critiques
+                }
             await websocket_manager.send_message(session_id, current_status)
 
         # Keep connection alive and handle any messages
