@@ -43,10 +43,10 @@ class CritiqueSession:
     session_id: str
     status: CritiqueStatus
     paper_content: str
-    paper_title: Optional[str] = None
-    paper_type: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    paper_title: Optional[str] = None
+    paper_type: Optional[str] = None
     
     # Progress tracking
     overall_progress: float = 0.0
