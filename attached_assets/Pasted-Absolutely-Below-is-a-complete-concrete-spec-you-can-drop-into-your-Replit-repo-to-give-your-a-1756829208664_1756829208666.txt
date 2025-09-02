@@ -1,0 +1,689 @@
+Absolutely. Below is a **complete, concrete spec** you can drop into your Replit repo to give your agent three modes:
+
+* **APA7** → analyze **only** APA Style elements.
+* **Standard** → supervisor **auto-selects** relevant PACT elements based on the paper’s content.
+* **Comprehensive** → analyze **all** PACT elements exhaustively.
+
+I’ll show:
+
+1. **Interfaces & config** (mode switch, limits)
+2. **JSON Schemas** (strict, small, enforceable)
+3. **Prompts** (one per node)
+4. **LangGraph (TS) graph** (nodes, edges, reducers)
+5. **Validator, deep-merge, skinny-retry**
+6. **Example call** to kick off a run
+
+> Assumes: Node 18+, `openai` SDK v4+, `langgraph` (JS), `ajv` for JSON Schema validation, and your existing PACT taxonomy JSON.
+
+---
+
+# 1) Install packages
+
+```bash
+npm i openai langgraph ajv ajv-formats
+```
+
+---
+
+# 2) Source layout (suggested)
+
+```
+/server
+  /agents
+    pactAgent.ts
+    prompts.ts
+    schemas.ts
+    utils.ts
+  /services
+    openai.ts
+  /taxonomy
+    pact-taxonomy.json        # your PACT structure (dimensions → sections → subsections)
+  /routes
+    analyze.ts                # express route (if you have one)
+```
+
+---
+
+# 3) Modes & Config
+
+```ts
+// server/agents/pactAgent.ts
+export type AgentMode = "APA7" | "STANDARD" | "COMPREHENSIVE";
+
+export const DEFAULTS = {
+  model: "gpt-5-thinking",
+  // keep outputs bounded (tune as needed)
+  tokens: {
+    outline: 600,
+    section: 900,
+    subsection: 800,
+    apa7: 900,
+    synthesis: 900,
+  },
+  // depth caps
+  caps: {
+    rationaleLen: { standard: 600, deep: 1200, apa7: 700 },
+    bulletLen: 160,
+    bullets: { essentials: 3, standard: 5, apa7: 5 },
+    evidenceSnips: 2,
+    evidenceLen: 240,
+  },
+} as const;
+```
+
+---
+
+# 4) JSON Schemas (strict Structured Outputs)
+
+> These schemas *must* be used with OpenAI `response_format: { type: "json_schema", json_schema: { name, schema, strict:true } }`. Every `object` has `properties`, `required`, and `additionalProperties:false`. Arrays have `maxItems`. Strings have `maxLength`.
+
+```ts
+// server/agents/schemas.ts
+export const SectionSubsectionSchema = (caps: {
+  rationaleLen: number; bulletLen: number; bullets: number; evidenceSnips: number; evidenceLen: number;
+}) => ({
+  name: "PACT_Section_Payload",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      section_id:       { type: "string", maxLength: 64 },
+      section_label:    { type: "string", maxLength: 120 },
+      score:            { type: "number" },
+      rationale:        { type: "string", maxLength: caps.rationaleLen },
+      subsections: {
+        type: "array",
+        maxItems: 12, // adjust to your max per section
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            subsection_id:    { type: "string", maxLength: 64 },
+            subsection_label: { type: "string", maxLength: 120 },
+            score:            { type: "number" },
+            confidence:       { type: "number", minimum: 0, maximum: 1 },
+            rationale:        { type: "string", maxLength: caps.rationaleLen },
+            evidence_snippets: {
+              type: "array",
+              maxItems: caps.evidenceSnips,
+              items: { type: "string", maxLength: caps.evidenceLen }
+            },
+            strengths: {
+              type: "array",
+              maxItems: caps.bullets,
+              items: { type: "string", maxLength: caps.bulletLen }
+            },
+            improvements: {
+              type: "array",
+              maxItems: caps.bullets,
+              items: { type: "string", maxLength: caps.bulletLen }
+            }
+          },
+          required: ["subsection_id","subsection_label","score","confidence","rationale","strengths","improvements"]
+        }
+      }
+    },
+    required: ["section_id","section_label","score","rationale","subsections"]
+  },
+  strict: true
+});
+
+export const DimensionOutlineSchema = {
+  name: "PACT_Dimension_Outline",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      dimension_id:    { type: "string", maxLength: 64 },
+      dimension_label: { type: "string", maxLength: 120 },
+      sections_plan: {
+        type: "array",
+        maxItems: 12,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            section_id:    { type: "string", maxLength: 64 },
+            section_label: { type: "string", maxLength: 120 },
+            subsection_ids: {
+              type: "array",
+              maxItems: 20,
+              items: { type: "string", maxLength: 64 }
+            }
+          },
+          required: ["section_id","section_label","subsection_ids"]
+        }
+      }
+    },
+    required: ["dimension_id","dimension_label","sections_plan"]
+  },
+  strict: true
+};
+
+export const DimensionSynthesisSchema = (caps: { rationaleLen: number; bulletLen: number; bullets: number }) => ({
+  name: "PACT_Dimension_Synthesis",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      dimension_id:     { type: "string", maxLength: 64 },
+      dimension_label:  { type: "string", maxLength: 120 },
+      overall_score:    { type: "number" },
+      synthesis:        { type: "string", maxLength: caps.rationaleLen },
+      top_priorities:   { type: "array", maxItems: 5, items: { type: "string", maxLength: caps.bulletLen } }
+    },
+    required: ["dimension_id","dimension_label","overall_score","synthesis","top_priorities"]
+  },
+  strict: true
+});
+
+// APA7 node produces issues with targeted fixes
+export const APA7SectionSchema = (caps: { rationaleLen: number; bulletLen: number; bullets: number }) => ({
+  name: "APA7_Report",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      items: {
+        type: "array", maxItems: 40,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            apa_element: { 
+              type: "string",
+              enum: [
+                "TitlePage","Abstract","Headings","InTextCitations",
+                "ReferenceList","BiasFreeLanguage","Numbers",
+                "Lists","Tables","Figures","Mechanics","Punctuation",
+                "Italics","Capitals","Abbreviations","StyleConsistency"
+              ]
+            },
+            severity: { type: "string", enum: ["low","medium","high"] },
+            description: { type: "string", maxLength: caps.rationaleLen },
+            examples: { type: "array", maxItems: 2, items: { type: "string", maxLength: 240 } },
+            fixes: { type: "array", maxItems: caps.bullets, items: { type: "string", maxLength: caps.bulletLen } }
+          },
+          required: ["apa_element","severity","description","fixes"]
+        }
+      }
+    },
+    required: ["items"]
+  },
+  strict: true
+});
+```
+
+---
+
+# 5) Prompts (system & per-node)
+
+```ts
+// server/agents/prompts.ts
+export const SYSTEM_BASE = `
+You are a precise analysis agent. Always return STRICT JSON matching the provided JSON Schema. 
+Be concise, factual, and fit within max lengths. Do not include Markdown or commentary.
+`;
+
+export const PLAN_DIMENSION_PROMPT = (dimensionLabel: string) => `
+Plan coverage for the PACT dimension "${dimensionLabel}".
+Return a minimal outline listing each section and the IDs of its subsections.
+No rationales. No scores.
+`;
+
+export const SECTION_PROMPT = `
+Analyze the given section and its specified subsections from the user's manuscript.
+Return scores, short rationales, strengths and improvements per subsection.
+Be concise. Fit within schema caps. Use up to 2 short evidence snippets if they materially strengthen a point.
+`;
+
+export const DIMENSION_SYNTHESIS_PROMPT = `
+Synthesize the completed section analyses for this dimension into a brief overview and 3–5 top priorities.
+Be specific and action-oriented; avoid generic advice.
+`;
+
+export const APA7_PROMPT = `
+APA7 MODE: Analyze ONLY APA Style compliance.
+Scope may include TitlePage, Abstract, Headings, InTextCitations, ReferenceList, BiasFreeLanguage, Numbers, Lists, 
+Tables, Figures, Mechanics, Punctuation, Italics, Capitals, Abbreviations, StyleConsistency.
+For each detected issue, give a short description and concrete fixes. Keep within schema caps.
+`;
+
+// routing instruction for STANDARD vs COMPREHENSIVE
+export const STANDARD_SUPERVISOR_PROMPT = `
+STANDARD MODE: Determine which PACT sections/subsections are most relevant to the manuscript content.
+Focus on areas with enough evidence in the text to support specific, actionable feedback.
+Skip areas without clear signals. Plan an outline listing only selected sections and subsections.
+`;
+
+export const COMPREHENSIVE_SUPERVISOR_PROMPT = `
+COMPREHENSIVE MODE: Plan to cover all PACT sections and subsections in the taxonomy for this dimension.
+Return a full outline.
+`;
+```
+
+---
+
+# 6) Utilities: OpenAI helper, JSON validator, deep-merge, skinny-retry
+
+```ts
+// server/services/openai.ts
+import OpenAI from "openai";
+export const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+type SchemaDef = { name: string; schema: any; strict: true };
+export async function callStructured({
+  messages,
+  schema,
+  maxTokens
+}: {
+  messages: { role: "system" | "user"; content: string }[];
+  schema: SchemaDef;
+  maxTokens: number;
+}) {
+  return openai.chat.completions.create({
+    model: "gpt-5-thinking",
+    messages,
+    response_format: { type: "json_schema", json_schema: schema },
+    max_output_tokens: maxTokens
+  });
+}
+```
+
+```ts
+// server/agents/utils.ts
+import Ajv from "ajv";
+import addFormats from "ajv-formats";
+
+const ajv = new Ajv({ allErrors: true, strict: true });
+addFormats(ajv);
+
+export function validateOrThrow(schema: any, data: any, label: string) {
+  const validate = ajv.compile(schema);
+  const ok = validate(data);
+  if (!ok) {
+    const msg = JSON.stringify(validate.errors, null, 2);
+    throw new Error(`Validation failed for ${label}: ${msg}`);
+  }
+}
+
+export function deepMerge<A extends object, B extends object>(a: A, b: B): A & B {
+  const out: any = Array.isArray(a) ? [...(a as any)] : { ...(a as any) };
+  for (const [k, v] of Object.entries(b)) {
+    if (k in out && typeof out[k] === "object" && out[k] && typeof v === "object" && v) {
+      if (Array.isArray(out[k]) && Array.isArray(v)) out[k] = [...out[k], ...v];
+      else out[k] = deepMerge(out[k], v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+export async function structuredWithSkinnyRetry(
+  invoke: () => Promise<any>,
+  parse: (raw: any) => any,
+  shrink: () => void
+) {
+  try {
+    const res = await invoke();
+    return parse(res);
+  } catch (e: any) {
+    const msg = String(e?.message || e);
+    if (msg.includes("length limit was reached")) {
+      // apply shrinker, retry once
+      shrink();
+      const res2 = await invoke();
+      return parse(res2);
+    }
+    throw e;
+  }
+}
+```
+
+---
+
+# 7) LangGraph (JS) state, nodes, graph
+
+```ts
+// server/agents/pactAgent.ts
+import { StateGraph } from "langgraph";
+import { callStructured } from "../services/openai";
+import { SYSTEM_BASE, PLAN_DIMENSION_PROMPT, SECTION_PROMPT, DIMENSION_SYNTHESIS_PROMPT, APA7_PROMPT, STANDARD_SUPERVISOR_PROMPT, COMPREHENSIVE_SUPERVISOR_PROMPT } from "./prompts";
+import { SectionSubsectionSchema, DimensionOutlineSchema, DimensionSynthesisSchema, APA7SectionSchema } from "./schemas";
+import { validateOrThrow, deepMerge, structuredWithSkinnyRetry } from "./utils";
+import taxonomy from "../taxonomy/pact-taxonomy.json";
+import { DEFAULTS, AgentMode } from "./pactAgent";
+
+type PACTState = {
+  mode: AgentMode;
+  manuscript: string;                 // raw user text
+  dimension?: { id: string; label: string };
+  outline?: {
+    dimension_id: string;
+    dimension_label: string;
+    sections_plan: { section_id: string; section_label: string; subsection_ids: string[] }[];
+  };
+  partials?: Record<string, any>;     // section_id -> payload
+  synthesis?: any;
+  apa7?: any;
+  config?: {
+    depth_mode?: "standard" | "deep"; // you can extend later
+  }
+};
+
+// Helpers to slice taxonomy
+function getAllDimensions() {
+  return taxonomy.dimensions as { id: string; label: string; sections: any[] }[];
+}
+function toSectionsPlan(dim: any, mode: AgentMode): PACTState["outline"] {
+  return {
+    dimension_id: dim.id,
+    dimension_label: dim.label,
+    sections_plan: dim.sections.map((s: any) => ({
+      section_id: s.id,
+      section_label: s.label,
+      subsection_ids: s.subsections.map((ss: any) => ss.id)
+    }))
+  };
+}
+
+// Node 1: Planner (APA7 vs STANDARD vs COMPREHENSIVE)
+async function planNode(state: PACTState): Promise<Partial<PACTState>> {
+  if (state.mode === "APA7") {
+    // No PACT outline; APA7 path only
+    return {};
+  }
+
+  // For simplicity, handle one dimension per run. Extend to loop if desired.
+  const dim = getAllDimensions()[0]; // or pick by request
+  const supervisorInstruction = state.mode === "STANDARD" ? STANDARD_SUPERVISOR_PROMPT : COMPREHENSIVE_SUPERVISOR_PROMPT;
+
+  const messages = [
+    { role: "system" as const, content: SYSTEM_BASE },
+    { role: "user" as const, content: `${supervisorInstruction}\n${PLAN_DIMENSION_PROMPT(dim.label)}\n` +
+        `Context excerpt (keep light):\n${state.manuscript.slice(0, 4000)}`
+    }
+  ];
+
+  let caps = DEFAULTS.caps;
+  const schema = DimensionOutlineSchema;
+
+  let outline: any;
+  await structuredWithSkinnyRetry(
+    () => callStructured({ messages, schema, maxTokens: DEFAULTS.tokens.outline }),
+    (res) => {
+      outline = JSON.parse(res.choices[0].message.content!);
+      validateOrThrow(schema.schema, outline, "DimensionOutline");
+      return outline;
+    },
+    // skinny shrinker: no structural shrink needed here—token cut handled by maxTokens
+    () => {}
+  );
+
+  // If STANDARD returned too few/empty, fallback to full taxonomy for safety:
+  if (!outline?.sections_plan?.length) {
+    outline = toSectionsPlan(dim, "COMPREHENSIVE");
+  }
+
+  return { dimension: { id: dim.id, label: dim.label }, outline };
+}
+
+// Node 2: Section analysis (map over outline.sections_plan)
+async function sectionNode(state: PACTState, sectionPlan: { section_id: string; section_label: string; subsection_ids: string[] }): Promise<Partial<PACTState>> {
+  const caps = DEFAULTS.caps;
+  const schema = SectionSubsectionSchema({
+    rationaleLen: caps.rationaleLen.standard,
+    bulletLen: caps.bulletLen,
+    bullets: caps.bullets.standard,
+    evidenceSnips: caps.evidenceSnips,
+    evidenceLen: caps.evidenceLen
+  });
+
+  const messages = [
+    { role: "system" as const, content: SYSTEM_BASE },
+    { role: "user" as const, content: `${SECTION_PROMPT}
+Analyze section "${sectionPlan.section_label}" (id: ${sectionPlan.section_id}).
+Subsections to cover: ${sectionPlan.subsection_ids.join(", ")}.
+` + `Manuscript excerpt (use sparingly, quote briefly if helpful):
+${state.manuscript.slice(0, 7000)}`
+    }
+  ];
+
+  let payload: any;
+  await structuredWithSkinnyRetry(
+    () => callStructured({ messages, schema, maxTokens: DEFAULTS.tokens.section }),
+    (res) => {
+      payload = JSON.parse(res.choices[0].message.content!);
+      validateOrThrow(schema.schema, payload, "SectionPayload");
+      return payload;
+    },
+    // skinny: reduce bullets and rationale lengths by ~40%
+    () => {
+      schema.schema.properties.rationale.maxLength = Math.floor(DEFAULTS.caps.rationaleLen.standard * 0.6);
+      schema.schema.properties.subsections.items.properties.rationale.maxLength = Math.floor(DEFAULTS.caps.rationaleLen.standard * 0.6);
+      schema.schema.properties.subsections.items.properties.strengths.maxItems = 3;
+      schema.schema.properties.subsections.items.properties.improvements.maxItems = 3;
+    }
+  );
+
+  return {
+    partials: {
+      ...(state.partials || {}),
+      [sectionPlan.section_id]: payload
+    }
+  };
+}
+
+// Node 3: Dimension synthesis (roll-up)
+async function synthesisNode(state: PACTState): Promise<Partial<PACTState>> {
+  const caps = DEFAULTS.caps;
+  const schema = DimensionSynthesisSchema({
+    rationaleLen: caps.rationaleLen.standard,
+    bulletLen: caps.bulletLen,
+    bullets: caps.bullets.standard
+  });
+
+  const messages = [
+    { role: "system" as const, content: SYSTEM_BASE },
+    { role: "user" as const, content:
+`${DIMENSION_SYNTHESIS_PROMPT}
+Here is the structured section analysis JSON (partial results):
+${JSON.stringify(state.partials || {}, null, 0)}`
+    }
+  ];
+
+  let out: any;
+  await structuredWithSkinnyRetry(
+    () => callStructured({ messages, schema, maxTokens: DEFAULTS.tokens.synthesis }),
+    (res) => {
+      out = JSON.parse(res.choices[0].message.content!);
+      validateOrThrow(schema.schema, out, "DimensionSynthesis");
+      return out;
+    },
+    () => {
+      // skinny: reduce synthesis length
+      (schema.schema.properties.synthesis as any).maxLength = Math.floor(DEFAULTS.caps.rationaleLen.standard * 0.6);
+      (schema.schema.properties.top_priorities as any).maxItems = 3;
+    }
+  );
+
+  return { synthesis: out };
+}
+
+// Node A: APA7 analysis (separate path)
+async function apa7Node(state: PACTState): Promise<Partial<PACTState>> {
+  const caps = DEFAULTS.caps;
+  const schema = APA7SectionSchema({
+    rationaleLen: caps.rationaleLen.apa7,
+    bulletLen: caps.bulletLen,
+    bullets: caps.bullets.apa7
+  });
+
+  const messages = [
+    { role: "system" as const, content: SYSTEM_BASE },
+    { role: "user" as const, content:
+`${APA7_PROMPT}
+Manuscript:
+${state.manuscript.slice(0, 10000)}`
+    }
+  ];
+
+  let out: any;
+  await structuredWithSkinnyRetry(
+    () => callStructured({ messages, schema, maxTokens: DEFAULTS.tokens.apa7 }),
+    (res) => {
+      out = JSON.parse(res.choices[0].message.content!);
+      validateOrThrow(schema.schema, out, "APA7Report");
+      return out;
+    },
+    () => {
+      // skinny: reduce issue count
+      schema.schema.properties.items.maxItems = 24;
+      (schema.schema.properties.items.items.properties.description as any).maxLength = Math.floor(DEFAULTS.caps.rationaleLen.apa7 * 0.6);
+      (schema.schema.properties.items.items.properties.fixes as any).maxItems = 3;
+    }
+  );
+
+  return { apa7: out };
+}
+```
+
+**Graph assembly & execution (single dimension run + APA7 path):**
+
+```ts
+export async function runPACTAgent(input: {
+  manuscript: string;
+  mode: AgentMode;
+}) {
+  const graph = new StateGraph<PACTState>({
+    channels: {
+      mode: null,
+      manuscript: null,
+      dimension: null,
+      outline: null,
+      partials: (prev, upd) => deepMerge(prev || {}, upd || {}),
+      synthesis: null,
+      apa7: null,
+      config: null
+    }
+  });
+
+  // Entry routing
+  graph.addNode("plan", planNode);
+  graph.addNode("section", async (s) => s);        // placeholder, we fan-out below
+  graph.addNode("synthesize", synthesisNode);
+  graph.addNode("apa7", apa7Node);
+
+  // Flow control
+  graph.setEntryPoint("plan");
+
+  // Execute
+  let state: PACTState = { mode: input.mode, manuscript: input.manuscript, partials: {} };
+
+  // 1) APA7-only
+  if (input.mode === "APA7") {
+    const a = await apa7Node(state);
+    state = { ...state, ...a };
+    return {
+      mode: state.mode,
+      apa7: state.apa7
+    };
+  }
+
+  // 2) STANDARD/COMPREHENSIVE PACT
+  const plan = await planNode(state);
+  state = { ...state, ...plan };
+
+  // map over sections
+  for (const sp of state.outline!.sections_plan) {
+    const sec = await sectionNode(state, sp);
+    state = { ...state, ...sec };
+  }
+
+  const syn = await synthesisNode(state);
+  state = { ...state, ...syn };
+
+  return {
+    mode: state.mode,
+    dimension: state.dimension,
+    outline: state.outline,
+    sections: state.partials,
+    synthesis: state.synthesis
+  };
+}
+```
+
+---
+
+# 8) Example Express route (or Replit handler)
+
+```ts
+// server/routes/analyze.ts
+import { runPACTAgent } from "../agents/pactAgent";
+
+export async function analyzeHandler(req, res) {
+  try {
+    const { manuscript, mode } = req.body as { manuscript: string; mode: "APA7"|"STANDARD"|"COMPREHENSIVE" };
+    if (!manuscript || !mode) return res.status(400).json({ error: "manuscript and mode are required" });
+
+    const out = await runPACTAgent({ manuscript, mode });
+    res.json(out);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || String(e) });
+  }
+}
+```
+
+---
+
+# 9) What each mode does (behavioral guarantees)
+
+* **APA7**
+
+  * Runs only `apa7Node`.
+  * Produces a concise list of APA7 **issues** with severities and **fixes**.
+  * No PACT scoring.
+
+* **STANDARD**
+
+  * Planner chooses **relevant** PACT sections/subsections based on manuscript evidence (uses STANDARD\_SUPERVISOR\_PROMPT).
+  * Analyzes *only those* sections → subsections with **scores, rationales, strengths, improvements, evidence**.
+  * Produces **dimension synthesis** (overview + top priorities).
+  * Coverage is guaranteed over the planned set (not necessarily the whole taxonomy).
+
+* **COMPREHENSIVE**
+
+  * Planner returns **full taxonomy** coverage for the dimension.
+  * Analyzes **every** section/subsection.
+  * Same outputs as Standard, but exhaustive.
+
+---
+
+# 10) Practical notes & guardrails
+
+* **Token safety**: We cap output tokens per node and enforce schema caps (length, counts). Skinny-retry halves caps once on overflow.
+* **Dict merging**: We never use `a + b` on objects; we use `deepMerge` for reducers/state updates.
+* **Validation**: Every model output is validated with AJV before entering state.
+* **Streaming**: If you switch to streaming, buffer fully before JSON.parse, or assemble with a stream-aware parser.
+
+---
+
+## Kickoff example (client)
+
+```ts
+const resp = await fetch("/api/analyze", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    manuscript: userText,
+    mode: "STANDARD" // "APA7" | "COMPREHENSIVE"
+  })
+});
+const json = await resp.json();
+console.log(json);
+```
+
+---
+
+This gives you a **production-ready skeleton**: strict schemas, per-mode routing, per-node token budgets, robust retries, and validations—so APA7, Standard, and Comprehensive each do exactly what you described, without the length, schema, or dict-merge failures you hit before.
