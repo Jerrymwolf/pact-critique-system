@@ -24,7 +24,7 @@ critique_model = ChatOpenAI(
 
 def create_enhanced_dimension_critique_prompt(paper_content: str, dimension_id: str) -> str:
     """
-    Create an enhanced critique prompt for detailed PACT subsection analysis.
+    Create an enhanced critique prompt for detailed PACT analysis.
     """
     dimension_info = PACT_DIMENSIONS.get(dimension_id, {})
     dimension_name = dimension_info.get('name', '')
@@ -44,42 +44,17 @@ SUBSECTIONS TO EVALUATE:
 
 PAPER TO CRITIQUE:
 ---
-{paper_content[:8000]}  # Extended for more detailed analysis
+{paper_content[:8000]}
 ---
 
-EVALUATION INSTRUCTIONS:
-Provide a detailed, professional critique that includes:
+Provide a structured critique with:
+1. Overall dimension score (0-100) and rationale
+2. For each subsection listed above:
+   - Subsection score (0-100)
+   - List of specific strengths found
+   - List of specific improvements needed
 
-1. OVERALL DIMENSION ASSESSMENT:
-   - Rate the overall dimension: Inadequate, Developing, Competent, Strong, or Exemplary
-   - Provide an executive summary (2-3 sentences)
-
-2. SUBSECTION-BY-SUBSECTION ANALYSIS:
-   For EACH subsection listed above, provide:
-   - Assessment level (Inadequate/Developing/Competent/Strong/Exemplary)
-   - Detailed feedback paragraph (100-150 words) explaining your assessment
-   - 2-3 specific strengths (with text evidence where possible)
-   - 2-3 areas for improvement (with specific recommendations)
-   - Examples from the text that support your evaluation
-   - Rubric score (1-5) if applicable
-
-3. EVIDENCE-BASED EVALUATION:
-   - Quote specific passages from the paper when possible
-   - Reference paragraph numbers or section titles
-   - Explain WHY each strength/weakness matters for academic quality
-
-4. ACTIONABLE RECOMMENDATIONS:
-   - Provide specific, concrete steps the author can take
-   - Prioritize improvements by impact (High/Medium/Low priority)
-   - Suggest resources or strategies where appropriate
-
-5. PROFESSIONAL TONE:
-   - Use constructive, supportive language
-   - Focus on helping the author improve
-   - Be specific rather than general in feedback
-   - Match the professional tone of academic peer review
-
-Your analysis will be used to generate a comprehensive PACT report, so be thorough and precise.
+Be thorough, specific, and constructive in your feedback.
 """
 
 def format_dimension_criteria(dimension_data: Dict[str, Any]) -> str:
@@ -118,14 +93,14 @@ async def critique_dimension_enhanced(state: PaperCritiqueState, dimension_id: s
     # Create enhanced critique prompt
     prompt = create_enhanced_dimension_critique_prompt(state['paper_content'], dimension_id)
 
-    # Get detailed critique from model
-    structured_model = critique_model.with_structured_output(DetailedDimensionCritique)
+    # Get detailed critique from model using function_calling method to avoid schema issues
+    structured_model = critique_model.with_structured_output(DetailedDimensionCritique, method="function_calling")
     critique = await structured_model.ainvoke([HumanMessage(content=prompt)])
 
     # Ensure dimension info is set
     critique.dimension_id = dimension_id
     if dimension_id in PACT_DIMENSIONS:
-        critique.dimension_name = PACT_DIMENSIONS[dimension_id]['name']
+        critique.dimension_label = PACT_DIMENSIONS[dimension_id]['name']
 
     return critique.dict()
 

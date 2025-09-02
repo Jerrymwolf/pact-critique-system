@@ -33,35 +33,35 @@ class DetailedImprovement(BaseModel):
 
 class SubsectionAnalysis(BaseModel):
     """Detailed analysis of a PACT subsection (e.g., 1.1.1)."""
-    code: str = Field(description="PACT subsection code (e.g., '1.1.1')")
-    name: str = Field(description="Subsection name")
-    assessment: AssessmentLevel = Field(description="Overall assessment level")
-    detailed_feedback: str = Field(description="Comprehensive feedback paragraph")
+    subsection_id: str = Field(description="PACT subsection code (e.g., '1.1.1')")
+    subsection_label: str = Field(description="Subsection name")
+    score: float = Field(description="Subsection score (0-100)", ge=0, le=100)
     strengths: List[str] = Field(description="Specific strengths in this subsection")
-    areas_for_improvement: List[str] = Field(description="Areas needing improvement")
-    examples_from_text: List[str] = Field(description="Specific examples from the paper", default_factory=list)
-    rubric_score: Optional[int] = Field(description="1-5 rubric score if applicable", ge=1, le=5)
+    improvements: List[str] = Field(description="Areas needing improvement")
 
-class DetailedDimensionCritique(BaseModel):
-    """Comprehensive dimension critique with subsection analysis."""
-    dimension_id: str = Field(description="PACT dimension ID (e.g., '1.0.0')")
-    dimension_name: str = Field(description="Full dimension name")
-    overall_assessment: AssessmentLevel = Field(description="Overall dimension assessment")
-    
-    # Subsection-level analysis
+class SectionAnalysis(BaseModel):
+    """Analysis of a PACT section (e.g., 1.1)."""
+    section_id: str = Field(description="PACT section code (e.g., '1.1')")
+    section_label: str = Field(description="Section name")
+    score: float = Field(description="Section score (0-100)", ge=0, le=100)
+    rationale: str = Field(description="Rationale for section assessment")
     subsections: Dict[str, SubsectionAnalysis] = Field(
-        description="Detailed analysis of each subsection",
+        description="Analysis of subsections within this section",
         default_factory=dict
     )
+
+class DetailedDimensionCritique(BaseModel):
+    """Comprehensive dimension critique following proper hierarchy."""
+    dimension_id: str = Field(description="PACT dimension ID (e.g., '1.0.0')")
+    dimension_label: str = Field(description="Full dimension name")
+    overall_score: float = Field(description="Overall dimension score (0-100)", ge=0, le=100)
+    rationale: str = Field(description="Overall rationale for this dimension")
     
-    # Overall dimension feedback
-    executive_summary: str = Field(description="Executive summary of this dimension")
-    key_strengths: List[DetailedStrength] = Field(description="Major strengths", default_factory=list)
-    priority_improvements: List[DetailedImprovement] = Field(description="Priority improvements", default_factory=list)
-    
-    # Scoring
-    dimension_score: float = Field(description="Overall dimension score (0-100)", ge=0, le=100)
-    weighted_score: float = Field(description="Weighted score based on dimension importance", ge=0, le=100)
+    # Proper hierarchy: dimensions have sections, sections have subsections
+    sections: Dict[str, SectionAnalysis] = Field(
+        description="Analysis of sections within this dimension",
+        default_factory=dict
+    )
 
 class PACTChecklistItem(BaseModel):
     """Individual checklist item for revision tracking."""
