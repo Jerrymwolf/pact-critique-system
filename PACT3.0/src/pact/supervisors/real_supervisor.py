@@ -28,6 +28,8 @@ class RealCritiqueSupervisor:
     """Real supervisor using OpenAI API with robust error handling and non-blocking calls."""
 
     async def ainvoke(self, state: Dict[str, Any], session_id: Optional[str] = None) -> Dict[str, Any]:
+        logger.info("Real supervisor ainvoke starting (session=%s)", session_id)
+        
         # Import websocket_manager here to avoid circular imports
         try:
             from ..websocket_manager import manager as websocket_manager
@@ -154,7 +156,7 @@ Return **JSON only** with this exact structure:
                     "payload": result
                 })
 
-            logger.info(f"Real supervisor completed analysis for session {session_id}")
+            logger.info("Real supervisor ainvoke finished (session=%s)", session_id)
             return result
 
         except (APIConnectionError, RateLimitError, BadRequestError, APIError) as e:
