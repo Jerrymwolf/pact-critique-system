@@ -321,10 +321,19 @@ def create_critique_supervisor():
             mode = initial_state.get("mode", "STANDARD")
             paper_content = initial_state.get("paper_content")
             
+            # Create a mock config similar to what the real system would use
+            mock_config = {
+                "configurable": {"thread_id": "supervisor_session"},
+                "recursion_limit": 20
+            }
+            
             # Mock the behavior of pact_critique_agent.ainvoke directly
             # This mock supervisor doesn't have complex internal logic, 
             # it just delegates to the mock pact_critique_agent
-            return await pact_critique_agent.ainvoke({"messages": [HumanMessage(content=paper_content)], "mode": mode})
+            return await pact_critique_agent.ainvoke(
+                {"messages": [HumanMessage(content=paper_content)], "mode": mode}, 
+                mock_config
+            )
 
     return MockSupervisor()
 
