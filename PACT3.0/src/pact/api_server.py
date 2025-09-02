@@ -37,6 +37,7 @@ try:
     from .mode_config import AgentMode, mode_config
     from .supervisors.real_supervisor import RealCritiqueSupervisor
     from .supervisors.mock_supervisor import MockCritiqueSupervisor
+    logger.info("WS manager id (api_server)=%s", id(manager))
     MOCK_MODE = False
 except ImportError:
     logger.warning("PACT modules not available, using mock mode")
@@ -913,6 +914,17 @@ async def notify_websocket_clients(session_id: str):
         await websocket_manager.broadcast(session_id, progress_data)
 
 # ===== HEALTH CHECK =====
+
+@app.post("/api/critique/test-broadcast/{session_id}")
+async def test_broadcast(session_id: str):
+    """Test endpoint to manually broadcast a message to verify WebSocket manager is working."""
+    logger.info("Test broadcast called for session %s, manager id=%s", session_id, id(manager))
+    await manager.broadcast(session_id, {
+        "event": "progress",
+        "progress": 42,
+        "message": "Test ping from API server"
+    })
+    return {"ok": True, "session_id": session_id, "manager_id": id(manager)}
 
 @app.get("/health")
 async def health_check():

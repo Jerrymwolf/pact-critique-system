@@ -33,6 +33,7 @@ class RealCritiqueSupervisor:
         # Import websocket_manager here to avoid circular imports
         try:
             from ..websocket_manager import manager as websocket_manager
+            logger.info("WS manager id (real_supervisor)=%s", id(websocket_manager))
         except ImportError:
             websocket_manager = None
             logger.warning("WebSocket manager not available")
