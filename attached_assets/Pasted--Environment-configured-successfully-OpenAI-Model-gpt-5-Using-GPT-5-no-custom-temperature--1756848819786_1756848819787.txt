@@ -1,0 +1,47 @@
+✅ Environment configured successfully
+📝 OpenAI Model: gpt-5
+🤖 Using GPT-5 (no custom temperature - uses model defaults)
+🔍 Tavily search enabled for research agents
+ INFO:pact.websocket_manager:WS manager singleton created id=139649931854624
+INFO:pact.api_server:WS manager id (api_server)=139649931854624
+🚀 Starting PACT Critique API Server on 0.0.0.0:5000
+🔗 Access the app in the Replit webview or at your repl's URL
+📊 WebSocket endpoint: /api/critique/live/{session_id}
+📖 API documentation: /docs
+INFO:     Will watch for changes in these directories: ['/home/runner/workspace/PACT3.0']
+INFO:     Uvicorn running on http://0.0.0.0:5000 (Press CTRL+C to quit)
+INFO:     Started reloader process [4478] using StatReload
+✅ Environment configured successfully
+📝 OpenAI Model: gpt-5
+🤖 Using GPT-5 (no custom temperature - uses model defaults)
+🔍 Tavily search enabled for research agents
+🤖 Running in REAL mode - using LLM for analysis
+INFO:pact.websocket_manager:WS manager singleton created id=140377028415264
+INFO:pact.api_server:WS manager id (api_server)=140377028415264
+INFO:     Started server process [4507]
+INFO:     Waiting for application startup.
+INFO:pact.api_server:Starting PACT Critique API server...
+INFO:     Application startup complete.
+INFO:     172.31.112.194:33098 - "GET / HTTP/1.1" 200 OK
+INFO:pact.api_server:Processing uploaded file: Joshua Lafazan, Pre-Work, 08052025.docx, content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document, size: 11656
+INFO:pact.api_server:Read 11656 bytes from file Joshua Lafazan, Pre-Work, 08052025.docx
+INFO:pact.api_server:Extracted 6314 characters from DOCX file
+INFO:pact.api_server:Successfully processed file Joshua Lafazan, Pre-Work, 08052025.docx
+INFO:     172.31.112.194:33098 - "POST /api/upload HTTP/1.1" 200 OK
+INFO:pact.session_manager:Created session 5a01aa95-5ee4-4417-8d60-05d0517636d2 with title: Pre-Work  - Brief Topic Description
+INFO:     172.31.112.194:33098 - "POST /api/critique/start HTTP/1.1" 200 OK
+INFO:pact.api_server:Launching supervisor task for session 5a01aa95-5ee4-4417-8d60-05d0517636d2
+INFO:pact.api_server:Creating real critique supervisor
+INFO:pact.supervisors.real_supervisor:Real supervisor ainvoke starting (session=5a01aa95-5ee4-4417-8d60-05d0517636d2)
+INFO:pact.supervisors.real_supervisor:WS manager id (real_supervisor)=140377028415264
+INFO:     172.31.112.194:46296 - "WebSocket /api/critique/live/5a01aa95-5ee4-4417-8d60-05d0517636d2" [accepted]
+INFO:pact.websocket_manager:WebSocket connected for session 5a01aa95-5ee4-4417-8d60-05d0517636d2. Total connections: 1
+ERROR:pact.api_server:WebSocket error for session 5a01aa95-5ee4-4417-8d60-05d0517636d2: 'WebSocketConnectionManager' object has no attribute 'send_message'
+INFO:pact.websocket_manager:WebSocket disconnected for session 5a01aa95-5ee4-4417-8d60-05d0517636d2
+INFO:     connection open
+INFO:     172.31.112.194:33098 - "GET /api/critique/status/5a01aa95-5ee4-4417-8d60-05d0517636d2 HTTP/1.1" 200 OK
+INFO:     172.31.112.194:33098 - "GET /api/critique/status/5a01aa95-5ee4-4417-8d60-05d0517636d2 HTTP/1.1" 200 OK
+INFO:     172.31.112.194:33098 - "GET /api/critique/status/5a01aa95-5ee4-4417-8d60-05d0517636d2 HTTP/1.1" 200 OK
+INFO:     172.31.112.194:33098 - "GET /api/critique/status/5a01aa95-5ee4-4417-8d60-05d0517636d2 HTTP/1.1" 200 OK
+INFO:     172.31.112.194:33098 - "GET /api/critique/status/5a01aa95-5ee4-4417-8d60-05d0517636d2 HTTP/1.1" 200 OK
+INFO:     172.31.112.194:33098 - "GET /api/critique/status/5a01aa95-5ee4-4417-8d60-05d0517636d2 HTTP/1.1" 200 OK
