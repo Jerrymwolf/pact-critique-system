@@ -22,6 +22,7 @@ import io
 from docx import Document
 import PyPDF2
 import logging
+from langchain_core.messages import HumanMessage
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
