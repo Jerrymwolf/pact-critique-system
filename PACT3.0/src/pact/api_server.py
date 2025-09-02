@@ -242,7 +242,7 @@ def generate_html_report(results_data: Dict[str, Any]) -> str:
         <div class="section">
             <h2>Overall Assessment</h2>
             <p class="score">Overall Score: {results_data.get('overall_score', 'N/A')}/100</p>
-            <p>{results_data.get('final_critique', '')[:500]}...</p>
+            <p>{results_data.get('final_critique', '')}</p>
         </div>
 
         <div class="section">
@@ -542,31 +542,26 @@ async def start_critique(request: CritiqueRequest):
             logger.warning(f"Unrecognized mode '{mode}'. Defaulting to STANDARD.")
             mode = AgentMode.STANDARD
 
-        # Create session using session_manager
-        session_id = session_manager.create_session(
+        # Create new session
+        session = session_manager.create_session(
             paper_content=request.content,
             paper_title=request.title,
-            paper_type=getattr(request, 'paper_type', None)
+            paper_type=request.paper_type,
+            mode=request.mode
         )
 
-        # Get session object for status updates
-        session = session_manager.get_session(session_id)
-        if not session:
-            raise Exception(f"Session {session_id} not found")
-
-        # Set initial status and broadcast
-        session_manager.update_session_status(session_id, "running", overall_progress=1)
-        await manager.broadcast(session_id, {
-            "event": "status", 
-            "status": "running", 
+        # Broadcast initial status
+        await manager.broadcast(session.session_id, {
+            "event": "status",
+            "status": "running",
             "progress": 1
         })
 
-        # Launch analysis as background task
-        asyncio.create_task(run_critique_analysis(session_id, request.content, request.title, mode), name=f"critique-{session_id}")
+        # Start critique processing in background
+        asyncio.create_task(run_critique_analysis(session.session_id, request.content, request.title, mode), name=f"critique-{session.session_id}")
 
         return CritiqueResponse(
-            session_id=session_id,
+            session_id=session.session_id,
             status="processing", # Initial status after submission
             message="Paper submitted successfully. Analysis started."
         )
@@ -794,8 +789,8 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         # Set initial status and broadcast
         session_manager.update_session_status(session_id, "running", overall_progress=1)
         await manager.broadcast(session_id, {
-            "event": "status", 
-            "status": "running", 
+            "event": "status",
+            "status": "running",
             "progress": 1
         })
 
@@ -805,31 +800,18 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             session_id=session_id
         )
 
-        # Update session with completion
-        session_manager.update_session_status(
-            session_id,
-            "completed",
-            result=result,
-            overall_score=result.get("overall_score"),
-            final_critique=result.get("final_critique"),
-            overall_progress=100
-        )
+        # Save results to session
+        session_manager.update_session_results(session_id, result)
+        session_manager.update_session_status(session_id, "completed")
 
-        # Broadcast completion
+        # Broadcast completion status
         await manager.broadcast(session_id, {
             "event": "status",
-            "status": "completed", 
+            "status": "completed",
             "progress": 100
         })
 
-        # Optionally re-broadcast summary if supervisor didn't
-        if result:
-            await manager.broadcast(session_id, {
-                "event": "summary",
-                "payload": result
-            })
-
-        logger.info(f"Critique analysis completed for session {session_id}")
+        logger.info("Critique completed for session %s", session_id)
 
     except Exception as e:
         logger.exception("Critique failed for session %s", session_id)

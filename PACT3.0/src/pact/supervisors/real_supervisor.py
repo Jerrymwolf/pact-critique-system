@@ -104,6 +104,21 @@ Return **JSON only** with this exact structure:
             if session_id and websocket_manager:
                 await websocket_manager.broadcast(session_id, {
                     "event": "progress", 
+                    "progress": 35, 
+                    "message": "Parsing outline"
+                })
+
+            # Add scoring rubric milestone
+            if session_id and websocket_manager:
+                await websocket_manager.broadcast(session_id, {
+                    "event": "progress", 
+                    "progress": 65, 
+                    "message": "Scoring rubric"
+                })
+
+            if session_id and websocket_manager:
+                await websocket_manager.broadcast(session_id, {
+                    "event": "progress", 
                     "progress": 85, 
                     "message": "Formatting results"
                 })

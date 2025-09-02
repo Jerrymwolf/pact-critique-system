@@ -362,11 +362,12 @@
                     <div class="mb-8">
                         <div class="flex justify-between mb-2">
                             <span class="text-sm font-medium text-gray-700">Overall Progress</span>
-                            <span id="progress-percent" class="text-sm font-medium text-purple-600">0%</span>
+                            <span id="progress-text" class="text-sm font-medium text-purple-600">0%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-3">
                             <div id="progress-bar" class="gradient-bg h-3 rounded-full progress-bar" style="width: 0%"></div>
                         </div>
+                        <div id="status-message" class="mt-3 text-center text-sm text-gray-600">Waiting to start...</div>
                     </div>
 
                     <!-- Agent Status Grid -->
@@ -573,7 +574,7 @@
                                         <!-- Document type will be populated here -->
                                     </span>
                                 </div>
-                                
+
                                 <div id="document-context-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                                     <!-- Context information will be populated here -->
                                 </div>
@@ -594,7 +595,7 @@
                                         <!-- Coverage percentage will be populated here -->
                                     </div>
                                 </div>
-                                
+
                                 <div id="analysis-metadata-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                     <!-- Metadata will be populated here -->
                                 </div>
@@ -605,7 +606,7 @@
                         <div class="mb-8">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                 <!-- Critical Issues Card -->
-                                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="p-4 bg-red-50 rounded-lg border border-red-200">
                                     <div class="flex items-center space-x-2 mb-2">
                                         <div class="w-2 h-2 bg-red-600 rounded-full"></div>
                                         <h4 class="font-semibold text-red-600">Critical Issues</h4>
@@ -615,7 +616,7 @@
                                 </div>
 
                                 <!-- Areas for Improvement Card -->
-                                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                <div class="p-4 bg-orange-50 rounded-lg border border-orange-200">
                                     <div class="flex items-center space-x-2 mb-2">
                                         <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
                                         <h4 class="font-semibold text-orange-600">Areas for Improvement</h4>
@@ -625,7 +626,7 @@
                                 </div>
 
                                 <!-- Strengths Card -->
-                                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <div class="p-4 bg-green-50 rounded-lg border border-green-200">
                                     <div class="flex items-center space-x-2 mb-2">
                                         <div class="w-2 h-2 bg-green-600 rounded-full"></div>
                                         <h4 class="font-semibold text-green-600">Strengths</h4>
@@ -648,7 +649,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                     </svg>
                                 </button>
-                                
+
                                 <div id="detailed-findings" class="hidden border-t border-gray-200 p-4 bg-gray-50">
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <!-- Critical Issues Checklist -->
@@ -873,6 +874,8 @@
         let dimensionChart = null;
         let currentSessionId = null;
         let websocket = null;
+        let currentResult = null; // To store the final result payload
+
         // Configure API base URL
         const API_BASE_URL = window.location.protocol + '//' + window.location.host;
 
@@ -1039,6 +1042,9 @@
                 return;
             }
 
+            // Update status message
+            updateStatus('Initializing analysis...');
+
             try {
                 // Submit the paper for analysis
                 await submitPaperForAnalysis(content, paperTitle, paperType);
@@ -1116,30 +1122,49 @@
 
                 websocket.onopen = function(event) {
                     console.log('WebSocket connected');
+                    updateStatus('Analysis started, receiving updates via WebSocket.');
                 };
 
                 websocket.onmessage = function(event) {
                     const data = JSON.parse(event.data);
+                    console.log('Received WebSocket message:', data);
                     updateProgressFromAPI(data);
                 };
 
                 websocket.onclose = function(event) {
                     console.log('WebSocket closed');
                     websocket = null;
+                    updateStatus('WebSocket connection closed. Polling for updates.');
+                    // If the connection closes unexpectedly, start polling as a fallback
+                    if (!currentSessionId) return; // Avoid starting polls if no session active
+                    startProgressPolling(currentSessionId);
                 };
 
                 websocket.onerror = function(error) {
                     console.error('WebSocket error:', error);
+                    updateStatus('WebSocket error. Falling back to polling.');
+                    // On error, also fall back to polling
+                    if (!currentSessionId) return;
+                    startProgressPolling(currentSessionId);
                 };
 
             } catch (error) {
                 console.error('Failed to connect WebSocket:', error);
+                updateStatus('Failed to connect WebSocket. Falling back to polling.');
+                if (!currentSessionId) return;
+                startProgressPolling(currentSessionId);
             }
         }
 
         // Start polling for progress updates (fallback)
         async function startProgressPolling(sessionId) {
             const pollInterval = setInterval(async () => {
+                // Only poll if WebSocket is not active or failed
+                if (websocket && websocket.readyState === WebSocket.OPEN) {
+                    clearInterval(pollInterval);
+                    return;
+                }
+
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/critique/status/${sessionId}`, {
                         method: 'GET',
@@ -1155,7 +1180,7 @@
                     }
 
                     const data = await response.json();
-                    console.log('Progress data received:', data);
+                    console.log('Progress data received via polling:', data);
                     updateProgressFromAPI(data);
 
                     // Stop polling when completed or failed
@@ -1171,34 +1196,82 @@
                     }
                 } catch (error) {
                     console.error('Error polling progress:', error);
-                    showError('Failed to get progress updates');
+                    showError('Failed to get progress updates via polling.');
                 }
             }, 2000); // Poll every 2 seconds
         }
 
-        // Update UI based on API progress data
+        // Helper functions for progress updates
+        function setProgress(progress) {
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+            }
+            if (progressText) {
+                progressText.textContent = `${progress}%`;
+            }
+        }
+
+        function updateStatus(message) {
+            const statusElement = document.getElementById('status-message');
+            if (statusElement) {
+                statusElement.textContent = message;
+            }
+        }
+
+        function setResult(payload) {
+            currentResult = payload;
+            displayResults(payload);
+        }
+
+        // Helper function to update progress from API data (legacy fallback)
         function updateProgressFromAPI(data) {
-            console.log('Updating progress from API:', data);
+            console.log('Updating UI with data:', data);
 
-            // Update overall progress
-            updateProgress(data.overall_progress || 0);
+            // Handle overall progress
+            if (typeof data.progress === 'number') {
+                setProgress(Math.max(0, Math.min(100, data.progress)));
+            } else if (data.overall_progress) { // For older API response formats
+                setProgress(Math.max(0, Math.min(100, data.overall_progress)));
+            }
 
-            // Update agent statuses
+            // Handle status updates
+            if (data.status) {
+                updateStatus(`Status: ${data.status}`);
+            } else if (data.message) { // For specific agent messages
+                updateStatus(`Message: ${data.message}`);
+            }
+
+            // Handle agent-specific progress or status
+            if (data.event === "progress" && typeof data.progress === "number") {
+                // This might be specific agent progress, overall progress is handled above
+                // For now, we'll rely on the overall progress or status field for UI updates
+            } else if (data.event === "status") {
+                if (data.status === "running") {
+                    updateStatus("Analysis is running...");
+                } else if (data.status === "completed") {
+                    updateStatus("Analysis completed. Loading results...");
+                    setProgress(100); // Ensure progress is 100%
+                    if (data.session_id) {
+                        loadFinalResults(data.session_id);
+                    }
+                }
+            } else if (data.event === "summary" && data.payload) {
+                setResult(data.payload);
+                // The 'setResult' function will call 'displayResults'
+            }
+
+            // Update individual agent statuses if provided in the data
             if (data.agents) {
                 for (const [agentId, agentData] of Object.entries(data.agents)) {
                     updateAgentStatus(agentId, agentData);
                 }
             }
 
-            // Check if analysis is completed
-            if (data.status === 'completed') {
-                console.log('Analysis completed, loading final results...');
-                setTimeout(() => {
-                    loadFinalResults(data.session_id);
-                }, 1000); // Small delay to ensure completion
-            } else if (data.status === 'failed') {
-                console.log('Analysis failed:', data.error_message);
-                showError(data.error_message || 'Analysis failed');
+            // If the analysis is completed, ensure final results are loaded
+            if (data.status === 'completed' && currentSessionId) {
+                setTimeout(() => loadFinalResults(currentSessionId), 1000);
             }
         }
 
@@ -1276,7 +1349,7 @@
                 // Try direct display with mock data if API fails
                 console.log('Attempting to display results with mock data');
                 showResults();
-                displayResults(generateMockResults());
+                displayResults(generateMockResults()); // Fallback to mock data
             }
         }
 
@@ -1370,7 +1443,7 @@
             }
 
             const overallScore = calculateOverallScore(apiResults);
-            
+
             return {
                 overallScore: overallScore,
                 recommendation: apiResults.submission_readiness || getRecommendationFromScore(overallScore),
@@ -1398,18 +1471,18 @@
         // Calculate the overall score from API results
         function calculateOverallScore(apiResults) {
             if (apiResults.overall_score) return apiResults.overall_score;
-            
+
             // If no overall score, calculate from dimension scores
             if (apiResults.dimension_critiques) {
                 const scores = Object.values(apiResults.dimension_critiques)
                     .map(critique => critique.dimension_score || 75)
                     .filter(score => score > 0);
-                
+
                 if (scores.length > 0) {
                     return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
                 }
             }
-            
+
             return 82; // Default score for completed analysis
         }
 
@@ -1475,7 +1548,7 @@
 
         // Update the progress bar and percentage
         function updateProgress(percent) {
-            document.getElementById('progress-percent').textContent = `${Math.round(percent)}%`;
+            document.getElementById('progress-text').textContent = `${Math.round(percent)}%`;
             document.getElementById('progress-bar').style.width = `${percent}%`;
         }
 
@@ -1493,9 +1566,9 @@
         // Display the analysis results in the UI
         function displayResults(data) {
             console.log('Displaying results with data:', data);
-            
+
             const score = data.overallScore || 75;
-            
+
             // Convert score to 0-5 scale if it's 0-100
             const normalizedScore = score > 5 ? score / 20 : score;
             document.getElementById('overall-score').textContent = normalizedScore.toFixed(1);
@@ -1886,8 +1959,9 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             document.getElementById('progress-section').classList.remove('hidden');
             document.getElementById('results-section').classList.add('hidden');
 
-            // Reset progress bar
-            updateProgress(0);
+            // Reset progress bar and status message
+            setProgress(0);
+            updateStatus('Waiting to start...');
 
             // Reset agent card statuses
             document.querySelectorAll('.agent-card').forEach(card => {
@@ -1996,13 +2070,13 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
         function populateDimensionScores(dimensions) {
             const dimensionsList = document.getElementById('dimension-scores-list');
             const dimensionEntries = Object.entries(dimensions);
-            
+
             dimensionsList.innerHTML = dimensionEntries.map(([dimensionName, score]) => {
                 const normalizedScore = score > 5 ? score / 20 : score;
                 const percentage = (normalizedScore / 5) * 100;
                 const scoreLevel = getScoreLevel(normalizedScore);
                 const scoreColor = getScoreBackground(normalizedScore);
-                
+
                 return `
                     <div class="space-y-1">
                         <div class="flex items-center justify-between">
@@ -2038,7 +2112,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const criticalCount = countCriticalIssues(data);
             const improvementCount = countImprovements(data);
             const strengthCount = countStrengths(data);
-            
+
             document.getElementById('critical-count').textContent = criticalCount;
             document.getElementById('improvement-count').textContent = improvementCount;
             document.getElementById('strength-count').textContent = strengthCount;
@@ -2079,7 +2153,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const criticalCount = countCriticalIssues(data);
             const improvementCount = countImprovements(data);
             const strengthCount = countStrengths(data);
-            
+
             document.getElementById('critical-issues-count').textContent = criticalCount;
             document.getElementById('improvement-issues-count').textContent = improvementCount;
             document.getElementById('strength-elements-count').textContent = strengthCount;
@@ -2179,18 +2253,18 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const contextSection = document.getElementById('document-context');
             const documentType = document.getElementById('document-type');
             const contextGrid = document.getElementById('document-context-grid');
-            
+
             // Show document context section
             contextSection.classList.remove('hidden');
-            
+
             // Set document type
             const paperType = document.getElementById('paper-type').value;
             documentType.textContent = paperType.charAt(0).toUpperCase() + paperType.slice(1);
-            
+
             // Populate context grid
             const wordCount = document.getElementById('word-count').textContent;
             const analysisMode = document.getElementById('analysisMode').value;
-            
+
             contextGrid.innerHTML = `
                 <div>
                     <span class="font-medium text-purple-600">Word Count:</span>
@@ -2211,17 +2285,17 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const metadataSection = document.getElementById('analysis-metadata');
             const coveragePercentage = document.getElementById('coverage-percentage');
             const metadataGrid = document.getElementById('analysis-metadata-grid');
-            
+
             // Show metadata section
             metadataSection.classList.remove('hidden');
-            
+
             // Calculate coverage percentage (mock calculation)
             const dimensionCount = Object.keys(data.dimensions || {}).length;
             const maxDimensions = 5;
             const coverage = Math.round((dimensionCount / maxDimensions) * 100);
-            
+
             coveragePercentage.textContent = `${coverage}% Coverage`;
-            
+
             // Populate metadata grid
             metadataGrid.innerHTML = `
                 <div>
@@ -2248,7 +2322,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const summaryContent = document.getElementById('summary-analysis-content');
             const summaryText = data.summary || data.executive_summary || 
                                'Your paper has been comprehensively analyzed using the PACT Academic Critique Taxonomy. The analysis covers multiple dimensions of academic writing quality, from research foundations to critical sophistication. Review the detailed feedback in each dimension to understand your paper\'s strengths and areas for improvement.';
-            
+
             summaryContent.innerHTML = `
                 <div class="text-left space-y-6">
                     <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
@@ -2257,7 +2331,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                             <p class="text-gray-700 leading-relaxed">${summaryText}</p>
                         </div>
                     </div>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                             <h5 class="font-semibold text-green-800 mb-3">Key Strengths</h5>
@@ -2272,7 +2346,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                 ).join('')}
                             </ul>
                         </div>
-                        
+
                         <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
                             <h5 class="font-semibold text-orange-800 mb-3">Priority Improvements</h5>
                             <ul class="space-y-2">
@@ -2287,7 +2361,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                             </ul>
                         </div>
                     </div>
-                    
+
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <h5 class="font-semibold text-blue-800 mb-3">Next Steps</h5>
                         <ol class="space-y-2">
@@ -2315,9 +2389,9 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
         function populateDimensionTabs(dimensionAnalyses) {
             const dimensionTabsNav = document.getElementById('dimension-tabs');
             const dimensionTabContent = document.getElementById('dimension-tab-content');
-            
+
             const dimensions = Object.entries(dimensionAnalyses);
-            
+
             // If no dimension data, create default structure
             if (dimensions.length === 0) {
                 const defaultDimensions = [
@@ -2357,7 +2431,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                 <div class="flex items-center space-x-2 mb-3">
                                     <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2371,8 +2445,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                 </p>
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
                 return;
             }
 
@@ -2542,7 +2615,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
         function toggleDetailedFindings() {
             const detailedFindings = document.getElementById('detailed-findings');
             const chevron = document.getElementById('findings-chevron');
-            
+
             detailedFindings.classList.toggle('hidden');
             chevron.classList.toggle('rotate-180');
         }
