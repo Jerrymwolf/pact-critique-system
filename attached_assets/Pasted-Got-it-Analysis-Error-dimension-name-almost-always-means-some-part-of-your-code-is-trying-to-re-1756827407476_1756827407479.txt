@@ -1,0 +1,167 @@
+Got it—`Analysis Error: 'dimension_name'` almost always means some part of your code is trying to read a field called `dimension_name` that isn’t present in the data you’re passing (KeyError in Python / undefined property access in JS/TS).
+
+Here’s how to fix it fast:
+
+# 1) Find where it’s referenced
+
+Search your repo for `dimension_name` (frontend **and** backend). In Replit’s shell:
+
+```
+grep -R --line-number "dimension_name" .
+```
+
+You’ll likely see it in:
+
+* the request body you POST to your `/analyze` (or similar) endpoint, **or**
+* the server’s parsing/loop over rubric items, **or**
+* a Pydantic/Zod/TypeScript type, **or**
+* a database/JSON file for your PACT rubric.
+
+# 2) Make the schema and payload match
+
+Whichever side is wrong, pick **one** canonical name and stick to it (either `dimension_name` or `dimension`). Then:
+
+**If your backend expects `dimension_name`:**
+Make sure the client sends it:
+
+```ts
+// Frontend request
+await fetch("/api/analyze", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    text,
+    items: rubricItems.map(r => ({
+      dimension_name: r.dimension_name,   // ← ensure this exists
+      section_name: r.section_name,
+      element_name: r.element_name,
+      criteria: r.criteria
+    }))
+  })
+});
+```
+
+**If you prefer `dimension` (shorter):**
+Update the backend to accept both and normalize:
+
+```ts
+// Node/TS example (Express)
+type RubricItem = {
+  dimension_name?: string;
+  dimension?: string;
+  section_name?: string;
+  element_name?: string;
+  criteria?: string;
+};
+
+app.post("/api/analyze", async (req, res) => {
+  const items: RubricItem[] = req.body.items ?? [];
+  const normalized = items.map(it => ({
+    dimension: it.dimension ?? it.dimension_name ?? "Unspecified",
+    section: it.section_name ?? it["section"] ?? "Unspecified",
+    element: it.element_name ?? it["element"] ?? "Unspecified",
+    criteria: it.criteria ?? ""
+  }));
+
+  // guard rails
+  const missing = normalized.filter(n => !n.dimension || !n.section || !n.element);
+  if (missing.length) {
+    return res.status(400).json({
+      error: "Invalid rubric items: dimension/section/element required",
+      sample_expected: { dimension: "Clarity", section: "Thesis", element: "Claim", criteria: "..." }
+    });
+  }
+
+  // ... proceed with analysis using `normalized`
+});
+```
+
+# 3) Add validation with friendly errors
+
+Use Zod (TS) or Pydantic (Python) so you get a clear 400 instead of a cryptic runtime crash.
+
+**Zod example:**
+
+```ts
+import { z } from "zod";
+
+const RubricItemSchema = z.object({
+  dimension_name: z.string().optional(),
+  dimension: z.string().optional(),
+  section_name: z.string().optional(),
+  element_name: z.string().optional(),
+  criteria: z.string().optional()
+}).refine(
+  (v) => (v.dimension || v.dimension_name) && v.section_name && v.element_name,
+  { message: "Each item must include dimension (or dimension_name), section_name, and element_name" }
+);
+
+const AnalyzeBody = z.object({
+  text: z.string(),
+  items: z.array(RubricItemSchema).min(1)
+});
+
+app.post("/api/analyze", (req, res) => {
+  const parse = AnalyzeBody.safeParse(req.body);
+  if (!parse.success) {
+    return res.status(400).json({ error: parse.error.flatten() });
+  }
+  const items = parse.data.items.map(i => ({
+    dimension: i.dimension ?? i.dimension_name!,
+    section: i.section_name!,
+    element: i.element_name!,
+    criteria: i.criteria ?? ""
+  }));
+  // continue...
+});
+```
+
+**Pydantic example (if your analyzer is Python):**
+
+```python
+from pydantic import BaseModel, root_validator
+from typing import List, Optional
+
+class RubricItem(BaseModel):
+  dimension_name: Optional[str] = None
+  dimension: Optional[str] = None
+  section_name: Optional[str]
+  element_name: Optional[str]
+  criteria: Optional[str] = ""
+
+  @root_validator
+  def dimension_required(cls, v):
+    if not (v.get("dimension") or v.get("dimension_name")):
+      raise ValueError("dimension or dimension_name is required")
+    return v
+
+class AnalyzeBody(BaseModel):
+  text: str
+  items: List[RubricItem]
+```
+
+# 4) Log the incoming payload to confirm
+
+Right before you reference the field, log what you actually received:
+
+```ts
+console.log("Analyze payload:", JSON.stringify(req.body, null, 2));
+```
+
+If `dimension_name` is missing/undefined in the log, the bug is on the **client**; if it’s present but you still error, the bug is on the **server** (wrong path or destructure).
+
+# 5) Defensive access where you loop
+
+If you’re doing something like `for (const { dimension_name } of items)`, change to:
+
+```ts
+for (const item of items) {
+  const dimension = item.dimension ?? item.dimension_name;
+  if (!dimension) throw new Error("Missing dimension in rubric item");
+  // ...
+}
+```
+
+---
+
+If you paste the stack trace (or the file/line where it throws), I’ll point to the exact spot and give you a one-line patch.
