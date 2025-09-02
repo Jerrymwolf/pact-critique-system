@@ -20,6 +20,7 @@ load_dotenv()
 
 # Check for required environment variables
 required_vars = ["OPENAI_API_KEY"]
+optional_vars = ["TAVILY_API_KEY"]
 missing_vars = []
 
 for var in required_vars:
@@ -37,6 +38,13 @@ if missing_vars:
 print("✅ Environment configured successfully")
 print(f"📝 OpenAI Model: {os.getenv('OPENAI_MODEL', 'chatgpt-5')}")
 print("🤖 Using ChatGPT 5 (no custom temperature - uses model defaults)")
+
+# Check optional services
+tavily_key = os.getenv("TAVILY_API_KEY")
+if tavily_key:
+    print("🔍 Tavily search enabled for research agents")
+else:
+    print("⚠️  Tavily API key not found - web search functionality will be limited")
 
 # Start the server
 if __name__ == "__main__":
