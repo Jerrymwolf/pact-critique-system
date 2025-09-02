@@ -1,0 +1,88 @@
+You fixed the model name issue—now you’re crashing because something in your analysis path treats a `CritiqueSession` **object** like a **dict**:
+
+```
+TypeError: 'CritiqueSession' object does not support item assignment
+```
+
+That means code like this exists somewhere in your server/supervisor:
+
+```py
+session['status'] = 'running'        # ❌ object used like a dict
+session['progress'] = 0
+session['started_at'] = ts
+```
+
+### Fast fix (recommended): use attributes, not item assignment
+
+Change any `session['...'] = ...` to dot notation:
+
+```py
+session.status = 'running'
+session.progress = 0
+session.started_at = ts
+```
+
+And any reads like `session['status']` → `session.status`.
+
+**Find all offenders:**
+
+```bash
+# in Replit shell
+grep -R --line-number -E "session\[['\"]" .
+```
+
+You’ll likely see hits in:
+
+* `pact/api_server.py` (inside the `/api/critique/start` flow or background task)
+* a supervisor/worker module that streams progress to the websocket
+* anywhere you build the payload for `manager.broadcast(...)`
+
+### Compatibility shim (quick bandaid)
+
+If you want everything to keep working *without* refactoring right now, add `__getitem__`/`__setitem__` to your `CritiqueSession` class (Pydantic or dataclass):
+
+```py
+# if Pydantic v1/v2 BaseModel or a @dataclass
+class CritiqueSession(BaseModel):  # or dataclass
+    id: str
+    status: str = "pending"
+    progress: int = 0
+    started_at: str | None = None
+    completed_at: str | None = None
+    events: list[dict] = Field(default_factory=list)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+```
+
+That will make `session['status'] = ...` work, but the **better** fix is updating call sites to attribute access.
+
+### Don’t forget your websocket/broadcast payloads
+
+If you’re pushing the session over websockets/JSON, serialize properly:
+
+```py
+# Pydantic v2
+payload = session.model_dump()
+
+# Pydantic v1
+payload = session.dict()
+
+# dataclass
+from dataclasses import asdict
+payload = asdict(session)
+
+await manager.broadcast(session.id, payload)
+```
+
+### Quick checklist
+
+* [ ] Replace all `session['...']` reads/writes with `session....`
+* [ ] Or add the `__getitem__/__setitem__` shim (temporary)
+* [ ] Ensure JSON serialization uses `.model_dump()` / `.dict()` / `asdict()`
+* [ ] Re-run and watch logs; you should see the supervisor progress instead of the crash
+
+If you paste the specific snippet from `pact/api_server.py` where you create/update the `CritiqueSession`, I’ll give you an exact patch.
