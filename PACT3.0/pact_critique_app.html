@@ -142,6 +142,26 @@
         .form-text {
             @apply mt-2 text-sm text-gray-500;
         }
+
+        /* Additional styles for comprehensive interface */
+        .main-tab-content {
+            min-height: 200px;
+        }
+
+        .dim-tab-content {
+            min-height: 300px;
+        }
+
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+
+        /* Success/Warning/Error color classes */
+        .text-success-green { color: #10b981; }
+        .text-warning-orange { color: #f59e0b; }
+        .text-critical-red { color: #ef4444; }
+        .text-text-primary { color: #111827; }
+        .text-text-secondary { color: #6b7280; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -448,187 +468,329 @@
 
             <!-- Results Section (Initially Hidden) -->
             <div id="results-section" class="hidden max-w-6xl mx-auto">
-                <!-- Overall Score Card -->
-                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
-                    <div class="flex flex-col md:flex-row items-center justify-between">
-                        <div class="mb-6 md:mb-0">
-                            <h2 class="text-3xl font-bold mb-2">Analysis Complete</h2>
-                            <p id="paper-title" class="text-gray-600">Your Paper Analysis</p>
+                <!-- Main Results Card -->
+                <div class="bg-white rounded-xl shadow-lg">
+                    <div class="p-8">
+                        <!-- Header with Export Actions -->
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                Analysis Results
+                            </h2>
+                            <div class="flex space-x-2">
+                                <button onclick="toggleDownloadMenu()" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Export PDF
+                                </button>
+                                <button class="inline-flex items-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                                    </svg>
+                                    Share
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Score Circle -->
-                        <div class="relative">
-                            <svg class="w-32 h-32">
-                                <circle cx="64" cy="64" r="56" stroke="#e5e7eb" stroke-width="8" fill="none"></circle>
-                                <circle id="score-circle" cx="64" cy="64" r="56" stroke="url(#gradient)" stroke-width="8" fill="none" 
-                                        class="score-ring" stroke-dasharray="351.86" stroke-dashoffset="351.86"></circle>
-                                <defs>
-                                    <linearGradient id="gradient">
-                                        <stop offset="0%" stop-color="#667eea"/>
-                                        <stop offset="100%" stop-color="#764ba2"/>
-                                    </linearGradient>
-                                </defs>
-                            </svg>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="text-center">
-                                    <span id="overall-score" class="text-3xl font-bold gradient-text">0</span>
-                                    <span class="text-gray-500 text-sm block">/ 100</span>
+                        <!-- Learning Resources Banner -->
+                        <div class="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <svg class="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                </svg>
+                                <div class="flex-1">
+                                    <h3 class="text-sm font-semibold text-blue-800 mb-1">
+                                        Improve Your Academic Writing Skills
+                                    </h3>
+                                    <p class="text-xs text-blue-700 mb-2">
+                                        Each element in your analysis links to detailed explanations, examples, and improvement strategies in our PACT Wiki.
+                                    </p>
+                                    <div class="flex items-center space-x-3">
+                                        <button onclick="window.open('/pact-wiki', '_blank')" class="inline-flex items-center px-2 py-1 text-xs border border-blue-300 rounded text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
+                                            <svg class="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                            </svg>
+                                            Explore PACT Wiki
+                                        </button>
+                                        <span class="text-xs text-blue-600">
+                                            Click "Learn More" buttons below for targeted help
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Overall Score and Dimension Scores Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <!-- Overall Score with Circular Progress -->
+                            <div class="text-center">
+                                <div class="relative mx-auto mb-4" style="width: 128px; height: 128px;">
+                                    <svg class="w-32 h-32 transform -rotate-90">
+                                        <circle cx="64" cy="64" r="56" stroke="#e5e7eb" stroke-width="8" fill="none"></circle>
+                                        <circle id="score-circle" cx="64" cy="64" r="56" stroke="url(#gradient)" stroke-width="8" fill="none" 
+                                                stroke-dasharray="351.86" stroke-dashoffset="351.86" class="transition-all duration-1000 ease-out"></circle>
+                                        <defs>
+                                            <linearGradient id="gradient">
+                                                <stop offset="0%" stop-color="#10b981"/>
+                                                <stop offset="50%" stop-color="#3b82f6"/>
+                                                <stop offset="100%" stop-color="#8b5cf6"/>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="text-center">
+                                            <span id="overall-score" class="text-2xl font-bold text-gray-900">0.0</span>
+                                            <span class="text-gray-500 text-sm block">/ 5.0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900">Overall Assessment</h3>
+                            </div>
+
+                            <!-- Dimension Scores -->
+                            <div class="space-y-3">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Dimension Scores</h3>
+                                <div id="dimension-scores-list" class="space-y-3">
+                                    <!-- Dimension scores will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Document Context Information -->
+                        <div id="document-context" class="hidden mb-6">
+                            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-purple-800 flex items-center">
+                                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Document Context
+                                    </h4>
+                                    <span id="document-type" class="text-sm font-medium text-purple-600">
+                                        <!-- Document type will be populated here -->
+                                    </span>
+                                </div>
+                                
+                                <div id="document-context-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                                    <!-- Context information will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Coverage Metadata -->
+                        <div id="analysis-metadata" class="hidden mb-8">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-blue-800 flex items-center">
+                                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Document Analysis Coverage
+                                    </h4>
+                                    <div id="coverage-percentage" class="text-sm text-blue-600">
+                                        <!-- Coverage percentage will be populated here -->
+                                    </div>
+                                </div>
+                                
+                                <div id="analysis-metadata-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <!-- Metadata will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Key Findings Summary Cards -->
+                        <div class="mb-8">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <!-- Critical Issues Card -->
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <div class="w-2 h-2 bg-red-600 rounded-full"></div>
+                                        <h4 class="font-semibold text-red-600">Critical Issues</h4>
+                                    </div>
+                                    <p id="critical-count" class="text-2xl font-bold text-red-600 mb-1">0</p>
+                                    <p class="text-xs text-gray-600">Require immediate attention</p>
+                                </div>
+
+                                <!-- Areas for Improvement Card -->
+                                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                        <h4 class="font-semibold text-orange-600">Areas for Improvement</h4>
+                                    </div>
+                                    <p id="improvement-count" class="text-2xl font-bold text-orange-600 mb-1">0</p>
+                                    <p class="text-xs text-gray-600">Should be addressed</p>
+                                </div>
+
+                                <!-- Strengths Card -->
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <div class="w-2 h-2 bg-green-600 rounded-full"></div>
+                                        <h4 class="font-semibold text-green-600">Strengths</h4>
+                                    </div>
+                                    <p id="strength-count" class="text-2xl font-bold text-green-600 mb-1">0</p>
+                                    <p class="text-xs text-gray-600">Well-executed elements</p>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Findings Dropdown -->
+                            <div class="border border-gray-200 rounded-lg">
+                                <button onclick="toggleDetailedFindings()" class="w-full flex items-center justify-between p-4 font-medium text-left hover:bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <span class="flex items-center">
+                                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        View Detailed Findings Checklist
+                                    </span>
+                                    <svg id="findings-chevron" class="h-4 w-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                
+                                <div id="detailed-findings" class="hidden border-t border-gray-200 p-4 bg-gray-50">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <!-- Critical Issues Checklist -->
+                                        <div>
+                                            <h4 class="font-semibold text-red-600 mb-3 flex items-center">
+                                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                                </svg>
+                                                Critical Issues (<span id="critical-issues-count">0</span>)
+                                            </h4>
+                                            <div id="critical-issues-list" class="space-y-2 max-h-60 overflow-y-auto">
+                                                <!-- Critical issues will be populated here -->
+                                            </div>
+                                        </div>
+
+                                        <!-- Areas for Improvement Checklist -->
+                                        <div>
+                                            <h4 class="font-semibold text-orange-600 mb-3 flex items-center">
+                                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                                </svg>
+                                                Areas for Improvement (<span id="improvement-issues-count">0</span>)
+                                            </h4>
+                                            <div id="improvement-issues-list" class="space-y-2 max-h-60 overflow-y-auto">
+                                                <!-- Improvement issues will be populated here -->
+                                            </div>
+                                        </div>
+
+                                        <!-- Strengths Checklist -->
+                                        <div>
+                                            <h4 class="font-semibold text-green-600 mb-3 flex items-center">
+                                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                Strengths (<span id="strength-elements-count">0</span>)
+                                            </h4>
+                                            <div id="strength-elements-list" class="space-y-2 max-h-60 overflow-y-auto">
+                                                <!-- Strength elements will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Content Tabs -->
+                        <div class="border-t border-gray-200 pt-6">
+                            <!-- Tab Navigation -->
+                            <div class="border-b border-gray-200 mb-6">
+                                <nav class="-mb-px flex space-x-8">
+                                    <button onclick="showMainTab('summary')" id="main-tab-summary" class="main-tab-btn py-2 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600">
+                                        <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Summary Analysis
+                                    </button>
+                                    <button onclick="showMainTab('details')" id="main-tab-details" class="main-tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                        <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        </svg>
+                                        PACT Details
+                                    </button>
+                                    <button onclick="showMainTab('custom')" id="main-tab-custom" class="main-tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hidden">
+                                        <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Custom Analysis
+                                    </button>
+                                </nav>
+                            </div>
+
+                            <!-- Tab Content -->
+                            <div id="main-tab-content-summary" class="main-tab-content">
+                                <div id="summary-analysis-content" class="text-center py-8 text-gray-500">
+                                    <p>Summary analysis is being generated...</p>
+                                    <p class="text-sm mt-1">This will be available shortly after the detailed analysis completes.</p>
+                                </div>
+                            </div>
+
+                            <div id="main-tab-content-details" class="main-tab-content hidden">
+                                <!-- Dimension Sub-tabs -->
+                                <div class="border-b border-gray-200 mb-6">
+                                    <nav id="dimension-tabs" class="-mb-px flex space-x-8">
+                                        <!-- Dimension tabs will be populated here -->
+                                    </nav>
+                                </div>
+
+                                <!-- Dimension Tab Content -->
+                                <div id="dimension-tab-content">
+                                    <!-- Selected dimension content will be populated here -->
+                                </div>
+                            </div>
+
+                            <div id="main-tab-content-custom" class="main-tab-content hidden">
+                                <div id="custom-analysis-content">
+                                    <!-- Custom analysis content will be populated here -->
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Recommendation Badge -->
-                    <div class="mt-6">
-                        <span id="recommendation-badge" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium">
-                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                            </svg>
-                            <span id="recommendation-text">Processing...</span>
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Dimension Scores -->
-                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
-                    <h3 class="text-2xl font-bold mb-6">Dimension Scores</h3>
-                    <div class="relative chart-container" style="height: 400px;">
-                        <canvas id="dimension-chart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Detailed Feedback Tabs -->
-                <div class="bg-white rounded-xl shadow-lg p-8">
-                    <h3 class="text-2xl font-bold mb-6">Detailed Feedback</h3>
-
-                    <!-- Tab Navigation -->
-                    <div class="border-b border-gray-200 mb-6">
-                        <nav class="-mb-px flex space-x-8">
-                            <button onclick="showTab('summary')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-purple-500 text-purple-600">
-                                Summary
-                            </button>
-                            <button onclick="showTab('strengths')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                                Strengths
-                            </button>
-                            <button onclick="showTab('improvements')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                                Improvements
-                            </button>
-                            <button onclick="showTab('dimensions')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                                Dimensions
-                            </button>
-                            <button onclick="showTab('next-steps')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                                Next Steps
-                            </button>
-                            <button onclick="showTab('checklist')" class="tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                                PACT Checklist
-                            </button>
-                        </nav>
-                    </div>
-
-                    <!-- Tab Content -->
-                    <div id="tab-summary" class="tab-content">
-                        <div class="prose max-w-none">
-                            <h4 class="text-xl font-semibold mb-4">Executive Summary</h4>
-                            <p id="executive-summary" class="text-gray-700">Loading summary...</p>
-                        </div>
-                    </div>
-
-                    <div id="tab-strengths" class="tab-content hidden">
-                        <h4 class="text-xl font-semibold mb-4">Key Strengths</h4>
-                        <ul id="strengths-list" class="space-y-3">
-                            <!-- Strengths will be added here -->
-                        </ul>
-                    </div>
-
-                    <div id="tab-improvements" class="tab-content hidden">
-                        <h4 class="text-xl font-semibold mb-4">Priority Improvements</h4>
-                        <ul id="improvements-list" class="space-y-3">
-                            <!-- Improvements will be added here -->
-                        </ul>
-                    </div>
-
-                    <div id="tab-dimensions" class="tab-content hidden">
-                        <h4 class="text-xl font-semibold mb-4">Detailed Dimension Analysis</h4>
-                        <div id="dimensions-detail" class="space-y-8">
-                            <!-- Enhanced dimension details will be added here -->
-                        </div>
-                    </div>
-
-                    <div id="tab-next-steps" class="tab-content hidden">
-                        <h4 class="text-xl font-semibold mb-4">Actionable Next Steps</h4>
-                        <ol id="next-steps-list" class="space-y-3">
-                            <!-- Next steps will be added here -->
-                        </ol>
-                    </div>
-
-                    <div id="tab-checklist" class="tab-content hidden">
-                        <h4 class="text-xl font-semibold mb-4">PACT Assessment Checklist</h4>
-                        <div class="mb-6">
-                            <p class="text-gray-600 mb-4">Use this checklist to track your revision progress. Check off items as you address them.</p>
-                        </div>
-
-                        <div id="checklist-improvements" class="mb-8">
-                            <h5 class="text-lg font-medium mb-4 text-orange-700">Areas for Improvement - Should Be Addressed</h5>
-                            <div id="improvement-checklist" class="space-y-3">
-                                <!-- Improvement checklist items will be added here -->
+                    <!-- Action Buttons -->
+                    <div class="border-t border-gray-200 p-6">
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <!-- Download Dropdown -->
+                            <div class="relative flex-1">
+                                <!-- Download Menu -->
+                                <div id="download-menu" class="hidden absolute bottom-full left-0 right-0 mb-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                    <button onclick="downloadReport('pdf')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center">
+                                        <svg class="w-4 h-4 mr-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Executive Summary
+                                        <span class="ml-auto text-xs text-gray-500">(Summary + checklist)</span>
+                                    </button>
+                                    <button onclick="downloadReport('comprehensive')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center border-t border-gray-100">
+                                        <svg class="w-4 h-4 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        </svg>
+                                        Comprehensive Report
+                                        <span class="ml-auto text-xs text-gray-500">(Full details + checklist)</span>
+                                    </button>
+                                    <button onclick="downloadReport('checklist')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center border-t border-gray-100">
+                                        <svg class="w-4 h-4 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Checklist Only
+                                        <span class="ml-auto text-xs text-gray-500">(Print & track revisions)</span>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
 
-                        <div id="checklist-strengths">
-                            <h5 class="text-lg font-medium mb-4 text-green-700">Strengths - Well-Executed Elements</h5>
-                            <div id="strength-checklist" class="space-y-3">
-                                <!-- Strength checklist items will be added here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="mt-8 flex flex-col sm:flex-row gap-4">
-                    <!-- Download Dropdown -->
-                    <div class="relative flex-1">
-                        <button onclick="toggleDownloadMenu()" class="w-full bg-white border-2 border-purple-600 text-purple-600 font-semibold py-3 px-6 rounded-lg hover:bg-purple-50 transition flex items-center justify-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            Download Report
-                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-
-                        <!-- Download Menu -->
-                        <div id="download-menu" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                            <button onclick="downloadReport('pdf')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center">
-                                <svg class="w-4 h-4 mr-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                </svg>
-                                Professional PDF Report
-                                <span class="ml-auto text-xs text-gray-500">Recommended</span>
-                            </button>
-                            <button onclick="downloadReport('html')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center">
-                                <svg class="w-4 h-4 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"></path>
-                                </svg>
-                                HTML Web Page
-                            </button>
-                            <button onclick="downloadReport('md')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center border-t">
-                                <svg class="w-4 h-4 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                Markdown Document
+                            <button onclick="startNewAnalysis()" class="flex-1 gradient-bg text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition">
+                                <span class="flex items-center justify-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    Analyze Another Paper
+                                </span>
                             </button>
                         </div>
                     </div>
-
-                    <button onclick="startNewAnalysis()" class="flex-1 gradient-bg text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition">
-                        <span class="flex items-center justify-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Analyze Another Paper
-                        </span>
-                    </button>
                 </div>
             </div>
         </div>
@@ -1276,83 +1438,32 @@
         // Display the analysis results in the UI
         function displayResults(data) {
             const score = data.overallScore;
-            document.getElementById('overall-score').textContent = score;
+            
+            // Convert score to 0-5 scale if it's 0-100
+            const normalizedScore = score > 5 ? score / 20 : score;
+            document.getElementById('overall-score').textContent = normalizedScore.toFixed(1);
 
-            // Animate the score circle
+            // Animate the score circle (assuming 0-5 scale)
             const circle = document.getElementById('score-circle');
             const circumference = 351.86;
-            const offset = circumference - (score / 100) * circumference;
+            const percentage = (normalizedScore / 5) * 100;
+            const offset = circumference - (percentage / 100) * circumference;
             setTimeout(() => {
                 circle.style.strokeDashoffset = offset;
                 circle.style.transition = 'stroke-dashoffset 1s ease-in-out';
             }, 100);
 
-            // Update recommendation badge
-            const badge = document.getElementById('recommendation-badge');
-            const recommendationText = document.getElementById('recommendation-text');
-            recommendationText.textContent = data.recommendation;
+            // Populate dimension scores
+            populateDimensionScores(data.dimensions);
 
-            // Style badge based on recommendation
-            if (data.recommendation.includes('Accept')) {
-                badge.className = 'inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800';
-            } else if (data.recommendation.includes('Minor')) {
-                badge.className = 'inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800';
-            } else if (data.recommendation.includes('Major')) {
-                badge.className = 'inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800';
-            } else {
-                badge.className = 'inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800';
-            }
+            // Populate key findings cards
+            populateKeyFindingsCards(data);
 
-            // Update paper title if available
-            const paperTitleElement = document.getElementById('paper-title');
-            if (paperTitleElement && analysisData && analysisData.paper_title) {
-                paperTitleElement.textContent = analysisData.paper_title;
-            }
+            // Populate detailed findings checklist
+            populateDetailedFindings(data);
 
-            // Update summary text
-            document.getElementById('executive-summary').textContent = data.summary;
-
-            // Populate strengths list
-            const strengthsList = document.getElementById('strengths-list');
-            strengthsList.innerHTML = data.strengths.map(strength => `
-                <li class="flex items-start">
-                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span class="text-gray-700">${strength}</span>
-                </li>
-            `).join('');
-
-            // Populate improvements list
-            const improvementsList = document.getElementById('improvements-list');
-            improvementsList.innerHTML = data.improvements.map(improvement => `
-                <li class="flex items-start">
-                    <svg class="w-5 h-5 text-yellow-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span class="text-gray-700">${improvement}</span>
-                </li>
-            `).join('');
-
-            // Populate next steps list
-            const nextStepsList = document.getElementById('next-steps-list');
-            nextStepsList.innerHTML = data.nextSteps.map((step, index) => `
-                <li class="flex items-start">
-                    <span class="flex-shrink-0 w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mr-3 text-sm font-semibold">
-                        ${index + 1}
-                    </span>
-                    <span class="text-gray-700">${step}</span>
-                </li>
-            `).join('');
-
-            // Display detailed dimension analysis
-            displayDetailedDimensions(data.dimensionAnalyses || {});
-
-            // Display PACT checklist items
-            displayPACTChecklist(data.checklistItems || []);
-
-            // Create the dimension scores chart
-            createDimensionChart(data.dimensions);
+            // Populate main tab content
+            populateMainTabContent(data);
 
             // Store data for potential downloads
             analysisData = data;
@@ -1812,6 +1923,420 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             document.getElementById('upload-area').style.display = 'block';
             // showMessage('File removed', 'info'); // Removed to avoid redundant messages
             updateWordCount(); // Update word count after clearing file
+        }
+
+        // ===== COMPREHENSIVE INTERFACE FUNCTIONS =====
+
+        function populateDimensionScores(dimensions) {
+            const dimensionsList = document.getElementById('dimension-scores-list');
+            const dimensionEntries = Object.entries(dimensions);
+            
+            dimensionsList.innerHTML = dimensionEntries.map(([dimensionName, score]) => {
+                const normalizedScore = score > 5 ? score / 20 : score;
+                const percentage = (normalizedScore / 5) * 100;
+                const scoreLevel = getScoreLevel(normalizedScore);
+                const scoreColor = getScoreBackground(normalizedScore);
+                
+                return `
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-900">${dimensionName}</span>
+                            <span class="text-xs font-medium text-gray-600">${scoreLevel}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="h-2.5 rounded-full transition-all duration-500 ${scoreColor}" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getScoreLevel(score) {
+            if (score >= 4.5) return "Exemplary";
+            if (score >= 3.5) return "Strong";
+            if (score >= 2.5) return "Competent";
+            if (score >= 1.5) return "Developing";
+            return "Inadequate";
+        }
+
+        function getScoreBackground(score) {
+            if (score >= 4.5) return "bg-green-600";
+            if (score >= 3.5) return "bg-green-500";
+            if (score >= 2.5) return "bg-yellow-500";
+            if (score >= 1.5) return "bg-orange-500";
+            return "bg-red-500";
+        }
+
+        function populateKeyFindingsCards(data) {
+            // Calculate counts from the analysis data
+            const criticalCount = countCriticalIssues(data);
+            const improvementCount = countImprovements(data);
+            const strengthCount = countStrengths(data);
+            
+            document.getElementById('critical-count').textContent = criticalCount;
+            document.getElementById('improvement-count').textContent = improvementCount;
+            document.getElementById('strength-count').textContent = strengthCount;
+        }
+
+        function countCriticalIssues(data) {
+            if (data.dimensionAnalyses) {
+                return Object.values(data.dimensionAnalyses).reduce((count, dim) => {
+                    if (dim.dimension_score && dim.dimension_score < 40) count++; // Score < 2 on 5-point scale
+                    return count;
+                }, 0);
+            }
+            return 0;
+        }
+
+        function countImprovements(data) {
+            if (data.dimensionAnalyses) {
+                return Object.values(data.dimensionAnalyses).reduce((count, dim) => {
+                    if (dim.dimension_score && dim.dimension_score >= 40 && dim.dimension_score < 80) count++;
+                    return count;
+                }, 0);
+            }
+            return data.improvements ? data.improvements.length : 0;
+        }
+
+        function countStrengths(data) {
+            if (data.dimensionAnalyses) {
+                return Object.values(data.dimensionAnalyses).reduce((count, dim) => {
+                    if (dim.dimension_score && dim.dimension_score >= 80) count++;
+                    return count;
+                }, 0);
+            }
+            return data.strengths ? data.strengths.length : 0;
+        }
+
+        function populateDetailedFindings(data) {
+            // Update counts in dropdown header
+            const criticalCount = countCriticalIssues(data);
+            const improvementCount = countImprovements(data);
+            const strengthCount = countStrengths(data);
+            
+            document.getElementById('critical-issues-count').textContent = criticalCount;
+            document.getElementById('improvement-issues-count').textContent = improvementCount;
+            document.getElementById('strength-elements-count').textContent = strengthCount;
+
+            // Populate critical issues list
+            const criticalIssuesList = document.getElementById('critical-issues-list');
+            const criticalIssues = getCriticalIssuesFromData(data);
+            criticalIssuesList.innerHTML = criticalIssues.length > 0 ? criticalIssues.map(issue => `
+                <div class="flex items-start space-x-2 p-2 bg-red-50 rounded border-l-2 border-red-600">
+                    <svg class="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-red-600">${issue.name}</p>
+                        <p class="text-xs text-gray-600 mt-1">${issue.description}</p>
+                    </div>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500 italic">No critical issues identified.</p>';
+
+            // Populate improvement issues list
+            const improvementIssuesList = document.getElementById('improvement-issues-list');
+            const improvementIssues = getImprovementIssuesFromData(data);
+            improvementIssuesList.innerHTML = improvementIssues.length > 0 ? improvementIssues.map(issue => `
+                <div class="flex items-start space-x-2 p-2 bg-orange-50 rounded border-l-2 border-orange-500">
+                    <svg class="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-orange-600">${issue.name}</p>
+                        <p class="text-xs text-gray-600 mt-1">${issue.description}</p>
+                    </div>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500 italic">No areas for improvement identified.</p>';
+
+            // Populate strength elements list
+            const strengthElementsList = document.getElementById('strength-elements-list');
+            const strengthElements = getStrengthElementsFromData(data);
+            strengthElementsList.innerHTML = strengthElements.length > 0 ? strengthElements.map(element => `
+                <div class="flex items-start space-x-2 p-2 bg-green-50 rounded border-l-2 border-green-600">
+                    <svg class="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-green-600">${element.name}</p>
+                        <p class="text-xs text-gray-600 mt-1">${element.description}</p>
+                    </div>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500 italic">No key strengths identified yet.</p>';
+        }
+
+        function getCriticalIssuesFromData(data) {
+            const issues = [];
+            if (data.dimensionAnalyses) {
+                Object.values(data.dimensionAnalyses).forEach(dim => {
+                    if (dim.dimension_score && dim.dimension_score < 40) {
+                        issues.push({
+                            name: dim.dimension_name,
+                            description: dim.priority_improvements?.[0]?.recommendation || 'Requires significant improvement'
+                        });
+                    }
+                });
+            }
+            return issues;
+        }
+
+        function getImprovementIssuesFromData(data) {
+            const issues = [];
+            if (data.dimensionAnalyses) {
+                Object.values(data.dimensionAnalyses).forEach(dim => {
+                    if (dim.dimension_score && dim.dimension_score >= 40 && dim.dimension_score < 80) {
+                        issues.push({
+                            name: dim.dimension_name,
+                            description: dim.priority_improvements?.[0]?.recommendation || 'Could be strengthened'
+                        });
+                    }
+                });
+            }
+            return issues;
+        }
+
+        function getStrengthElementsFromData(data) {
+            const elements = [];
+            if (data.dimensionAnalyses) {
+                Object.values(data.dimensionAnalyses).forEach(dim => {
+                    if (dim.dimension_score && dim.dimension_score >= 80) {
+                        elements.push({
+                            name: dim.dimension_name,
+                            description: dim.key_strengths?.[0]?.strength || 'Well-executed dimension'
+                        });
+                    }
+                });
+            }
+            return elements;
+        }
+
+        function populateMainTabContent(data) {
+            // Summary Analysis tab
+            const summaryContent = document.getElementById('summary-analysis-content');
+            if (data.summary) {
+                summaryContent.innerHTML = `
+                    <div class="text-left">
+                        <h4 class="text-xl font-semibold mb-4">Executive Summary</h4>
+                        <div class="prose max-w-none">
+                            <p class="text-gray-700 leading-relaxed">${data.summary}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // PACT Details tab - populate dimension tabs
+            populateDimensionTabs(data.dimensionAnalyses || {});
+
+            // Custom Analysis tab (if available)
+            if (data.customAnalysis) {
+                document.getElementById('main-tab-custom').classList.remove('hidden');
+                populateCustomAnalysisTab(data.customAnalysis);
+            }
+        }
+
+        function populateDimensionTabs(dimensionAnalyses) {
+            const dimensionTabsNav = document.getElementById('dimension-tabs');
+            const dimensionTabContent = document.getElementById('dimension-tab-content');
+            
+            const dimensions = Object.entries(dimensionAnalyses);
+            if (dimensions.length === 0) {
+                dimensionTabsNav.innerHTML = '<p class="text-gray-500 py-4">Dimension analysis data will be available after detailed analysis completes.</p>';
+                dimensionTabContent.innerHTML = '';
+                return;
+            }
+
+            // Create dimension tabs navigation
+            dimensionTabsNav.innerHTML = dimensions.map(([dimId, dimension], index) => `
+                <button onclick="showDimensionTab('${dimId}')" id="dim-tab-${dimId}" class="dim-tab-btn py-2 px-1 border-b-2 font-medium text-xs ${index === 0 ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}">
+                    ${dimension.dimension_name.split(' ')[0]}
+                </button>
+            `).join('');
+
+            // Create dimension tab content
+            dimensionTabContent.innerHTML = dimensions.map(([dimId, dimension], index) => `
+                <div id="dim-content-${dimId}" class="dim-tab-content ${index !== 0 ? 'hidden' : ''}">
+                    <div class="space-y-4">
+                        <div class="mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">${dimension.dimension_name}</h3>
+                            <p class="text-sm text-gray-600 mb-4">${dimension.executive_summary}</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <div class="px-3 py-1 rounded-full ${getScoreBackground(dimension.dimension_score / 20)} text-white text-sm font-medium">
+                                        ${(dimension.dimension_score / 20).toFixed(1)}/5
+                                    </div>
+                                    <span class="text-sm text-gray-600">${dimension.overall_assessment}</span>
+                                </div>
+                                <button onclick="window.open('/pact-wiki/dimensions/${dimId}', '_blank')" class="inline-flex items-center px-3 py-1 text-sm border border-blue-600 rounded text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                    Learn About This Dimension
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Subsections -->
+                        ${dimension.subsections ? Object.entries(dimension.subsections).map(([code, subsection]) => `
+                            <div class="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500">
+                                <h4 class="font-semibold text-gray-900 mb-2">${code}: ${subsection.name}</h4>
+                                <div class="mb-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                        subsection.assessment === 'Strong' ? 'bg-green-100 text-green-700' :
+                                        subsection.assessment === 'Developing' ? 'bg-yellow-100 text-yellow-700' :
+                                        'bg-red-100 text-red-700'
+                                    }">${subsection.assessment}</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-3">${subsection.detailed_feedback}</p>
+
+                                ${subsection.strengths && subsection.strengths.length > 0 ? `
+                                    <div class="mb-2">
+                                        <span class="text-xs font-medium text-green-700">Strengths:</span>
+                                        <ul class="list-disc list-inside text-xs text-gray-600 ml-2 mt-1">
+                                            ${subsection.strengths.map(s => `<li>${s}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+
+                                ${subsection.areas_for_improvement && subsection.areas_for_improvement.length > 0 ? `
+                                    <div>
+                                        <span class="text-xs font-medium text-orange-700">Areas for Improvement:</span>
+                                        <ul class="list-disc list-inside text-xs text-gray-600 ml-2 mt-1">
+                                            ${subsection.areas_for_improvement.map(i => `<li>${i}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('') : ''}
+
+                        ${dimension.key_strengths && dimension.key_strengths.length > 0 ? `
+                            <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                                <h4 class="font-semibold text-green-700 mb-2">Key Dimension Strengths:</h4>
+                                <ul class="space-y-1">
+                                    ${dimension.key_strengths.map(s => `
+                                        <li class="text-sm text-green-700">
+                                            <strong>${s.strength}:</strong> ${s.evidence}
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+
+                        ${dimension.priority_improvements && dimension.priority_improvements.length > 0 ? `
+                            <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-500">
+                                <h4 class="font-semibold text-orange-700 mb-2">Priority Improvements:</h4>
+                                <ul class="space-y-1">
+                                    ${dimension.priority_improvements.map(i => `
+                                        <li class="text-sm text-orange-700">
+                                            <strong>${i.area}:</strong> ${i.recommendation}
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function populateCustomAnalysisTab(customAnalysis) {
+            const customContent = document.getElementById('custom-analysis-content');
+            customContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-blue-800 mb-3">Your Custom Question</h3>
+                                <p class="text-blue-700 bg-blue-100 rounded p-3 text-sm">${customAnalysis.question}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Analysis Response</h4>
+                        <div class="prose max-w-none">
+                            <p class="text-gray-900 leading-relaxed whitespace-pre-wrap">${customAnalysis.response}</p>
+                        </div>
+                    </div>
+
+                    ${customAnalysis.keyFindings && customAnalysis.keyFindings.length > 0 ? `
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold text-green-800 mb-4">Key Findings</h4>
+                            <ul class="space-y-2">
+                                ${customAnalysis.keyFindings.map(finding => `
+                                    <li class="flex items-start space-x-3">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                                        <span class="text-green-700 text-sm">${finding}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    ${customAnalysis.recommendations && customAnalysis.recommendations.length > 0 ? `
+                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold text-orange-800 mb-4">Recommendations</h4>
+                            <ul class="space-y-2">
+                                ${customAnalysis.recommendations.map(recommendation => `
+                                    <li class="flex items-start space-x-3">
+                                        <div class="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                                        <span class="text-orange-700 text-sm">${recommendation}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function toggleDetailedFindings() {
+            const detailedFindings = document.getElementById('detailed-findings');
+            const chevron = document.getElementById('findings-chevron');
+            
+            detailedFindings.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        }
+
+        function showMainTab(tabName) {
+            // Hide all main tab content
+            document.querySelectorAll('.main-tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Reset all main tab button styles
+            document.querySelectorAll('.main-tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+
+            // Show the selected main tab content
+            document.getElementById(`main-tab-content-${tabName}`).classList.remove('hidden');
+
+            // Highlight the selected main tab button
+            const activeBtn = document.getElementById(`main-tab-${tabName}`);
+            activeBtn.classList.remove('border-transparent', 'text-gray-500');
+            activeBtn.classList.add('border-blue-500', 'text-blue-600');
+        }
+
+        function showDimensionTab(dimensionId) {
+            // Hide all dimension tab content
+            document.querySelectorAll('.dim-tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Reset all dimension tab button styles
+            document.querySelectorAll('.dim-tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+
+            // Show the selected dimension tab content
+            document.getElementById(`dim-content-${dimensionId}`).classList.remove('hidden');
+
+            // Highlight the selected dimension tab button
+            const activeBtn = document.getElementById(`dim-tab-${dimensionId}`);
+            activeBtn.classList.remove('border-transparent', 'text-gray-500');
+            activeBtn.classList.add('border-blue-500', 'text-blue-600');
         }
 
         // ===== UTILITY FUNCTIONS =====
