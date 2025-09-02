@@ -63,6 +63,7 @@ class CritiqueSession:
     dimension_critiques: Dict[str, Any] = None
     final_critique: Optional[str] = None
     overall_score: Optional[float] = None
+    result: Optional[Dict[str, Any]] = None
 
     # Error handling
     error_message: Optional[str] = None
@@ -214,6 +215,27 @@ class SessionManager:
 
         if overall_score is not None:
             session.overall_score = overall_score
+
+        session.updated_at = datetime.now()
+        self.save_session(session)
+        return True
+
+    def update_session_results(self, session_id: str, result: Dict[str, Any]) -> bool:
+        """Update session with critique results."""
+        session = self.sessions.get(session_id)
+        if not session:
+            return False
+
+        # Store the complete result
+        session.result = result
+        
+        # Update individual result fields for backward compatibility
+        if 'overall_score' in result:
+            session.overall_score = result['overall_score']
+        if 'final_critique' in result:
+            session.final_critique = result['final_critique']
+        if 'dimension_critiques' in result:
+            session.dimension_critiques = result['dimension_critiques']
 
         session.updated_at = datetime.now()
         self.save_session(session)
