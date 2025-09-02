@@ -1,4 +1,3 @@
-
 import asyncio
 import json
 import logging
@@ -27,12 +26,11 @@ def _safe_extract_json(text: str) -> Optional[Dict[str, Any]]:
 
 class RealCritiqueSupervisor:
     """Real supervisor using OpenAI API with robust error handling and non-blocking calls."""
-    
+
     async def ainvoke(self, state: Dict[str, Any], session_id: Optional[str] = None) -> Dict[str, Any]:
         # Import websocket_manager here to avoid circular imports
         try:
             from ..websocket_manager import manager as websocket_manager
-            logger.info("WS manager id (real_supervisor)=%s", id(websocket_manager))
         except ImportError:
             websocket_manager = None
             logger.warning("WebSocket manager not available")
@@ -109,7 +107,7 @@ Return **JSON only** with this exact structure:
 
             # 4) Try to parse JSON; if not, wrap a fallback
             result = _safe_extract_json(text)
-            
+
             if not result:
                 logger.warning("Could not parse JSON from OpenAI response, creating fallback")
                 result = {
@@ -169,7 +167,7 @@ Return **JSON only** with this exact structure:
                 })
             raise
         except Exception as e:
-            logger.exception("Unexpected error during critique")
+            logger.error(f"Unexpected error during critique for session {session_id}: {e}")
             if session_id and websocket_manager:
                 await websocket_manager.broadcast(session_id, {
                     "event": "status", 

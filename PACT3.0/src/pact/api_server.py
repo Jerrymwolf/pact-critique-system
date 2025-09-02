@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 try:
     from .pact_critique_agent import pact_critique_agent
     from .session_manager import session_manager
-    from .websocket_handler import WebSocketManager
+    from .websocket_manager import manager
     from .pdf_generator import generate_pact_pdf_report
     from .mode_config import AgentMode, mode_config
     from .supervisors.real_supervisor import RealCritiqueSupervisor
@@ -147,7 +147,7 @@ if MOCK_MODE:
     session_manager = MockSessionManager()
     websocket_manager = MockWebSocketManager()
 else:
-    websocket_manager = WebSocketManager()
+    websocket_manager = manager
 
 
 def create_comprehensive_critique(result: Dict[str, Any]) -> Dict[str, Any]:
@@ -204,12 +204,7 @@ def make_supervisor():
 
     if real_mode:
         logger.info("Creating real critique supervisor")
-        try:
-            return RealCritiqueSupervisor()
-        except Exception:
-            logger.exception("Failed to create real supervisor; falling back to mock")
-            logger.info("Creating mock critique supervisor...")
-            return MockCritiqueSupervisor()
+        return RealCritiqueSupervisor()
     else:
         logger.info("Creating mock critique supervisor...")
         return MockCritiqueSupervisor()
@@ -566,9 +561,8 @@ async def start_critique(request: CritiqueRequest):
             "progress": 1
         })
 
-        # IMPORTANT: Launch analysis as background task - do not await here
-        # This ensures the POST /start returns quickly while analysis runs in background
-        asyncio.create_task(run_critique_analysis(session_id, request.content, request.title, mode))
+        # Launch analysis as background task
+        asyncio.create_task(run_critique_analysis(session_id, request.content, request.title, mode), name=f"critique-{session_id}")
 
         return CritiqueResponse(
             session_id=session_id,
@@ -646,7 +640,7 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
     """
     WebSocket endpoint for real-time progress updates.
     """
-    await websocket_manager.connect(websocket, session_id)
+    await websocket_manager.connect(session_id, websocket)
 
     try:
         # Send initial status
@@ -685,7 +679,7 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
     except Exception as e:
         logger.error(f"WebSocket error for session {session_id}: {e}")
     finally:
-        await websocket_manager.disconnect(session_id)
+        websocket_manager.disconnect(session_id, None)
 
 @app.get("/api/critique/download/{session_id}")
 async def download_critique_report(session_id: str, format: str = Query("pdf", description="Report format: pdf, html, md")):
@@ -786,17 +780,17 @@ async def preview_critique_report(session_id: str):
 async def run_critique_analysis(session_id: str, paper_content: str, paper_title: str, mode: str):
     """Background task to run the critique analysis."""
     try:
-        logger.info(f"Starting critique analysis for session {session_id}")
-
-        # Get session object for proper status updates
+        logger.info("Launching supervisor task for session %s", session_id)
+        
+        # Get session object
         session = session_manager.get_session(session_id)
         if not session:
             raise Exception(f"Session {session_id} not found")
 
-        # Create supervisor using single selection logic
+        # Create supervisor
         supervisor = make_supervisor()
-
-        # Before launching analysis - set initial status
+        
+        # Set initial status and broadcast
         session_manager.update_session_status(session_id, "running", overall_progress=1)
         await websocket_manager.broadcast(session_id, {
             "event": "status", 
@@ -804,117 +798,43 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             "progress": 1
         })
 
-        # Prepare initial state
-        initial_state = {
-            "paper_content": paper_content,
-            "paper_title": paper_title,
-            "mode": mode
-        }
-
-        logger.info(f"Running supervisor analysis with mode: {mode}")
-
-        # Add heartbeat to keep connections alive during long analysis
-        async def heartbeat(session_id: str, stop: asyncio.Event):
-            """Send periodic heartbeat messages during long-running analysis."""
-            import time
-            while not stop.is_set():
-                try:
-                    await asyncio.sleep(12)  # Send heartbeat every 12 seconds
-                    if not stop.is_set():  # Check again before sending
-                        await websocket_manager.broadcast(session_id, {
-                            "event": "heartbeat", 
-                            "timestamp": time.time(),
-                            "message": "Analysis in progress..."
-                        })
-                except Exception as e:
-                    logger.warning(f"Heartbeat failed for session {session_id}: {e}")
-                    break
-
-        # Define the analysis execution as a separate async function
-        async def run_analysis():
-            try:
-                # Run the analysis with session_id for progress tracking
-                result = await supervisor.ainvoke(initial_state, session_id=session_id)
-
-                # Update session with results and broadcast completion
-                session_manager.update_session_status(
-                    session_id,
-                    "completed",
-                    result=result,
-                    overall_score=result.get("overall_score"),
-                    final_critique=result.get("final_critique"),
-                    overall_progress=100
-                )
-
-                await websocket_manager.broadcast(session_id, {
-                    "event": "status",
-                    "status": "completed",
-                    "progress": 100
-                })
-
-                # Send final summary
-                if result:
-                    await websocket_manager.broadcast(session_id, {
-                        "event": "summary",
-                        "payload": result
-                    })
-
-                return result
-
-            except Exception as e:
-                logger.exception("Critique failed")
-                session_manager.update_session_status(session_id, "error", error_message=str(e))
-                await websocket_manager.broadcast(session_id, {
-                    "event": "status",
-                    "status": "error",
-                    "message": str(e)
-                })
-                raise
-
-        # Execute the analysis with heartbeat
-        stop_heartbeat = asyncio.Event()
-        heartbeat_task = asyncio.create_task(heartbeat(session_id, stop_heartbeat))
-
-        try:
-            result = await run_analysis()
-        finally:
-            # Stop heartbeat and cleanup
-            stop_heartbeat.set()
-            heartbeat_task.cancel()
-            try:
-                await heartbeat_task
-            except asyncio.CancelledError:
-                pass  # Expected when cancelling
-
-        # Generate PDF report
-        use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
-        if use_mock or MOCK_MODE:
-            pdf_filename = f"PACT_Analysis_Report_{session_id[:8]}.pdf"
-            # Create a dummy file for the mock PDF
-            dummy_pdf_path = os.path.join("/tmp", pdf_filename)
-            with open(dummy_pdf_path, "w") as f:
-                f.write("Mock PDF content")
-        else:
-            pdf_filename = generate_pact_pdf_report(session_id, result)
-
-        session_manager.update_session_status(session_id, "completed", report_filename=pdf_filename)
-
-        # Send final completion message with results
+        # Run the analysis
+        result = await supervisor.ainvoke(
+            {"paper_content": paper_content, "paper_title": paper_title, "mode": mode},
+            session_id=session_id
+        )
+        
+        # Update session with completion
+        session_manager.update_session_status(
+            session_id,
+            "completed",
+            result=result,
+            overall_score=result.get("overall_score"),
+            final_critique=result.get("final_critique"),
+            overall_progress=100
+        )
+        
+        # Broadcast completion
         await websocket_manager.broadcast(session_id, {
-            "type": "complete",
-            "session_id": session_id,
-            "result": result,
-            "report_url": f"/api/critique/report/{pdf_filename}"
+            "event": "status",
+            "status": "completed", 
+            "progress": 100
         })
-
+        
+        # Optionally re-broadcast summary if supervisor didn't
+        if result:
+            await websocket_manager.broadcast(session_id, {
+                "event": "summary",
+                "payload": result
+            })
+            
         logger.info(f"Critique analysis completed for session {session_id}")
 
     except Exception as e:
-        logger.error(f"Error in critique analysis for session {session_id}: {e}")
+        logger.exception("Critique failed for session %s", session_id)
         session_manager.update_session_status(session_id, "error", error_message=str(e))
-
         await websocket_manager.broadcast(session_id, {
-            "event": "status", 
+            "event": "status",
             "status": "error",
             "message": str(e)
         })
