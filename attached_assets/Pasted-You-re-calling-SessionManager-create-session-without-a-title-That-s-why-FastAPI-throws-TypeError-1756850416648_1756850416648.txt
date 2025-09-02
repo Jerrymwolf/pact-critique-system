@@ -1,0 +1,52 @@
+You’re calling SessionManager.create_session() without a title. That’s why FastAPI throws:
+TypeError: SessionManager.create_session() missing 1 required positional argument: 'title'
+Somewhere you changed the call to create_session(...) and dropped title= (likely added mode= and forgot title). Here’s a tight fix set.
+1) Make sure your request model has title
+# pact/api_server.py (or models.py)
+from pydantic import BaseModel
+
+class StartCritiqueRequest(BaseModel):
+    title: str                     # ✅ required
+    paper_text: str                # extracted text you’ll analyze
+    mode: str = "STANDARD"         # optional
+2) Call create_session with a title (and mode)
+Pick the style that matches your SessionManager.
+If your SessionManager accepts mode (based on your logs, it does):
+# pact/api_server.py (start handler)
+@app.post("/api/critique/start")
+async def start_critique(req: StartCritiqueRequest):
+    # robust fallback if client forgets title
+    title = (req.title or "").strip() or "Untitled"
+    session = session_manager.create_session(title=title, mode=req.mode or "STANDARD")  # ✅ include title
+    ...
+If your SessionManager does not accept mode:
+session = session_manager.create_session(title=title)  # ✅ include title
+session.mode = req.mode or "STANDARD"                  # set afterward
+Tip: Don’t pass the whole request dict into create_session(**req.model_dump()) unless create_session is designed for that—extra keys will break it (you already saw the mode kwarg issue earlier).
+3) Double-check your SessionManager signatures
+# pact/session_manager.py
+class SessionManager:
+    def create_session(self, title: str, mode: str = "STANDARD") -> CritiqueSession:
+        s = CritiqueSession(
+            id=str(uuid4()),
+            title=title,
+            mode=mode,
+            status="pending",
+            progress=0,
+            started_at=datetime.utcnow(),
+        )
+        self.sessions[s.id] = s
+        return s
+4) Ensure the frontend sends a title
+Your POST to /api/critique/start must include "title":
+await fetch("/api/critique/start", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    title,                  // ✅ required
+    paper_text,             // the extracted doc text
+    mode: "STANDARD"        // optional
+  })
+});
+If you want the server to fallback to the extracted doc title when the client doesn’t pass one, just add a server-side fallback before create_session:
+title = (req.title or getattr(preprocess_result, "paper_title", "") or "Untitled").strip()
