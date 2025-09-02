@@ -1,0 +1,145 @@
+1) Fix supervisor selection (don’t build both)
+Find wherever you log both lines (likely in pact/api_server.py or a create_supervisor helper). Replace with:
+# pact/api_server.py (or wherever you construct the supervisor)
+from pact.settings import settings
+from pact.supervisors.real_supervisor import RealCritiqueSupervisor
+from pact.supervisors.mock_supervisor import MockCritiqueSupervisor
+import logging
+
+logger = logging.getLogger(__name__)
+
+def make_supervisor():
+    # settings.real_mode should reflect your “🤖 Running in REAL mode” banner
+    if getattr(settings, "real_mode", False):
+        logger.info("Creating real critique supervisor")
+        try:
+            return RealCritiqueSupervisor()
+        except Exception:
+            logger.exception("Failed to create real supervisor; falling back to mock")
+            logger.info("Creating mock critique supervisor...")
+            return MockCritiqueSupervisor()
+    else:
+        logger.info("Creating mock critique supervisor...")
+        return MockCritiqueSupervisor()
+And call it:
+supervisor = make_supervisor()
+result = await supervisor.ainvoke(
+    {"paper_content": paper_text, "paper_title": title, "mode": mode},
+    session_id=session.id
+)
+Key point: Only one supervisor should be created per run. Your logs show both paths executing.
+2) Make sure the session status is updated + broadcasted
+Right before/after ainvoke, set status and notify the websocket:
+# Assume session is a Pydantic model or dataclass
+session.status = "running"
+session.progress = 1
+await manager.broadcast(session.id, {"event": "status", "status": session.status, "progress": session.progress})
+
+try:
+    result = await supervisor.ainvoke(
+        {"paper_content": paper_text, "paper_title": title, "mode": mode},
+        session_id=session.id
+    )
+    session.status = "completed"
+    session.progress = 100
+    await manager.broadcast(session.id, {"event": "status", "status": session.status, "progress": session.progress})
+    # If you keep a summary:
+    if result:
+        await manager.broadcast(session.id, {"event": "summary", "payload": result})
+except Exception as e:
+    logger.exception("Critique failed")
+    session.status = "error"
+    await manager.broadcast(session.id, {"event": "status", "status": "error", "message": str(e)})
+If your front-end expects a specific “first event” (e.g., event: "started"), broadcast that too.
+3) Ensure your MockCritiqueSupervisor actually emits events (for testing)
+If you need the mock to drive the UI:
+# pact/supervisors/mock_supervisor.py
+import asyncio
+
+class MockCritiqueSupervisor:
+    async def ainvoke(self, state: dict, session_id: str | None = None):
+        # Simulate streaming progress
+        for pct, msg in [(5, "Parsing document"),
+                         (25, "Extracting sections"),
+                         (55, "Scoring rubric"),
+                         (85, "Drafting feedback"),
+                         (100, "Finalizing")]:
+            await asyncio.sleep(0.2)
+            if session_id:
+                await manager.broadcast(session_id, {"event": "progress", "progress": pct, "message": msg})
+
+        summary = {
+            "title": state.get("paper_title"),
+            "scores": {"Clarity": 4, "Evidence": 3, "Structure": 3, "Originality": 4},
+            "recommendations": ["Tighten thesis focus", "Add 2–3 high-quality sources", "Clarify method vs. findings"],
+        }
+        if session_id:
+            await manager.broadcast(session_id, {"event": "summary", "payload": summary})
+        return summary
+Without progress events and a final “summary”, your UI will spin even if the endpoint returns 200s.
+4) Serialize session objects correctly
+Anywhere you send a session over the wire, don’t send the raw object:
+# Pydantic v2
+payload = session.model_dump()
+# Pydantic v1
+# payload = session.dict()
+# Dataclass
+# payload = asdict(session)
+await manager.broadcast(session.id, {"event": "status", "payload": payload})
+5) Quick verification steps (in Replit shell)
+# 1) Find the double-construction logs
+grep -R --line-number -E "Creating real critique supervisor|Creating mock critique supervisor" .
+
+# 2) Find websocket broadcasts to confirm they’re sent
+grep -R --line-number -E "broadcast\(|manager\.broadcast" .
+
+# 3) Ensure we never treat the session like a dict anymore
+grep -R --line-number -E "session\[['\"]" .
+6) If you’re truly in REAL mode, confirm the OpenAI call path
+Inside RealCritiqueSupervisor, make sure you use the correct client call and don’t override the model name later:
+# pact/supervisors/real_supervisor.py
+from openai import OpenAI
+client = OpenAI()
+
+MODEL = "gpt-5"  # or settings.model
+
+class RealCritiqueSupervisor:
+    async def ainvoke(self, state: dict, session_id: str | None = None):
+        # Broadcast a start event
+        if session_id:
+            await manager.broadcast(session_id, {"event": "progress", "progress": 5, "message": "Calling LLM"})
+
+        prompt = f"""You are PACT. Critique the paper titled "{state.get('paper_title')}"...
+        --- TEXT START ---
+        {state.get('paper_content')}
+        --- TEXT END ---
+        Return JSON with keys: scores, findings, recommendations.
+        """
+
+        # chat.completions style (works fine):
+        resp = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role":"system","content":"You are a precise academic critique engine (PACT)."},
+                {"role":"user","content": prompt}
+            ]
+        )
+        text = resp.choices[0].message.content
+
+        if session_id:
+            await manager.broadcast(session_id, {"event":"progress","progress":90,"message":"Formatting results"})
+
+        # parse your JSON block (or do structured prompting if you have it)
+        result = safe_parse_json(text)  # implement robust parsing
+
+        if session_id:
+            await manager.broadcast(session_id, {"event":"summary","payload":result})
+
+        return result
+Make sure you’re not accidentally using a leftover "chatgpt-5" constant anywhere else.
+Why your UI keeps polling /status with no output
+The mock ran instead of the real supervisor.
+The mock likely didn’t broadcast events and the session status was never set to completed.
+So the client sees a valid session but never receives progress or a final summary → endless polling “200 OK”.
+Apply the supervisor selection fix + ensure progress/summary broadcasts, and you should immediately see progress ticks and a final critique payload in the UI.
+If you paste the create_supervisor (or the block that logs both lines), I’ll give you a one-shot diff you can drop in verbatim.
