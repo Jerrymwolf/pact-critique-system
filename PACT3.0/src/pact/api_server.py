@@ -295,6 +295,10 @@ class AgentMode:
     APA7 = "APA7"
     STANDARD = "STANDARD"
     COMPREHENSIVE = "COMPREHENSIVE"
+    
+    @classmethod
+    def values(cls):
+        return [cls.APA7, cls.STANDARD, cls.COMPREHENSIVE]
 
 # Dummy mode_config, actual implementation would define agent configurations per mode
 mode_config = {
@@ -620,9 +624,8 @@ async def start_critique(request: CritiqueRequest):
         mode = getattr(request, 'mode', 'STANDARD')
         
         # Validate mode if it's not recognized, default to STANDARD
-        try:
-            AgentMode(mode)
-        except ValueError:
+        valid_modes = [AgentMode.APA7, AgentMode.STANDARD, AgentMode.COMPREHENSIVE]
+        if mode not in valid_modes:
             logger.warning(f"Unrecognized mode '{mode}'. Defaulting to STANDARD.")
             mode = AgentMode.STANDARD
 
@@ -803,12 +806,10 @@ async def run_critique_workflow(session_id: str, paper_content: str, paper_title
         # from pact.mode_config import AgentMode, mode_config
 
         # Validate mode
-        try:
-            agent_mode = AgentMode(mode)
-        except ValueError:
+        if mode not in AgentMode.values():
             logger.warning(f"Invalid mode '{mode}' received in workflow. Defaulting to STANDARD.")
-            agent_mode = AgentMode.STANDARD
-            mode = AgentMode.STANDARD # Ensure mode variable is updated
+            mode = AgentMode.STANDARD
+        agent_mode = mode
 
         # Update session status to running and initialize progress
         await update_session_status(session_id, "running", 10, "Initializing critique workflow")
