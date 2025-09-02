@@ -587,36 +587,23 @@ async def start_critique(request: CritiqueRequest):
 @app.get("/api/critique/status/{session_id}")
 async def get_critique_status(session_id: str):
     """Get the current status of a critique session."""
-    session = session_manager.get_session(session_id)
+    session = session_manager.get(session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise HTTPException(status_code=404, detail="Unknown session")
 
     # Convert status enum to string
     status = session.status.value if hasattr(session.status, 'value') else str(session.status)
 
     response = {
-        "session_id": session_id,
-        "state": status,  # Use 'state' for consistency
-        "paper_title": session.paper_title,
+        "session_id": session.session_id,
+        "title": session.paper_title,
         "mode": getattr(session, 'mode', 'STANDARD'),
-        "created_at": session.created_at.isoformat() if session.created_at else None,
-        "updated_at": session.updated_at.isoformat() if session.updated_at else None,
-        "error": session.error_message
+        "status": status,
+        "progress": session.overall_progress,
+        # Optional: include a small summary or a flag that results exist
+        "has_result": session.result is not None,
+        # "result": session.result,  # include if your UI wants it here
     }
-
-    # Add progress information if available
-    response["progress"] = session.overall_progress
-
-    # Add result data if analysis is complete
-    if status == "completed":
-        response["result"] = {
-            "overall_score": session.overall_score,
-            "final_critique": session.final_critique,
-            "dimension_critiques": session.dimension_critiques
-        }
-        response["overall_score"] = session.overall_score
-        response["final_critique"] = session.final_critique
-        response["dimension_critiques"] = session.dimension_critiques
 
     return response
 
