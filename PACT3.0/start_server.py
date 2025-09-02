@@ -44,11 +44,11 @@ if __name__ == "__main__":
     from pact.api_server import app
     
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8000"))
+    port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("DEBUG", "true").lower() == "true"
     
     print(f"🚀 Starting PACT Critique API Server on {host}:{port}")
-    print(f"🔗 Access the app at: http://localhost:{port}")
+    print(f"🔗 Access the app in the Replit webview or at your repl's URL")
     print("📊 WebSocket endpoint: /api/critique/live/{session_id}")
     print("📖 API documentation: /docs")
     

@@ -1,8 +1,21 @@
+
 modules = ["python-3.12", "web", "bash"]
-run = "install"
+run = "python PACT3.0/start_server.py"
 
 [nix]
 channel = "stable-25_05"
 
 [deployment]
-run = ["sh", "-c", "install"]
+run = ["python", "PACT3.0/start_server.py"]
+
+[workflows]
+runButton = "Start PACT Server"
+
+[[workflows.workflow]]
+name = "Start PACT Server"
+author = 43152860
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd PACT3.0 && python start_server.py"
