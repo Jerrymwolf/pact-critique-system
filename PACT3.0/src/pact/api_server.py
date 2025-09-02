@@ -110,7 +110,7 @@ class MockSessionManager:
             return {"error": "Session not found"}
         if session.get("status") != self.critique_status["completed"]:
             return {"error": "Session not yet completed"}
-        
+
         # Mock results
         return {
             "session_id": session_id,
@@ -146,7 +146,7 @@ class MockSessionManager:
             created_at = datetime.fromisoformat(session_data.get("created_at"))
             if (current_time - created_at).total_seconds() > max_age_hours * 3600:
                 sessions_to_remove.append(session_id)
-        
+
         for session_id in sessions_to_remove:
             del self.sessions[session_id]
             removed_count += 1
@@ -181,7 +181,7 @@ class MockWebSocketManager:
                 except RuntimeError as e:
                     logger.error(f"Error sending to WebSocket for session {session_id}: {e}")
                     disconnected_websockets.append(connection)
-            
+
             # Remove disconnected websockets
             for ws in disconnected_websockets:
                 if ws in self.active_connections[session_id]:
@@ -296,7 +296,7 @@ class AgentMode:
     APA7 = "APA7"
     STANDARD = "STANDARD"
     COMPREHENSIVE = "COMPREHENSIVE"
-    
+
     @classmethod
     def values(cls):
         return [cls.APA7, cls.STANDARD, cls.COMPREHENSIVE]
@@ -320,13 +320,13 @@ def create_critique_supervisor():
             # Simulate agent execution based on mode
             mode = initial_state.get("mode", "STANDARD")
             paper_content = initial_state.get("paper_content")
-            
+
             # Create a mock config similar to what the real system would use
             mock_config = {
                 "configurable": {"thread_id": "supervisor_session"},
                 "recursion_limit": 20
             }
-            
+
             # Mock the behavior of pact_critique_agent.ainvoke directly
             # This mock supervisor doesn't have complex internal logic, 
             # it just delegates to the mock pact_critique_agent
@@ -583,12 +583,12 @@ async def upload_file(file: UploadFile = File(...)):
     Upload and extract text content from uploaded files (DOCX, PDF, TXT).
     """
     logger.info(f"Processing uploaded file: {file.filename}, content-type: {file.content_type}, size: {file.size}")
-    
+
     try:
         # Validate file size
         if file.size and file.size > 10 * 1024 * 1024:  # 10MB limit
             raise HTTPException(status_code=400, detail="File size exceeds 10MB limit.")
-        
+
         content = await file.read()
         logger.info(f"Read {len(content)} bytes from file {file.filename}")
 
@@ -661,7 +661,7 @@ async def start_critique(request: CritiqueRequest):
     try:
         # Get mode from request (default to STANDARD)
         mode = getattr(request, 'mode', 'STANDARD')
-        
+
         # Validate mode if it's not recognized, default to STANDARD
         valid_modes = [AgentMode.APA7, AgentMode.STANDARD, AgentMode.COMPREHENSIVE]
         if mode not in valid_modes:
@@ -892,7 +892,7 @@ async def run_critique_workflow(session_id: str, paper_content: str, paper_title
 
         # Update progress to indicate evaluation/synthesis phase
         await update_session_status(session_id, "evaluating", 75, "Evaluating dimensions and synthesizing results")
-        
+
         # Update agent statuses based on mock result
         for agent_id, status in result.get("agents_status", {}).items():
              session_manager.update_agent_status(session_id, agent_id, status, f"Agent {status.lower()}", 100)
@@ -911,17 +911,6 @@ async def run_critique_workflow(session_id: str, paper_content: str, paper_title
             pdf_path = await generate_pdf_report(comprehensive_critique, session_id)
 
             # Save final results to the session manager
-            final_results = {
-                "session_id": session_id,
-                "status": "completed",
-                "mode": mode,
-                "comprehensive_critique": comprehensive_critique,
-                "markdown_report": markdown_report,
-                "pdf_path": str(pdf_path) if pdf_path else None,
-                "completed_at": datetime.now().isoformat()
-            }
-
-            # Update session manager with final results
             # This part needs to map correctly to how session_manager stores results
             # Assuming set_critique_results and then updating status to completed
             session_manager.set_critique_results(
@@ -930,7 +919,7 @@ async def run_critique_workflow(session_id: str, paper_content: str, paper_title
                 final_critique=comprehensive_critique.get("executive_summary", ""),
                 overall_score=comprehensive_critique.get("overall_score", 0)
             )
-            
+
             # Mark all agents as completed if they were tracked
             for agent_id in result.get("agents_status", {}):
                  session_manager.update_agent_status(session_id, agent_id, "COMPLETED", "Analysis complete", 100)
@@ -979,7 +968,7 @@ class CritiqueProgressCallback:
         """Called when LLM ends."""
         logger.debug("LLM end.")
         pass
-    
+
     async def on_tool_start(self, serialized: Dict[str, Any], args: Dict[str, Any], **kwargs):
         """Called when a tool starts."""
         logger.debug(f"Tool start: {serialized.get('name')}")
