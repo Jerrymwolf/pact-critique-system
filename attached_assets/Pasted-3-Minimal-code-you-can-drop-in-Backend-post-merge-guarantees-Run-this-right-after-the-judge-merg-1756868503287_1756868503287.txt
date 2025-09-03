@@ -1,0 +1,57 @@
+3) Minimal code you can drop in
+Backend: post-merge “guarantees”
+Run this right after the judge merge and before broadcasting the summary:
+def ensure_minimums(result):
+  dims = result.get("dimension_feedback", {})
+  total_issues = 0
+
+  for name, d in dims.items():
+    d.setdefault("strengths", [])
+    d.setdefault("issues", [])
+    d.setdefault("next_steps", [])
+
+    # Priority defaults
+    for it in d["issues"]:
+      it["priority"] = it.get("priority") or infer_priority(it)  # high/med/low
+
+    # Filter: keep only issues with exemplar_rewrites and ≥2 quotes
+    d["issues"] = [it for it in d["issues"]
+                   if it.get("exemplar_rewrites") and len(it.get("exemplar_rewrites", [])) >= 1
+                   and len(it.get("quotes", [])) >= 2]
+
+    total_issues += len(d["issues"])
+
+    # Ensure ≥2 strengths (call small helper if empty)
+    if len(d["strengths"]) < 2:
+      d["strengths"].extend(strength_harvester(title, text, name))  # cheap call or local heuristic
+      d["strengths"] = dedupe_texts(d["strengths"])[:4]
+
+  # Ensure at least 3 issues overall
+  if total_issues < 3:
+    result = top_off_with_specifics(result, title, text)  # small “targeted fill” call
+
+  return result
+(Implement infer_priority, strength_harvester, and top_off_with_specifics as tiny, low-token calls, or even local heuristics when possible.)
+Frontend: render everything (no slicing)
+Where you map your API result to UI data, do not truncate:
+function toDisplay(data) {
+  return {
+    qualitativeMode: true,
+    summary: data.final_summary || "",
+    dimensions: Object.entries(data.dimension_feedback || {}).map(([name, d]) => ({
+      name,
+      strengths: d.strengths || [],
+      issues: (d.issues || []).map(it => ({
+        title: it.title,
+        why: it.why_it_matters,
+        suggestions: it.suggestions || [],
+        rewrites: it.exemplar_rewrites || [],
+        quotes: it.quotes || [],
+        priority: it.priority || "medium",
+        location: it.location_hint || ""
+      })),
+      nextSteps: d.next_steps || []
+    }))
+  };
+}
+Then in your “Checklist” tab, group by priority and display all issues; don’t invent or remap numbers.
