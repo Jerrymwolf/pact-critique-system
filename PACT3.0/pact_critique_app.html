@@ -2739,9 +2739,16 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
         }
         
         function populateKeyFindingsCardsProfessional(data) {
-            const criticalCount = countCriticalIssuesProfessional(data);
-            const improvementCount = countImprovementAreasProfessional(data);
-            const strengthCount = countStrengthsProfessional(data);
+            // Use professional functions with fallback to avoid errors
+            const criticalCount = typeof countCriticalIssuesProfessional === 'function' 
+                ? countCriticalIssuesProfessional(data) 
+                : (typeof countCriticalIssues === 'function' ? countCriticalIssues(data) : 0);
+            const improvementCount = typeof countImprovementAreasProfessional === 'function' 
+                ? countImprovementAreasProfessional(data) 
+                : (typeof countImprovements === 'function' ? countImprovements(data) : 0);
+            const strengthCount = typeof countStrengthsProfessional === 'function' 
+                ? countStrengthsProfessional(data) 
+                : (typeof countStrengths === 'function' ? countStrengths(data) : 0);
             
             document.getElementById('critical-count').textContent = criticalCount;
             document.getElementById('improvement-count').textContent = improvementCount;
@@ -2933,6 +2940,22 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
         function countImprovementAreas(data) {
             return countImprovementAreasProfessional(data);
         }
+        
+        // Additional compatibility functions to ensure no errors
+        window.countImprovementAreas = countImprovementAreas;
+        window.countCriticalIssuesProfessional = countCriticalIssuesProfessional;
+        window.countImprovementAreasProfessional = countImprovementAreasProfessional;
+        window.countStrengthsProfessional = countStrengthsProfessional;
+        
+        // Debug function to check what functions are available
+        console.log('PACT Functions Available:', {
+            countCriticalIssuesProfessional: typeof countCriticalIssuesProfessional,
+            countImprovementAreasProfessional: typeof countImprovementAreasProfessional,
+            countStrengthsProfessional: typeof countStrengthsProfessional,
+            countImprovementAreas: typeof countImprovementAreas,
+            countCriticalIssues: typeof countCriticalIssues,
+            countStrengths: typeof countStrengths
+        });
     </script>
 </body>
 </html>
