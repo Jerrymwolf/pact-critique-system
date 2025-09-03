@@ -14,6 +14,8 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 import logging
 
+from .utils.enum_safety import enum_value, safe_status_value
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -294,13 +296,13 @@ class SessionManager:
 
         return {
             "session_id": session_id,
-            "status": session.status.value,
+            "status": enum_value(session.status),
             "overall_progress": session.overall_progress,
             "current_stage": session.current_stage,
             "agents": {
                 agent_id: {
                     "name": agent.agent_name,
-                    "status": agent.status.value,
+                    "status": enum_value(agent.status),
                     "message": agent.message,
                     "progress": agent.progress
                 }
@@ -358,7 +360,7 @@ class SessionManager:
 
         # Convert session to dict, handling dataclasses and enums
         session_data = asdict(session)
-        session_data['status'] = session.status.value
+        session_data['status'] = enum_value(session.status)
         session_data['created_at'] = session.created_at.isoformat()
         session_data['updated_at'] = session.updated_at.isoformat()
         session_data['mode'] = getattr(session, 'mode', 'STANDARD')
@@ -368,7 +370,7 @@ class SessionManager:
             if isinstance(agent, dict):
                 # Already a dict, just convert status and times
                 if 'status' in agent:
-                    agent['status'] = agent['status'].value if hasattr(agent['status'], 'value') else agent['status']
+                    agent['status'] = enum_value(agent['status'])
                 if agent.get('start_time'):
                     agent['start_time'] = agent['start_time'].isoformat() if hasattr(agent['start_time'], 'isoformat') else agent['start_time']
                 if agent.get('end_time'):
@@ -376,7 +378,7 @@ class SessionManager:
             elif hasattr(agent, '__dict__'):
                 # Convert object to dict first if it's not already a dict
                 agent_dict = asdict(agent) if hasattr(agent, '__dataclass_fields__') else agent.__dict__
-                agent_dict['status'] = agent_dict['status'].value if hasattr(agent_dict['status'], 'value') else agent_dict['status']
+                agent_dict['status'] = enum_value(agent_dict['status'])
                 if agent_dict.get('start_time'):
                     agent_dict['start_time'] = agent_dict['start_time'].isoformat() if hasattr(agent_dict['start_time'], 'isoformat') else agent_dict['start_time']
                 if agent_dict.get('end_time'):

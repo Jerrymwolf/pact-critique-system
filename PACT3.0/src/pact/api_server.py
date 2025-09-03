@@ -25,11 +25,7 @@ import PyPDF2
 import logging
 from langchain_core.messages import HumanMessage
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Import real PACT components
+# Local imports for PACT components
 try:
     from .pact_critique_agent import pact_critique_agent
     from .session_manager import session_manager
@@ -38,6 +34,7 @@ try:
     from .mode_config import AgentMode, mode_config
     from .supervisors.real_supervisor import RealCritiqueSupervisor
     from .supervisors.mock_supervisor import MockCritiqueSupervisor
+    from .utils.enum_safety import enum_value # Import the new helper
     logger.info("WS manager id (api_server)=%s", id(manager))
     MOCK_MODE = False
 except ImportError:
@@ -123,7 +120,7 @@ if MOCK_MODE:
                 "updated_at": datetime.now().isoformat()
             }
             self.sessions[session_id] = session_dict
-            
+
             # Create a mock session object with dict-like access
             class MockSession:
                 def __init__(self, data):
@@ -134,7 +131,7 @@ if MOCK_MODE:
                     setattr(self, key, value)
                 def get(self, key, default=None):
                     return getattr(self, key, default)
-            
+
             return MockSession(session_dict)
 
         def get_session(self, session_id: str):
@@ -622,11 +619,11 @@ async def get_critique_status(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Unknown session")
 
-    # Convert status enum to string
-    status = session.status.value if hasattr(session.status, 'value') else str(session.status)
+    # Convert status enum to string using safe accessor
+    status = enum_value(session.status)
 
     response = {
-        "session_id": session.session_id,
+        "session_id": session_id,
         "title": session.paper_title,
         "mode": getattr(session, 'mode', 'STANDARD'),
         "status": status,
@@ -647,7 +644,8 @@ async def get_critique_results(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    status = session.status.value if hasattr(session.status, 'value') else str(session.status)
+    # Convert status enum to string using safe accessor
+    status = enum_value(session.status)
     if status != "completed":
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
@@ -675,7 +673,8 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
         # Send initial status
         session = session_manager.get_session(session_id)
         if session:
-            status = session.status.value if hasattr(session.status, 'value') else str(session.status)
+            # Convert status enum to string using safe accessor
+            status = enum_value(session.status)
             current_status = {
                 "session_id": session_id,
                 "state": status,
@@ -719,7 +718,8 @@ async def download_critique_report(session_id: str, format: str = Query("pdf", d
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    status = session.status.value if hasattr(session.status, 'value') else str(session.status)
+    # Convert status enum to string using safe accessor
+    status = enum_value(session.status)
     if status != "completed": # Use the mapped status 'completed'
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
@@ -788,7 +788,8 @@ async def preview_critique_report(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    status = session.status.value if hasattr(session.status, 'value') else str(session.status)
+    # Convert status enum to string using safe accessor
+    status = enum_value(session.status)
     if status != "completed": # Use the mapped status 'completed'
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
@@ -839,7 +840,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         # ✅ set final status/progress and broadcast
         session_manager.update_progress(session_id, 100, status="completed")
         await manager.broadcast(session_id, {"event": "status", "status": "completed", "progress": 100})
-        
+
         # If the supervisor didn't already send a summary, send it here too:
         await manager.broadcast(session_id, {"event": "summary", "payload": result})
 
@@ -912,7 +913,8 @@ async def notify_websocket_clients(session_id: str):
     """Send progress updates to WebSocket clients."""
     session = session_manager.get_session(session_id)
     if session:
-        status = session.status.value if hasattr(session.status, 'value') else str(session.status)
+        # Convert status enum to string using safe accessor
+        status = enum_value(session.status)
         progress_data = {
             "session_id": session_id,
             "state": status,
