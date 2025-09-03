@@ -1,4 +1,3 @@
-
 import logging
 from typing import Dict, Set
 from fastapi import WebSocket
@@ -22,13 +21,19 @@ class WebSocketConnectionManager:
         logger.info("WebSocket disconnected for session %s", session_id)
 
     async def broadcast(self, session_id: str, message: dict):
-        # Optionally log for debugging
-        # logger.info("Broadcasting to %s: %s", session_id, message.get("event"))
-        for ws in list(self.active.get(session_id, [])):
-            try:
-                await ws.send_json(message)
-            except Exception:
-                self.disconnect(session_id, ws)
+        """Broadcast message to all connections for a session."""
+        if session_id in self.active:
+            disconnected = []
+            for connection in self.active[session_id]:
+                try:
+                    await connection.send_json(message)
+                except Exception as e:
+                    logger.error(f"Error sending message to WebSocket: {str(e)}")
+                    disconnected.append(connection)
+
+            # Remove disconnected connections
+            for conn in disconnected:
+                self.active[session_id].remove(conn)
 
     # ✅ Legacy alias so existing calls keep working
     async def send_message(self, session_id: str, message: dict):

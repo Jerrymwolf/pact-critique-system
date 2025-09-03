@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from starlette.responses import PlainTextResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 import uvicorn
 import io
@@ -28,6 +29,10 @@ from langchain_core.messages import HumanMessage
 
 # Configure logger
 logger = logging.getLogger("pact.api_server")
+
+def _err_payload(exc: Exception):
+    return {"detail": "internal_error",
+            "error": {"type": exc.__class__.__name__, "message": str(exc)}}
 
 # Local imports for PACT components
 try:
@@ -404,9 +409,6 @@ def convert_to_comprehensive_critique(results_data: Dict[str, Any]) -> Dict[str,
 # ===== API MODELS =====
 
 # Define RunStatus Enum as per the user message
-from enum import Enum
-from pydantic import BaseModel, Field, model_validator
-
 class RunStatus(str, Enum):
     pending = "pending"
     running = "running"
@@ -510,12 +512,13 @@ app.add_middleware(
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.error("422 on %s: %s", request.url, exc.errors())
-    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+    return JSONResponse(status_code=422,
+                        content=jsonable_encoder({"detail": "validation_error", "errors": exc.errors()}))
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     logger.exception("500 on %s", request.url)
-    return JSONResponse(status_code=500, content={"detail": f"internal_error: {exc.__class__.__name__}: {exc}"})
+    return JSONResponse(status_code=500, content=jsonable_encoder(_err_payload(exc)))
 
 # Serve static files (the HTML app)
 # Assuming pact_critique_app.html is in the root directory
@@ -611,56 +614,35 @@ async def upload_file(file: UploadFile = File(...)):
 @app.post("/api/critique/start")
 async def start_critique(req: StartCritiqueRequest, request: Request):
     try:
-        title = (req.title or "").strip() or "Untitled"
-        text = req.text
-        logger.info("START: title=%r mode=%r text_len=%d", title, req.mode, len(text))
+        logger.info(f"Starting critique for paper: {req.title[:50]}...")
 
-        # 1) create session (make sure your create_session signature matches)
-        session = session_manager.create_session(title=title, mode=req.mode or "STANDARD")
-        logger.info("Session created %s", session.session_id)
-        
-        # Store original text for comprehensive reports
-        session_manager.attach_text(session.session_id, text)
+        # Check required fields
+        if not req.text or not req.text.strip():
+            raise HTTPException(status_code=400, detail="Paper text is required")
 
-        # 2) set initial status + broadcast (use enum-safe strings)
-        session.status = "running"
-        session.overall_progress = 1
-        await manager.broadcast(session.session_id, {"event":"status","status":"running","progress":1})
-        logger.info("Broadcasted initial status for %s", session.session_id)
+        if len(req.text.strip()) < 100:
+            raise HTTPException(status_code=400, detail="Paper text is too short (minimum 100 characters)")
 
-        # 3) run background analysis (don't await here)
-        async def run():
-            try:
-                supervisor = make_supervisor()
-                await manager.broadcast(session.session_id, {"event":"progress","progress":5,"message":"Calling GPT-5"})
-                result = await supervisor.ainvoke(
-                    {"paper_title": title, "paper_content": text, "mode": session.mode},
-                    session_id=session.session_id
-                )
-                # persist results (non-fatal if it fails)
-                try:
-                    session_manager.update_session_results(session.session_id, result)
-                except Exception as e:
-                    logger.exception("Non-fatal: update_session_results failed: %s", e)
+        # Create session
+        session_id = session_manager.create_session(
+            title=req.title,
+            text=req.text,
+            mode=req.mode,
+            paper_type=req.paper_type
+        )
 
-                session_manager.update_progress(session.session_id, 100, status="completed")
-                await manager.broadcast(session.session_id, {"event":"status","status":"completed","progress":100})
-                # the supervisor should have already sent summary; resend for safety:
-                await manager.broadcast(session.session_id, {"event":"summary","payload":result})
-                logger.info("Completed analysis for %s", session.session_id)
-            except Exception as e:
-                logger.exception("Critique run failed for %s", session.session_id)
-                session_manager.update_progress(session.session_id, session.overall_progress, status="error")
-                await manager.broadcast(session.session_id, {"event":"status","status":"error","message":str(e)})
+        logger.info(f"Created session {session_id}")
 
-        asyncio.create_task(run(), name=f"critique-{session.session_id}")
-        return {"session_id": session.session_id}
+        # Start background analysis
+        asyncio.create_task(run_critique_analysis(session_id))
+
+        return {"session_id": session_id, "status": "started"}
+
     except HTTPException:
         raise
     except Exception as e:
-        # This is the bit causing your 500—now you'll see exactly why in server logs and client error JSON
         logger.exception("Error starting critique")
-        raise HTTPException(status_code=500, detail=f"start_failed: {e.__class__.__name__}: {e}")
+        return JSONResponse(status_code=500, content=jsonable_encoder(_err_payload(e)))
 
 @app.get("/api/critique/status/{session_id}")
 async def get_critique_status(session_id: str):
@@ -669,7 +651,7 @@ async def get_critique_status(session_id: str):
         session = session_manager.get_session(session_id)
         if not session:
             return JSONResponse(
-                status_code=404, 
+                status_code=404,
                 content={"detail": "Session not found", "session_id": session_id}
             )
 
@@ -736,7 +718,7 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
         # Send initial status
         session = session_manager.get_session(session_id)
         if session:
-            # String-based enums are directly JSON-serializable  
+            # String-based enums are directly JSON-serializable
             current_status = {
                 "session_id": session_id,
                 "state": session.status,  # No .value needed - string enum
