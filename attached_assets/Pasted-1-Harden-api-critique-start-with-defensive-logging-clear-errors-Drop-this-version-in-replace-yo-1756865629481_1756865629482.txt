@@ -1,0 +1,82 @@
+1) Harden /api/critique/start with defensive logging + clear errors
+Drop this version in (replace your current handler):
+# pact/api_server.py
+import asyncio, logging
+from fastapi import HTTPException, APIRouter
+from fastapi import Request
+from pydantic import BaseModel, model_validator
+from typing import Optional
+
+logger = logging.getLogger("pact.api_server")
+router = APIRouter()
+
+class StartCritiqueRequest(BaseModel):
+    title: str
+    paper_text: Optional[str] = None
+    paper_content: Optional[str] = None
+    mode: str = "STANDARD"
+
+    @model_validator(mode="after")
+    def ensure_text_present(self):
+        if not (self.paper_text or self.paper_content):
+            raise ValueError("Provide paper_text or paper_content")
+        return self
+
+    @property
+    def text(self) -> str:
+        return (self.paper_text or self.paper_content or "").strip()
+
+@router.post("/api/critique/start")
+async def start_critique(req: StartCritiqueRequest, request: Request):
+    try:
+        title = (req.title or "").strip() or "Untitled"
+        text = req.text
+        logger.info("START: title=%r mode=%r text_len=%d", title, req.mode, len(text))
+
+        # 1) create session (make sure your create_session signature matches)
+        session = session_manager.create_session(title=title, mode=req.mode or "STANDARD")
+        logger.info("Session created %s", session.id)
+
+        # 2) set initial status + broadcast (use enum-safe strings)
+        session.status = "running"
+        session.progress = 1
+        await manager.broadcast(session.id, {"event":"status","status":"running","progress":1})
+        logger.info("Broadcasted initial status for %s", session.id)
+
+        # 3) run background analysis (don’t await here)
+        async def run():
+            try:
+                supervisor = RealCritiqueSupervisor()
+                await manager.broadcast(session.id, {"event":"progress","progress":5,"message":"Calling GPT-5"})
+                result = await supervisor.ainvoke(
+                    {"paper_title": title, "paper_content": text, "mode": session.mode},
+                    session_id=session.id
+                )
+                # persist results (non-fatal if it fails)
+                try:
+                    session_manager.update_session_results(session.id, result)
+                except Exception as e:
+                    logger.exception("Non-fatal: update_session_results failed: %s", e)
+
+                session_manager.update_progress(session.id, 100, status="completed")
+                await manager.broadcast(session.id, {"event":"status","status":"completed","progress":100})
+                # the supervisor should have already sent summary; resend for safety:
+                await manager.broadcast(session.id, {"event":"summary","payload":result})
+                logger.info("Completed analysis for %s", session.id)
+            except Exception as e:
+                logger.exception("Critique run failed for %s", session.id)
+                session_manager.update_progress(session.id, session.progress, status="error")
+                await manager.broadcast(session.id, {"event":"status","status":"error","message":str(e)})
+
+        asyncio.create_task(run(), name=f"critique-{session.id}")
+        return {"session_id": session.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        # This is the bit causing your 500—now you'll see exactly why in server logs and client error JSON
+        logger.exception("Error starting critique")
+        raise HTTPException(status_code=500, detail=f"start_failed: {e.__class__.__name__}: {e}")
+Key points:
+Logs the title/mode/text_len before any work.
+Confirms create_session succeeded.
+Wraps everything with a final HTTPException(500, ...) so your client sees the reason (and your server logs the stack).
