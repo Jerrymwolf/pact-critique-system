@@ -1431,26 +1431,33 @@
         function convertAPIResultsToDisplayFormat(apiResults) {
             console.log('Converting API results:', apiResults);
 
-            const dimensions = {};
+            const dimensionAnalyses = apiResults.dimension_critiques || {};
+            const dimensions = [];
             const strengths = [];
             const improvements = [];
             const nextSteps = [];
-            const dimensionAnalyses = {};
             const checklistItems = [];
 
-            // Process dimension critiques - handle the actual API response format
-            if (apiResults.dimension_critiques) {
-                for (const [dimId, critique] of Object.entries(apiResults.dimension_critiques)) {
-                    const dimensionName = critique.dimension_name || dimId;
-                    dimensions[dimensionName] = critique.dimension_score || 75;
-                    dimensionAnalyses[dimId] = critique;
+            // Process dimension critiques for qualitative approach
+            if (dimensionAnalyses) {
+                for (const [dimId, critique] of Object.entries(dimensionAnalyses)) {
+                    dimensions.push({
+                        id: dimId,
+                        name: critique.dimension_name || dimId,
+                        overall_assessment: critique.overall_assessment || 'Competent',
+                        key_strengths: critique.key_strengths || [],
+                        priority_improvements: critique.priority_improvements || [],
+                        issues: critique.issues || [],
+                        subsections: critique.subsections || {},
+                        executive_summary: critique.executive_summary || ''
+                    });
 
-                    // Collect strengths and improvements from key_strengths and priority_improvements
+                    // Collect strengths and improvements without slicing
                     if (critique.key_strengths && Array.isArray(critique.key_strengths)) {
-                        strengths.push(...critique.key_strengths.map(s => s.strength || s).slice(0, 2));
+                        strengths.push(...critique.key_strengths.map(s => s.strength || s));
                     }
                     if (critique.priority_improvements && Array.isArray(critique.priority_improvements)) {
-                        improvements.push(...critique.priority_improvements.map(i => i.recommendation || i).slice(0, 2));
+                        improvements.push(...critique.priority_improvements.map(i => i.recommendation || i));
                     }
                 }
             }
@@ -1464,17 +1471,14 @@
                 checklistItems.push(...apiResults.checklist_items);
             }
 
-            const overallScore = calculateOverallScore(apiResults);
-
             return {
-                overallScore: overallScore,
-                recommendation: apiResults.submission_readiness || getRecommendationFromScore(overallScore),
-                dimensions: Object.keys(dimensions).length > 0 ? dimensions : getDefaultDimensions(),
+                qualitativeMode: true,
+                dimensions: dimensions,
                 dimensionAnalyses: dimensionAnalyses,
-                summary: apiResults.executive_summary || apiResults.final_critique || 'Analysis completed successfully. Your paper has been evaluated across multiple PACT dimensions.',
-                strengths: strengths.length > 0 ? strengths.slice(0, 4) : ['Analysis completed successfully', 'Paper structure is coherent', 'Research topic is well-defined'],
-                improvements: improvements.length > 0 ? improvements.slice(0, 4) : ['Consider strengthening methodology section', 'Review citation formatting'],
-                nextSteps: nextSteps.length > 0 ? nextSteps.slice(0, 5) : ['Review detailed feedback', 'Address priority improvements', 'Consider revision timeline'],
+                summary: apiResults.executive_summary || extractSummaryFromCritique(apiResults.final_critique) || 'Analysis completed successfully. Your paper has been evaluated across multiple PACT dimensions.',
+                strengths: strengths.length > 0 ? strengths : ['Analysis completed successfully', 'Paper structure is coherent', 'Research topic is well-defined'],
+                improvements: improvements.length > 0 ? improvements : ['Consider strengthening methodology section', 'Review citation formatting'],
+                nextSteps: nextSteps.length > 0 ? nextSteps : ['Review detailed feedback', 'Address priority improvements', 'Consider revision timeline'],
                 checklistItems: checklistItems,
                 submissionReadiness: apiResults.submission_readiness
             };
@@ -1589,30 +1593,39 @@
         function displayResults(data) {
             console.log('Displaying results with data:', data);
 
-            const score = data.overallScore || 75;
+            // Hide score UI when in qualitative mode
+            if (data.qualitativeMode) {
+                // Hide overall score section
+                const overallScoreContainer = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.gap-6.mb-8');
+                if (overallScoreContainer) {
+                    overallScoreContainer.classList.add('hidden');
+                }
+            } else {
+                const score = data.overallScore || 75;
 
-            // Convert score to 0-5 scale if it's 0-100
-            const normalizedScore = score > 5 ? score / 20 : score;
-            document.getElementById('overall-score').textContent = normalizedScore.toFixed(1);
+                // Convert score to 0-5 scale if it's 0-100
+                const normalizedScore = score > 5 ? score / 20 : score;
+                document.getElementById('overall-score').textContent = normalizedScore.toFixed(1);
 
-            // Animate the score circle (assuming 0-5 scale)
-            const circle = document.getElementById('score-circle');
-            const circumference = 351.86;
-            const percentage = (normalizedScore / 5) * 100;
-            const offset = circumference - (percentage / 100) * circumference;
-            setTimeout(() => {
-                circle.style.strokeDashoffset = offset;
-                circle.style.transition = 'stroke-dashoffset 1s ease-in-out';
-            }, 100);
+                // Animate the score circle (assuming 0-5 scale)
+                const circle = document.getElementById('score-circle');
+                const circumference = 351.86;
+                const percentage = (normalizedScore / 5) * 100;
+                const offset = circumference - (percentage / 100) * circumference;
+                setTimeout(() => {
+                    circle.style.strokeDashoffset = offset;
+                    circle.style.transition = 'stroke-dashoffset 1s ease-in-out';
+                }, 100);
+
+                // Populate dimension scores for quantitative mode
+                populateDimensionScores(data.dimensions || getDefaultDimensions());
+            }
 
             // Show document context if available
             populateDocumentContext(data);
 
             // Show analysis metadata
             populateAnalysisMetadata(data);
-
-            // Populate dimension scores
-            populateDimensionScores(data.dimensions || getDefaultDimensions());
 
             // Populate key findings cards
             populateKeyFindingsCards(data);
@@ -2338,6 +2351,11 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                         <div class="prose max-w-none">
                             <p class="text-gray-700 leading-relaxed">${summaryText}</p>
                         </div>
+                        ${!data.qualitativeMode && data.submissionReadiness ? `
+                            <div class="mt-4 p-3 bg-blue-100 rounded-lg">
+                                <span class="text-sm font-medium text-blue-800">Submission Readiness: ${data.submissionReadiness}</span>
+                            </div>
+                        ` : ''}
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2398,16 +2416,18 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const dimensionTabsNav = document.getElementById('dimension-tabs');
             const dimensionTabContent = document.getElementById('dimension-tab-content');
 
-            const dimensions = Object.entries(dimensionAnalyses);
+            // For qualitative mode, use the dimensions array
+            const dimensions = analysisData && analysisData.qualitativeMode ? 
+                analysisData.dimensions : Object.entries(dimensionAnalyses);
 
             // If no dimension data, create default structure
             if (dimensions.length === 0) {
                 const defaultDimensions = [
-                    { id: '1.0.0', name: 'Research Foundations', score: 75, summary: 'Analysis of research question, literature review, and theoretical framework.' },
-                    { id: '2.0.0', name: 'Methodological Rigor', score: 72, summary: 'Evaluation of research methods, data collection, and analysis procedures.' },
-                    { id: '3.0.0', name: 'Structure & Coherence', score: 78, summary: 'Assessment of organization, flow, and logical progression.' },
-                    { id: '4.0.0', name: 'Academic Precision', score: 70, summary: 'Review of citations, terminology, grammar, and formatting.' },
-                    { id: '5.0.0', name: 'Critical Sophistication', score: 73, summary: 'Analysis of critical thinking, originality, and scholarly depth.' }
+                    { id: '1.0.0', name: 'Research Foundations', overall_assessment: 'Competent', summary: 'Analysis of research question, literature review, and theoretical framework.' },
+                    { id: '2.0.0', name: 'Methodological Rigor', overall_assessment: 'Competent', summary: 'Evaluation of research methods, data collection, and analysis procedures.' },
+                    { id: '3.0.0', name: 'Structure & Coherence', overall_assessment: 'Competent', summary: 'Assessment of organization, flow, and logical progression.' },
+                    { id: '4.0.0', name: 'Academic Precision', overall_assessment: 'Competent', summary: 'Review of citations, terminology, grammar, and formatting.' },
+                    { id: '5.0.0', name: 'Critical Sophistication', overall_assessment: 'Competent', summary: 'Analysis of critical thinking, originality, and scholarly depth.' }
                 ];
 
                 // Create navigation for default dimensions
@@ -2417,7 +2437,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                     </button>
                 `).join('');
 
-                // Create content for default dimensions
+                // Create content for default dimensions in qualitative mode
                 dimensionTabContent.innerHTML = defaultDimensions.map((dim, index) => `
                     <div id="dim-content-${dim.id}" class="dim-tab-content ${index !== 0 ? 'hidden' : ''}">
                         <div class="space-y-4">
@@ -2426,10 +2446,9 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                 <p class="text-sm text-gray-600 mb-4">${dim.summary}</p>
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-4">
-                                        <div class="px-3 py-1 rounded-full ${getScoreBackground(dim.score / 20)} text-white text-sm font-medium">
-                                            ${(dim.score / 20).toFixed(1)}/5
+                                        <div class="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-medium">
+                                            ${dim.overall_assessment}
                                         </div>
-                                        <span class="text-sm text-gray-600">Competent</span>
                                     </div>
                                     <button onclick="window.open('/pact-wiki/dimensions/${dim.id}', '_blank')" class="inline-flex items-center px-3 py-1 text-sm border border-blue-600 rounded text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
                                         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2448,23 +2467,135 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                     <h4 class="font-semibold text-blue-800">Analysis Complete</h4>
                                 </div>
                                 <p class="text-sm text-blue-700">
-                                    Your paper has been analyzed for this dimension. The detailed subsection analysis and specific feedback 
+                                    Your paper has been analyzed for this dimension. The detailed feedback 
                                     will be available in the comprehensive PDF report. Click "Export PDF" above to download your complete analysis.
                                 </p>
                             </div>
                         </div>
-                    `).join('');
+                    </div>
+                `).join('');
                 return;
             }
 
-            // Create dimension tabs navigation for actual data
+            // Handle qualitative mode
+            if (analysisData && analysisData.qualitativeMode) {
+                // Create dimension tabs navigation for qualitative data
+                dimensionTabsNav.innerHTML = dimensions.map((dimension, index) => `
+                    <button onclick="showDimensionTab('${dimension.id}')" id="dim-tab-${dimension.id}" class="dim-tab-btn py-2 px-1 border-b-2 font-medium text-xs ${index === 0 ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}">
+                        ${dimension.name.split(' ')[0]}
+                    </button>
+                `).join('');
+
+                // Create dimension tab content for qualitative data with per-issue cards
+                dimensionTabContent.innerHTML = dimensions.map((dimension, index) => `
+                    <div id="dim-content-${dimension.id}" class="dim-tab-content ${index !== 0 ? 'hidden' : ''}">
+                        <div class="space-y-4">
+                            <div class="mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">${dimension.name}</h3>
+                                <p class="text-sm text-gray-600 mb-4">${dimension.executive_summary || 'Analysis completed for this dimension.'}</p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-medium">
+                                            ${dimension.overall_assessment}
+                                        </div>
+                                    </div>
+                                    <button onclick="window.open('/pact-wiki/dimensions/${dimension.id}', '_blank')" class="inline-flex items-center px-3 py-1 text-sm border border-blue-600 rounded text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
+                                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                        </svg>
+                                        Learn About This Dimension
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Per-issue cards for qualitative feedback -->
+                            ${dimension.issues && dimension.issues.length > 0 ? `
+                                <div class="space-y-4">
+                                    <h4 class="font-semibold text-gray-900">Detailed Observations</h4>
+                                    ${dimension.issues.map(issue => `
+                                        <div class="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+                                            <div class="mb-3">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <h5 class="font-medium text-gray-900">${issue.title || 'Observation'}</h5>
+                                                    <span class="px-2 py-1 text-xs rounded-full ${
+                                                        issue.priority === 'Critical' ? 'bg-red-100 text-red-800' :
+                                                        issue.priority === 'Important' ? 'bg-orange-100 text-orange-800' :
+                                                        'bg-blue-100 text-blue-800'
+                                                    }">${issue.priority || 'Standard'}</span>
+                                                </div>
+                                                ${issue.rubric_id ? `<p class="text-xs text-gray-500 mb-2">Rubric: ${issue.rubric_id}</p>` : ''}
+                                            </div>
+                                            
+                                            ${issue.why_it_matters ? `
+                                                <div class="mb-3">
+                                                    <h6 class="text-sm font-medium text-gray-700 mb-1">Why it matters:</h6>
+                                                    <p class="text-sm text-gray-600">${issue.why_it_matters}</p>
+                                                </div>
+                                            ` : ''}
+                                            
+                                            ${issue.evidence ? `
+                                                <div class="mb-3">
+                                                    <h6 class="text-sm font-medium text-gray-700 mb-1">Evidence:</h6>
+                                                    <div class="bg-gray-50 border-l-4 border-gray-300 p-3 text-sm text-gray-700 italic">
+                                                        "${issue.evidence}"
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+                                            
+                                            ${issue.rewrite ? `
+                                                <div>
+                                                    <h6 class="text-sm font-medium text-gray-700 mb-1">Suggested revision:</h6>
+                                                    <div class="bg-green-50 border-l-4 border-green-400 p-3 text-sm text-gray-700">
+                                                        ${issue.rewrite}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+
+                            <!-- Key Strengths Section -->
+                            ${dimension.key_strengths && dimension.key_strengths.length > 0 ? `
+                                <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                                    <h4 class="font-semibold text-green-700 mb-2">Key Strengths:</h4>
+                                    <ul class="space-y-1">
+                                        ${dimension.key_strengths.map(s => `
+                                            <li class="text-sm text-green-700">
+                                                <strong>${s.strength || s}:</strong> ${s.evidence || 'Well executed in this area'}
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            <!-- Priority Improvements Section -->
+                            ${dimension.priority_improvements && dimension.priority_improvements.length > 0 ? `
+                                <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-500">
+                                    <h4 class="font-semibold text-orange-700 mb-2">Priority Improvements:</h4>
+                                    <ul class="space-y-1">
+                                        ${dimension.priority_improvements.map(i => `
+                                            <li class="text-sm text-orange-700">
+                                                <strong>${i.area || i}:</strong> ${i.recommendation || 'Consider strengthening this aspect'}
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                return;
+            }
+
+            // Create dimension tabs navigation for quantitative data
             dimensionTabsNav.innerHTML = dimensions.map(([dimId, dimension], index) => `
                 <button onclick="showDimensionTab('${dimId}')" id="dim-tab-${dimId}" class="dim-tab-btn py-2 px-1 border-b-2 font-medium text-xs ${index === 0 ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}">
                     ${dimension.dimension_name ? dimension.dimension_name.split(' ')[0] : dimId}
                 </button>
             `).join('');
 
-            // Create dimension tab content for actual data
+            // Create dimension tab content for quantitative data
             dimensionTabContent.innerHTML = dimensions.map(([dimId, dimension], index) => `
                 <div id="dim-content-${dimId}" class="dim-tab-content ${index !== 0 ? 'hidden' : ''}">
                     <div class="space-y-4">
