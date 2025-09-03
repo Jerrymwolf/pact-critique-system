@@ -39,11 +39,20 @@ PAPER TO ANALYZE:
 
 REQUIRED ANALYSIS STRUCTURE:
 
-1. **COMPREHENSIVE ASSESSMENT** (300-400 words):
+1. **ELEMENT-BY-ELEMENT ANALYSIS**: 
+   Analyze EACH specific PACT element within this dimension (e.g., 1.1.1, 1.1.2):
+   - Element ID and Title (e.g., "1.1.1: Problem Identification and Significance")
+   - Assessment Level: Inadequate/Developing/Competent/Strong/Exemplary  
+   - 150-200 word detailed evaluation explaining the assessment
+   - Specific strengths with evidence from the paper
+   - Areas for improvement with actionable suggestions
+   - Direct quotes or examples as supporting evidence
+
+2. **COMPREHENSIVE ASSESSMENT** (200-300 words):
    - Overall evaluation of this dimension's execution in the paper
-   - Identify patterns, recurring issues, and systemic strengths/weaknesses
-   - Place the work in context of academic standards for this type of document
-   - Assess readiness level: submission-ready, minor revisions needed, or major work required
+   - Patterns, recurring issues, and systemic strengths/weaknesses across elements
+   - Context within academic standards for this document type
+   - Submission readiness level assessment
 
 2. **DETAILED STRENGTHS** (minimum 3-5, each 50-100 words):
    For each strength provide:

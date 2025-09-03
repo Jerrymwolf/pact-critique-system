@@ -80,17 +80,31 @@ CRITIQUE PLAN:
 INDIVIDUAL DIMENSION CRITIQUES:
 {critiques_text}
 
-Create a comprehensive final critique that:
-1. Provides an executive summary of the paper's overall quality
-2. Synthesizes feedback across all dimensions
-3. Identifies the top 3-5 key strengths
-4. Identifies the top 3-5 priority areas for improvement
-5. Provides specific, actionable next steps
-6. Calculates an overall score (weighted average of dimension scores)
-7. Makes a final recommendation (Accept, Revise, Major Revision, Reject)
+Create a COMPREHENSIVE PACT ANALYSIS REPORT matching the professional standard:
 
-Be constructive and supportive while maintaining academic rigor.
-Focus on helping the author improve their work.
+1. **OVERALL ASSESSMENT**:
+   - Assessment level (Strong, Competent, Developing, etc.)
+   - Overall score (weighted average of dimension scores)
+   - Final recommendation (Accept, Revise, Major Revision, Reject)
+
+2. **DIMENSION SCORES**: Each with assessment level and brief justification
+
+3. **EXECUTIVE SUMMARY**: 200-300 word comprehensive assessment
+
+4. **PACT FINDINGS CHECKLIST**: 
+   Generate 6-12 specific items with element codes (1.1.2, 3.4.2, 4.1.1):
+   - Categorize as "Areas for Improvement" vs "Strengths"
+   - Include brief titles and specific suggestions
+
+5. **DETAILED ELEMENT ANALYSIS**:
+   For each dimension, break down by individual PACT elements:
+   - Element ID and title (e.g., "1.1.1: Problem Identification and Significance")
+   - Assessment level (Strong/Competent/Developing/etc.)
+   - 150-200 word detailed analysis explaining the assessment
+   - Specific strengths and improvement areas with evidence
+
+Match the professional depth of the PACT Analysis Report standard.
+Be constructive, specific, and academically rigorous.
 """
 
 async def plan_critique(state: PaperCritiqueState) -> Command[Literal["evaluate_dimensions"]]:
