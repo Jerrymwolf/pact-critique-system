@@ -1094,8 +1094,10 @@
                     })
                 });
 
+                // Add detailed error handling here
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(`HTTP error! status: ${response.status}${err?.detail ? ` — ${err.detail}` : ""}`);
                 }
 
                 const result = await response.json();
@@ -1128,7 +1130,7 @@
                 websocket.onmessage = function(event) {
                     const data = JSON.parse(event.data);
                     console.log('Received WebSocket message:', data);
-                    
+
                     // Front-end guard: ignore late errors after summary is received
                     if (data.event === "summary") {
                         hasSummary = true;
