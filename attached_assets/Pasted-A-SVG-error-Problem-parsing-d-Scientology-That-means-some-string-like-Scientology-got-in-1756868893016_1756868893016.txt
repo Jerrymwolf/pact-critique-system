@@ -1,0 +1,51 @@
+A) SVG error: Problem parsing d="… Scientology …"
+That means some string (like “Scientology”) got injected into an SVG <path d="…">. The d attribute may only contain path commands/numbers; any random word breaks it.
+What’s most likely happening
+You’re using template strings/innerHTML to build UI blocks that include inline SVG icons (e.g., the spinner in your download button, checklist icons, etc.). Something later concatenates or injects user/model text into that same HTML string, which ends up inside a <path d="…">.
+This can happen if:
+You reuse a template literal and interpolate text before a </svg> closes.
+You write to element.innerHTML = someUserText on a node that contains inline SVG markup (icons).
+A global replace (highlighting, etc.) touches the whole innerHTML of a container with SVGs.
+Prove which element is corrupted (run this in your browser console)
+for (const p of document.querySelectorAll('path[d]')) {
+  const d = p.getAttribute('d') || '';
+  if (/[^MLHVCSQTAZmlhvcsqtaz0-9.,\s-]/.test(d)) {
+    console.warn('Bad path:', p, d);
+  }
+  if (d.includes('Scientology')) {
+    console.error('Path contains unexpected text:', p, d);
+  }
+}
+It’ll log the exact <path> that has the bad d string and where in the DOM it lives.
+Make your icon templates safe (don’t let text touch <path d>)
+Never concatenate user/model strings in the same template literal as your SVG path. Keep it separate:
+// BAD (mixing text & svg in one literal)
+btn.innerHTML = `
+  <svg ...><path d="${iconPath}"></path></svg>
+  ${userText}
+`;
+
+// GOOD
+btn.innerHTML = '';               // wipe
+const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+svg.setAttribute('viewBox','0 0 24 24');
+svg.className = 'w-4 h-4 mr-3 animate-spin';
+
+const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+path.setAttribute('stroke-linecap','round');
+path.setAttribute('stroke-linejoin','round');
+path.setAttribute('d','M12 4v16m8-8H4'); // static, known-good
+svg.appendChild(path);
+
+btn.appendChild(svg);
+btn.append(document.createTextNode(`Generating ${format.toUpperCase()}...`));
+If you must use a template string, insert the SVG first, then append text with textContent:
+btn.innerHTML = `<svg class="w-4 h-4 mr-3 animate-spin" ...><path d="M12 4v16M20 12H4"/></svg>`;
+btn.append(document.createTextNode(`Generating ${format.toUpperCase()}...`));
+Guard against corrupted d before inserting:
+const SAFE_D = /^[MLHVCSQTAZmlhvcsqtaz0-9.,\s-]+$/;
+function setPathD(el, d) {
+  if (!SAFE_D.test(d)) return; // refuse bad data
+  el.setAttribute('d', d);
+}
+Avoid doing any global container.innerHTML = ... where container contains inline SVG icons. If you need to add dynamic text, target a child like .text-container instead.
