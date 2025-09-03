@@ -271,7 +271,11 @@ def make_supervisor():
 
     if real_mode:
         logger.info("Creating real critique supervisor")
-        return RealCritiqueSupervisor()
+        # Create agents and LLM for real supervisor
+        from langchain.chat_models import init_chat_model
+        llm = init_chat_model(model="openai:gpt-4o", temperature=0.1)
+        agents = {}  # Will be populated by the supervisor
+        return RealCritiqueSupervisor(agents, llm)
     else:
         logger.info("Creating mock critique supervisor...")
         return MockCritiqueSupervisor()
@@ -905,7 +909,10 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
     except Exception as e:
         logger.exception("Critique failed for session %s", session_id)
         current_progress = getattr(session, 'overall_progress', 0) if session else 0
-        session_manager.update_progress(session_id, current_progress, status="error", error_message=str(e))
+        # Use update_session_status which exists in both mock and real managers
+        session_manager.update_session_status(session_id, "error", 
+                                            overall_progress=current_progress, 
+                                            error_message=str(e))
         await manager.send_message(session_id, {
             "event": "status",
             "status": "error",
