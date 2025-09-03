@@ -476,7 +476,7 @@
                         <div class="flex items-center justify-between mb-6">
                             <h2 class="text-lg font-semibold text-gray-900 flex items-center">
                                 <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                                 </svg>
                                 Analysis Results
                             </h2>
@@ -708,7 +708,7 @@
                                     </button>
                                     <button onclick="showMainTab('details')" id="main-tab-details" class="main-tab-btn py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                                         <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                                         </svg>
                                         PACT Details
                                     </button>
@@ -879,6 +879,7 @@
         // Polling variables
         let usePolling = false;      // turn on only if WS closes
         let pollAbort = null;
+        let currentPollTimeout = null; // For polling specific functions
 
         // Configure API base URL
         const API_BASE_URL = window.location.protocol + '//' + window.location.host;
@@ -984,9 +985,8 @@
                 const circle = document.getElementById('score-circle');
                 const circumference = 351.86;
                 const percentage = (normalizedScore / 5) * 100;
-                const offset = circumference - (percentage / 100) * circumference;
                 setTimeout(() => {
-                    circle.style.strokeDashoffset = offset;
+                    circle.style.strokeDashoffset = circumference - (percentage / 100) * circumference;
                     circle.style.transition = 'stroke-dashoffset 1s ease-in-out';
                 }, 100);
 
@@ -1008,9 +1008,6 @@
 
             // Populate main tab content
             populateMainTabContent(data);
-
-            // Store data for potential downloads
-            analysisData = data;
 
             // Show success message
             showNotification('Analysis completed successfully! Review your comprehensive results below.', 'success');
@@ -1866,130 +1863,19 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                 return;
             }
 
-            // Handle qualitative mode
-            if (analysisData && analysisData.qualitativeMode) {
-                // Create dimension tabs navigation for qualitative data
-                dimensionTabsNav.innerHTML = dimensions.map((dimension, index) => `
-                    <button onclick="showDimensionTab('${dimension.id}')" id="dim-tab-${dimension.id}" class="dim-tab-btn py-2 px-1 border-b-2 font-medium text-xs ${index === 0 ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}">
-                        ${dimension.name.split(' ')[0]}
-                    </button>
-                `).join('');
-
-                // Create dimension tab content for qualitative data with per-issue cards
-                dimensionTabContent.innerHTML = dimensions.map((dimension, index) => `
-                    <div id="dim-content-${dimension.id}" class="dim-tab-content ${index !== 0 ? 'hidden' : ''}">
-                        <div class="space-y-4">
-                            <div class="mb-4">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">${dimension.name}</h3>
-                                <p class="text-sm text-gray-600 mb-4">${dimension.executive_summary || 'Analysis completed for this dimension.'}</p>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-4">
-                                        <div class="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-medium">
-                                            ${dimension.overall_assessment}
-                                        </div>
-                                    </div>
-                                    <button onclick="window.open('/pact-wiki/dimensions/${dimension.id}', '_blank')" class="inline-flex items-center px-3 py-1 text-sm border border-blue-600 rounded text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
-                                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                        </svg>
-                                        Learn About This Dimension
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Per-issue cards for qualitative feedback -->
-                            ${dimension.issues && dimension.issues.length > 0 ? `
-                                <div class="space-y-4">
-                                    <h4 class="font-semibold text-gray-900">Detailed Observations</h4>
-                                    ${dimension.issues.map(issue => `
-                                        <div class="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
-                                            <div class="mb-3">
-                                                <div class="flex items-center justify-between mb-2">
-                                                    <h5 class="font-medium text-gray-900">${issue.title || 'Observation'}</h5>
-                                                    <span class="px-2 py-1 text-xs rounded-full ${
-                                                        issue.priority === 'Critical' ? 'bg-red-100 text-red-800' :
-                                                        issue.priority === 'Important' ? 'bg-orange-100 text-orange-800' :
-                                                        'bg-blue-100 text-blue-800'
-                                                    }">${issue.priority || 'Standard'}</span>
-                                                </div>
-                                                ${issue.rubric_id ? `<p class="text-xs text-gray-500 mb-2">Rubric: ${issue.rubric_id}</p>` : ''}
-                                            </div>
-
-                                            ${issue.why_it_matters ? `
-                                                <div class="mb-3">
-                                                    <h6 class="text-sm font-medium text-gray-700 mb-1">Why it matters:</h6>
-                                                    <p class="text-sm text-gray-600">${issue.why_it_matters}</p>
-                                                </div>
-                                            ` : ''}
-
-                                            ${issue.evidence ? `
-                                                <div class="mb-3">
-                                                    <h6 class="text-sm font-medium text-gray-700 mb-1">Evidence:</h6>
-                                                    <div class="bg-gray-50 border-l-4 border-gray-300 p-3 text-sm text-gray-700 italic">
-                                                        "${issue.evidence}"
-                                                    </div>
-                                                </div>
-                                            ` : ''}
-
-                                            ${issue.rewrite ? `
-                                                <div>
-                                                    <h6 class="text-sm font-medium text-gray-700 mb-1">Suggested revision:</h6>
-                                                    <div class="bg-green-50 border-l-4 border-green-400 p-3 text-sm text-gray-700">
-                                                        ${issue.rewrite}
-                                                    </div>
-                                                </div>
-                                            ` : ''}
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            ` : ''}
-
-                            <!-- Key Strengths Section -->
-                            ${dimension.key_strengths && dimension.key_strengths.length > 0 ? `
-                                <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
-                                    <h4 class="font-semibold text-green-700 mb-2">Key Strengths:</h4>
-                                    <ul class="space-y-1">
-                                        ${dimension.key_strengths.map(s => `
-                                            <li class="text-sm text-green-700">
-                                                <strong>${s.strength || s}:</strong> ${s.evidence || 'Well executed in this area'}
-                                            </li>
-                                        `).join('')}
-                                    </ul>
-                                </div>
-                            ` : ''}
-
-                            <!-- Priority Improvements Section -->
-                            ${dimension.priority_improvements && dimension.priority_improvements.length > 0 ? `
-                                <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-500">
-                                    <h4 class="font-semibold text-orange-700 mb-2">Priority Improvements:</h4>
-                                    <ul class="space-y-1">
-                                        ${dimension.priority_improvements.map(i => `
-                                            <li class="text-sm text-orange-700">
-                                                <strong>${i.area || i}:</strong> ${i.recommendation || 'Consider strengthening this aspect'}
-                                            </li>
-                                        `).join('')}
-                                    </ul>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `).join('');
-                return;
-            }
-
-            // Create dimension tabs navigation for quantitative data
-            dimensionTabsNav.innerHTML = dimensions.map(([dimId, dimension], index) => `
-                <button onclick="showDimensionTab('${dimId}')" id="dim-tab-${dimId}" class="dim-tab-btn py-2 px-1 border-b-2 font-medium text-xs ${index === 0 ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}">
-                    ${dimension.dimension_name ? dimension.dimension_name.split(' ')[0] : dimId}
+            // Create dimension tabs navigation for qualitative data
+            dimensionTabsNav.innerHTML = dimensions.map((dimension, index) => `
+                <button onclick="showDimensionTab('${dimension.id}')" id="dim-tab-${dimension.id}" class="dim-tab-btn py-2 px-1 border-b-2 font-medium text-xs ${index === 0 ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}">
+                    ${dimension.name.split(' ')[0]}
                 </button>
             `).join('');
 
-            // Create dimension tab content for quantitative data
-            dimensionTabContent.innerHTML = dimensions.map(([dimId, dimension], index) => `
-                <div id="dim-content-${dimId}" class="dim-tab-content ${index !== 0 ? 'hidden' : ''}">
+            // Create dimension tab content for qualitative data with per-issue cards
+            dimensionTabContent.innerHTML = dimensions.map((dimension, index) => `
+                <div id="dim-content-${dimension.id}" class="dim-tab-content ${index !== 0 ? 'hidden' : ''}">
                     <div class="space-y-4">
                         <div class="mb-4">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2">${dimension.dimension_name || dimId}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">${dimension.name}</h3>
                             <p class="text-sm text-gray-600 mb-4">${dimension.executive_summary || 'Analysis completed for this dimension.'}</p>
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-4">
@@ -1998,7 +1884,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                     </div>
                                     <span class="text-sm text-gray-600">${dimension.overall_assessment || 'Competent'}</span>
                                 </div>
-                                <button onclick="window.open('/pact-wiki/dimensions/${dimId}', '_blank')" class="inline-flex items-center px-3 py-1 text-sm border border-blue-600 rounded text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
+                                <button onclick="window.open('/pact-wiki/dimensions/${dimension.id}', '_blank')" class="inline-flex items-center px-3 py-1 text-sm border border-blue-600 rounded text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
                                     <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                                     </svg>
@@ -2559,7 +2445,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                         // Handle non-JSON error responses safely
                         const errorText = await response.text().catch(() => '');
                         const errorMsg = `HTTP ${response.status}${errorText ? ' — ' + errorText.slice(0, 200) : ''}`;
-                        
+
                         if (response.status === 409) {
                             // 409 means analysis not ready yet - this is normal, continue polling
                             console.log('Analysis not ready yet, continuing to poll...');
