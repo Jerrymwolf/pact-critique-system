@@ -37,7 +37,7 @@ try:
     from .mode_config import AgentMode, mode_config
     from .supervisors.real_supervisor import RealCritiqueSupervisor
     from .supervisors.mock_supervisor import MockCritiqueSupervisor
-    # Removed enum_value import - no longer needed with string-based enums
+    from .utils.enum_safety import enum_value
     logger.info("WS manager id (api_server)=%s", id(manager))
     MOCK_MODE = False
 except ImportError:
@@ -616,41 +616,41 @@ async def start_critique(req: StartCritiqueRequest, request: Request):
 
         # 1) create session (make sure your create_session signature matches)
         session = session_manager.create_session(title=title, mode=req.mode or "STANDARD")
-        logger.info("Session created %s", session.id)
+        logger.info("Session created %s", session.session_id)
 
         # 2) set initial status + broadcast (use enum-safe strings)
         session.status = "running"
-        session.progress = 1
-        await manager.broadcast(session.id, {"event":"status","status":"running","progress":1})
-        logger.info("Broadcasted initial status for %s", session.id)
+        session.overall_progress = 1
+        await manager.broadcast(session.session_id, {"event":"status","status":"running","progress":1})
+        logger.info("Broadcasted initial status for %s", session.session_id)
 
         # 3) run background analysis (don't await here)
         async def run():
             try:
                 supervisor = make_supervisor()
-                await manager.broadcast(session.id, {"event":"progress","progress":5,"message":"Calling GPT-5"})
+                await manager.broadcast(session.session_id, {"event":"progress","progress":5,"message":"Calling GPT-5"})
                 result = await supervisor.ainvoke(
                     {"paper_title": title, "paper_content": text, "mode": session.mode},
-                    session_id=session.id
+                    session_id=session.session_id
                 )
                 # persist results (non-fatal if it fails)
                 try:
-                    session_manager.update_session_results(session.id, result)
+                    session_manager.update_session_results(session.session_id, result)
                 except Exception as e:
                     logger.exception("Non-fatal: update_session_results failed: %s", e)
 
-                session_manager.update_progress(session.id, 100, status="completed")
-                await manager.broadcast(session.id, {"event":"status","status":"completed","progress":100})
+                session_manager.update_progress(session.session_id, 100, status="completed")
+                await manager.broadcast(session.session_id, {"event":"status","status":"completed","progress":100})
                 # the supervisor should have already sent summary; resend for safety:
-                await manager.broadcast(session.id, {"event":"summary","payload":result})
-                logger.info("Completed analysis for %s", session.id)
+                await manager.broadcast(session.session_id, {"event":"summary","payload":result})
+                logger.info("Completed analysis for %s", session.session_id)
             except Exception as e:
-                logger.exception("Critique run failed for %s", session.id)
-                session_manager.update_progress(session.id, session.progress, status="error")
-                await manager.broadcast(session.id, {"event":"status","status":"error","message":str(e)})
+                logger.exception("Critique run failed for %s", session.session_id)
+                session_manager.update_progress(session.session_id, session.overall_progress, status="error")
+                await manager.broadcast(session.session_id, {"event":"status","status":"error","message":str(e)})
 
-        asyncio.create_task(run(), name=f"critique-{session.id}")
-        return {"session_id": session.id}
+        asyncio.create_task(run(), name=f"critique-{session.session_id}")
+        return {"session_id": session.session_id}
     except HTTPException:
         raise
     except Exception as e:
