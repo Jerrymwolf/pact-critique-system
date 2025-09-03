@@ -749,45 +749,62 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
     """
     WebSocket endpoint for real-time progress updates.
     """
-    await manager.connect(session_id, websocket)
-
+    logger.info(f"WebSocket connection requested for session: {session_id}")
+    
     try:
+        await manager.connect(session_id, websocket)
+        logger.info(f"WebSocket connected successfully for session: {session_id}")
+
         # Send initial status
         session = session_manager.get_session(session_id)
         if session:
+            logger.info(f"Sending initial status for session {session_id}, status: {session.status}")
             # String-based enums are directly JSON-serializable
             current_status = {
+                "event": "status",
                 "session_id": session_id,
                 "state": session.status,  # No .value needed - string enum
-                "paper_title": session.paper_title,
-                "created_at": session.created_at.isoformat() if session.created_at else None,
-                "updated_at": session.updated_at.isoformat() if session.updated_at else None,
-                "error": session.error_message,
-                "progress": session.overall_progress
+                "status": session.status,
+                "paper_title": getattr(session, 'paper_title', 'Unknown'),
+                "created_at": session.created_at.isoformat() if hasattr(session, 'created_at') and session.created_at else None,
+                "updated_at": session.updated_at.isoformat() if hasattr(session, 'updated_at') and session.updated_at else None,
+                "error_message": getattr(session, 'error_message', None),
+                "progress": getattr(session, 'overall_progress', 0)
             }
             if session.status == "completed":
                 current_status["result"] = {
-                    "overall_score": session.overall_score,
-                    "final_critique": session.final_critique,
-                    "dimension_critiques": session.dimension_critiques
+                    "overall_score": getattr(session, 'overall_score', None),
+                    "final_critique": getattr(session, 'final_critique', None),
+                    "dimension_critiques": getattr(session, 'dimension_critiques', {})
                 }
             await manager.send_message(session_id, current_status)
+        else:
+            logger.warning(f"Session {session_id} not found for WebSocket connection")
+            await websocket.close(code=1000, reason="Session not found")
+            return
 
         # Keep connection alive
         while True:
             try:
-                await websocket.receive_json()
+                # Wait for ping/pong or other messages from client
+                data = await websocket.receive_text()
+                logger.debug(f"Received WebSocket message: {data}")
             except WebSocketDisconnect:
-                logger.info(f"WebSocket disconnected for session {session_id}")
+                logger.info(f"WebSocket disconnected cleanly for session {session_id}")
                 break
             except Exception as e:
                 logger.error(f"Error receiving message on WebSocket for session {session_id}: {e}")
                 break
 
     except Exception as e:
-        logger.error(f"WebSocket error for session {session_id}: {e}")
+        logger.error(f"WebSocket error for session {session_id}: {e}", exc_info=True)
+        try:
+            await websocket.close(code=1011, reason="Internal error")
+        except:
+            pass
     finally:
-        manager.disconnect(session_id, None)
+        logger.info(f"Cleaning up WebSocket connection for session {session_id}")
+        manager.disconnect(session_id, websocket)
 
 def _build_markdown_report(title: str, result: Dict[str, Any], original_text: str | None) -> str:
     lines = []

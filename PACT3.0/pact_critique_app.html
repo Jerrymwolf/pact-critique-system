@@ -1615,36 +1615,45 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             // Ensure sessionId is a string, not an object
             const cleanSessionId = typeof sessionId === 'string' ? sessionId : sessionId.session_id || String(sessionId);
             const wsUrl = `ws://${window.location.host}/api/critique/live/${cleanSessionId}`;
+            
+            console.log('Attempting WebSocket connection to:', wsUrl);
+            console.log('Session ID:', cleanSessionId);
+            
             websocket = new WebSocket(wsUrl);
 
             websocket.onopen = function() {
-                console.log('WebSocket connected');
+                console.log('WebSocket connected successfully');
                 updateStatus('Connected to analysis service...');
             };
 
             websocket.onmessage = function(event) {
                 try {
                     const data = JSON.parse(event.data);
+                    console.log('WebSocket message received:', data);
                     handleWebSocketMessage(data);
                 } catch (error) {
                     console.error('Error parsing WebSocket message:', error);
                 }
             };
 
-            websocket.onclose = function() {
-                console.log('WebSocket disconnected');
+            websocket.onclose = function(event) {
+                console.log('WebSocket disconnected - Code:', event.code, 'Reason:', event.reason);
+                updateStatus('Connection lost, switching to polling...');
                 // Start polling as fallback if not completed
                 if (currentSessionId && !currentResult) {
+                    console.log('Starting polling fallback');
                     startPolling(currentSessionId);
                 }
             };
 
             websocket.onerror = function(error) {
-                console.error('WebSocket error:', error);
+                console.error('WebSocket error occurred:', error);
+                console.log('WebSocket state:', websocket.readyState);
                 updateStatus('Connection error, switching to polling...');
-                // Start polling as fallback
+                // Start polling as fallback immediately
                 if (currentSessionId) {
-                    startPolling(currentSessionId);
+                    console.log('WebSocket failed, starting polling fallback');
+                    setTimeout(() => startPolling(currentSessionId), 1000);
                 }
             };
         }
@@ -1688,19 +1697,26 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
         async function pollResults(sessionId) {
             if (currentResult) return; // Already have results
 
+            console.log('Polling status for session:', sessionId);
+
             try {
                 const response = await fetch(`${API_BASE_URL}/api/critique/status/${sessionId}`, {
                     signal: pollAbort.signal
                 });
 
+                console.log('Poll response status:', response.status);
+
                 if (response.ok) {
                     const status = await response.json();
+                    console.log('Poll response data:', status);
 
                     // Update progress
                     setProgress(status.progress || 0);
                     updateStatus(status.status === 'completed' ? 'Analysis completed!' : 'Analysis in progress...');
 
                     if (status.status === 'completed' && status.has_result) {
+                        console.log('Analysis completed, fetching results...');
+                        
                         // Get final results
                         const resultsResponse = await fetch(`${API_BASE_URL}/api/critique/results/${sessionId}`, {
                             signal: pollAbort.signal
@@ -1708,15 +1724,29 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
 
                         if (resultsResponse.ok) {
                             const results = await resultsResponse.json();
+                            console.log('Results fetched successfully:', results);
                             currentResult = results;
                             processAnalysisResults(results);
                             return;
+                        } else {
+                            console.error('Failed to fetch results:', resultsResponse.status);
                         }
+                    } else if (status.status === 'error') {
+                        console.error('Analysis failed:', status.error_message || 'Unknown error');
+                        showMessage(`Analysis failed: ${status.error_message || 'Unknown error'}`, 'error');
+                        return;
                     }
                 } else if (response.status === 409) {
                     // Analysis not ready yet, continue polling
+                    console.log('Analysis not ready yet, continuing polling...');
+                } else if (response.status === 404) {
+                    console.error('Session not found:', sessionId);
+                    showMessage('Session not found. Please start a new analysis.', 'error');
+                    return;
                 } else {
-                    console.error('Polling error:', response.status);
+                    console.error('Polling error status:', response.status);
+                    const errorText = await response.text().catch(() => 'Unknown error');
+                    console.error('Polling error response:', errorText);
                 }
 
                 // Continue polling if not completed
