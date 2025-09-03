@@ -1443,47 +1443,65 @@
 
             const dimensionAnalyses = apiResults.dimension_critiques || {};
 
-            // Collect all issues and categorize by priority
+            // Use the new toDisplay function approach with no truncation
+            function toDisplay(data) {
+                return {
+                    qualitativeMode: true,
+                    summary: data.final_critique || data.executive_summary || "Analysis completed successfully.",
+                    dimensions: Object.entries(data.dimension_critiques || {}).map(([name, d]) => ({
+                        id: name,
+                        name: d.dimension_name || name,
+                        overall_assessment: d.overall_assessment || "Competent",
+                        executive_summary: d.executive_summary || "",
+                        strengths: d.key_strengths || [],
+                        issues: (d.issues || []).map(it => ({
+                            title: it.title || "Issue identified",
+                            why_it_matters: it.why_it_matters || "",
+                            suggestions: it.suggestions || [],
+                            exemplar_rewrites: it.exemplar_rewrites || it.rewrite ? [it.rewrite] : [],
+                            quotes: it.quotes || it.evidence ? [it.evidence] : [],
+                            priority: it.priority || "medium",
+                            location_hint: it.location_hint || "",
+                            rubric_id: it.rubric_id || ""
+                        })),
+                        next_steps: d.next_steps || [],
+                        priority_improvements: d.priority_improvements || []
+                    }))
+                };
+            }
+
+            const displayData = toDisplay(apiResults);
+
+            // Collect all issues and categorize by priority (no filtering/truncation)
             const allIssues = [];
             const allStrengths = [];
             const allNextSteps = [];
 
-            const dimensions = Object.values(dimensionAnalyses).map(d => {
-                // Add dimension issues to global collections
+            displayData.dimensions.forEach(d => {
+                // Add all dimension issues to global collections
                 if (d.issues) {
-                    allIssues.push(...d.issues.map(issue => ({...issue, dimension: d.dimension_name})));
+                    allIssues.push(...d.issues.map(issue => ({...issue, dimension: d.name})));
                 }
-                if (d.key_strengths) {
-                    allStrengths.push(...d.key_strengths.map(strength => ({...strength, dimension: d.dimension_name})));
+                if (d.strengths) {
+                    allStrengths.push(...d.strengths.map(strength => ({...strength, dimension: d.name})));
                 }
                 if (d.next_steps) {
-                    allNextSteps.push(...d.next_steps.map(step => ({...step, dimension: d.dimension_name})));
+                    allNextSteps.push(...d.next_steps.map(step => ({...step, dimension: d.name})));
                 }
-
-                return {
-                    name: d.dimension_name,
-                    overall_assessment: d.overall_assessment,
-                    key_strengths: d.key_strengths || [],
-                    issues: d.issues || [],
-                    next_steps: d.next_steps || [],
-                    executive_summary: d.executive_summary || ''
-                };
             });
 
-            // Categorize issues by priority
+            // Categorize issues by priority (render everything, no slicing)
             const criticalIssues = allIssues.filter(issue => issue.priority === 'high');
             const improvementIssues = allIssues.filter(issue => issue.priority === 'medium');
             const polishIssues = allIssues.filter(issue => issue.priority === 'low');
 
             return {
-                qualitativeMode: true,
-                dimensions: dimensions,
+                ...displayData,
                 dimensionAnalyses: dimensionAnalyses,
-                summary: apiResults.executive_summary || extractSummaryFromCritique(apiResults.final_critique) || 'Analysis completed successfully.',
-                strengths: allStrengths,
                 criticalIssues: criticalIssues,
                 improvementIssues: improvementIssues,
                 polishIssues: polishIssues,
+                strengths: allStrengths,
                 nextSteps: allNextSteps,
                 checklistItems: apiResults.checklist_items || []
             };
