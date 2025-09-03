@@ -1833,7 +1833,7 @@
         });
 
         // Handle report download request
-        async function downloadReport(format = 'pdf') {
+        async function downloadReport(format = 'comprehensive') {
             if (!currentSessionId) {
                 alert('No analysis session available for download.');
                 return;
@@ -1858,34 +1858,20 @@
                 const response = await fetch(`${API_BASE_URL}/api/critique/download/${currentSessionId}?format=${format}`);
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(`HTTP error! status: ${response.status}${err?.detail ? ` — ${err.detail}` : ""}`);
                 }
 
-                // Handle the download based on format
-                if (format === 'pdf') {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `PACT_Analysis_Report_${currentSessionId.substring(0, 8)}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                } else {
-                    const text = await response.text();
-                    const blob = new Blob([text], { 
-                        type: format === 'html' ? 'text/html' : 'text/markdown' 
-                    });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `PACT_Report_${currentSessionId.substring(0, 8)}.${format}`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                }
+                // Download the blob from backend
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `PACT-${currentSessionId}.${format === "json" ? "json" : "md"}`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
 
                 // Show success notification
                 showNotification(`${format.toUpperCase()} report downloaded successfully!`, 'success');
