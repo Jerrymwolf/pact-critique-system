@@ -110,7 +110,7 @@ if MOCK_MODE:
                 "session_id": session_id,
                 "paper_title": paper_title,
                 "mode": mode,
-                "status": "queued", # Default status
+                "status": "pending", # Default status, matches enum
                 "paper_content": paper_content, # Added for completeness
                 "paper_type": paper_type, # Added for completeness
                 "agents": {},
@@ -139,20 +139,34 @@ if MOCK_MODE:
 
         def update_session_status(self, session_id: str, status: str, **kwargs):
             if session_id in self.sessions:
-                # Convert string status to enum if needed
-                if isinstance(status, str):
-                    status_enum_map = {
-                        "queued": "pending",
-                        "running": "processing",
-                        "complete": "completed",
-                        "error": "failed"
-                    }
-                    status = status_enum_map.get(status, status)
-
                 self.sessions[session_id]["status"] = status
                 self.sessions[session_id]["updated_at"] = datetime.now().isoformat()
                 for key, value in kwargs.items():
                     self.sessions[session_id][key] = value
+
+        def update_session_results(self, session_id: str, result_data: Dict[str, Any]):
+            """Updates session with critique results."""
+            if session_id in self.sessions:
+                self.sessions[session_id].update(result_data)
+                self.sessions[session_id]["updated_at"] = datetime.now().isoformat()
+
+        def update_progress(self, session_id: str, progress: int, status: str, error_message: Optional[str] = None):
+            """Updates session progress and status."""
+            if session_id in self.sessions:
+                self.sessions[session_id]["overall_progress"] = progress
+                self.sessions[session_id]["status"] = status
+                if error_message:
+                    self.sessions[session_id]["error_message"] = error_message
+                self.sessions[session_id]["updated_at"] = datetime.now().isoformat()
+
+        def update_agent_status(self, session_id: str, agent_id: str, agent_status: str, message: str):
+            """Updates the status of a specific agent within a session."""
+            if session_id in self.sessions:
+                if "agents" not in self.sessions[session_id]:
+                    self.sessions[session_id]["agents"] = {}
+                self.sessions[session_id]["agents"][agent_id] = {"status": agent_status, "message": message}
+                self.sessions[session_id]["updated_at"] = datetime.now().isoformat()
+
 
         def cleanup_old_sessions(self, max_age_hours: int = 24) -> int:
             return 0
@@ -160,7 +174,19 @@ if MOCK_MODE:
     session_manager = MockSessionManager()
     websocket_manager = MockWebSocketManager()
 else:
-    websocket_manager = manager
+    # Assuming 'manager' is correctly imported from websocket_manager
+    # If not, this will need to be defined or imported correctly.
+    # For now, we'll assume 'manager' is available and properly initialized.
+    # If 'manager' is not globally available or imported, this will cause an error.
+    # It's better to explicitly import or initialize it here if it's not in the global scope.
+    try:
+        from .websocket_manager import manager # Ensure manager is imported
+        websocket_manager = manager
+        logger.info("Using real WebSocket manager.")
+    except ImportError:
+        logger.error("Failed to import WebSocket manager.")
+        # Provide a fallback or raise an error if the manager is critical
+        raise
 
 
 def create_comprehensive_critique(result: Dict[str, Any]) -> Dict[str, Any]:
@@ -211,9 +237,9 @@ mode_config = {
 
 def make_supervisor():
     """Create appropriate supervisor based on configuration."""
-    # Check if we should use real mode
-    use_mock = os.getenv("USE_MOCK", "false").lower() == "true"
-    real_mode = not (use_mock or MOCK_MODE)
+    # Check if we should use mock mode based on environment variable or MOCK_MODE flag
+    use_mock_env = os.getenv("USE_MOCK", "false").lower() == "true"
+    real_mode = not (use_mock_env or MOCK_MODE)
 
     if real_mode:
         logger.info("Creating real critique supervisor")
@@ -371,14 +397,21 @@ def convert_to_comprehensive_critique(results_data: Dict[str, Any]) -> Dict[str,
 
 # ===== API MODELS =====
 
+# Define RunStatus Enum as per the user message
+from enum import Enum
+from pydantic import BaseModel, Field, model_validator
+
+class RunStatus(str, Enum):
+    pending = "pending"
+    running = "running"
+    completed = "completed"
+    error = "error"
+
 class CritiqueRequest(BaseModel):
     content: str = Field(description="The academic paper content to critique")
     title: Optional[str] = Field(default=None, description="Title of the paper")
     paper_type: Optional[str] = Field(default=None, description="Type of the paper")
-    mode: Optional[str] = Field(default="STANDARD", description="Analysis mode: APA7, STANDARD, or COMPREHENSIVE")
-
-from pydantic import BaseModel, Field, model_validator
-from typing import Optional
+    mode: str = Field(default="STANDARD", description="Analysis mode: APA7, STANDARD, or COMPREHENSIVE")
 
 class StartCritiqueRequest(BaseModel):
     title: str
@@ -389,11 +422,9 @@ class StartCritiqueRequest(BaseModel):
     @model_validator(mode="after")
     def ensure_text_present(self):
         if not (self.paper_text or self.paper_content):
-            # This message will show up in the 422 response
             raise ValueError("Provide paper_text or paper_content")
         return self
 
-    # convenience
     @property
     def text(self) -> str:
         return (self.paper_text or self.paper_content or "").strip()
@@ -430,6 +461,7 @@ async def cleanup_old_sessions():
     """Background task to cleanup old sessions."""
     while True:
         try:
+            # Assuming session_manager has a cleanup_old_sessions method
             removed = session_manager.cleanup_old_sessions(max_age_hours=24)
             if removed > 0:
                 logger.info(f"Cleaned up {removed} old sessions")
@@ -574,18 +606,17 @@ async def start_critique(req: StartCritiqueRequest):
         title = (req.title or "").strip() or "Untitled"
         text = req.text
         if not text:
-            # Fallback guard; should be caught by validator already
             raise HTTPException(status_code=422, detail="paper_text or paper_content is required")
 
-        # create the session (whichever signature you use)
-        session = session_manager.create_session(title=title, mode=req.mode or "STANDARD")
+        # Create the session using the Pydantic model which accepts string for status
+        # MockSessionManager.create_session initializes status to "pending"
+        session = session_manager.create_session(paper_content=text, paper_title=title, mode=req.mode or "STANDARD")
 
-        # initial status -> broadcast
-        session.status = "running"
-        session.progress = 1
+        # Update session status and notify clients
+        session_manager.update_session_status(session.session_id, "running", overall_progress=1)
         await manager.broadcast(session.session_id, {"event":"status","status":"running","progress":1})
 
-        # launch background task
+        # Launch background task for critique analysis
         async def run():
             try:
                 supervisor = make_supervisor()
@@ -593,27 +624,27 @@ async def start_critique(req: StartCritiqueRequest):
                     {"paper_title": title, "paper_content": text, "mode": session.mode},
                     session_id=session.session_id
                 )
-                
-                # Send summary first (most important for UI)
+
+                # Send summary first
                 await manager.broadcast(session.session_id, {"event":"summary","payload":result})
-                
-                # Try to persist results, but don't fail if this step fails
+
+                # Persist results
                 try:
                     session_manager.update_session_results(session.session_id, result)
                 except Exception as e:
                     logger.warning("Non-fatal: failed to persist results for session %s: %s", session.session_id, e)
-                    # keep going; we already broadcasted summary
 
+                # Set final status and progress
                 session_manager.update_progress(session.session_id, 100, status="completed")
                 await manager.broadcast(session.session_id, {"event":"status","status":"completed","progress":100})
-                
+
             except Exception as e:
                 logger.exception("Critique failed for session %s", session.session_id)
-                # only send error if we truly didn't finish the analysis
-                session_manager.update_progress(session.session_id, getattr(session, 'progress', 0), status="error")
+                session_manager.update_progress(session.session_id, getattr(session, 'overall_progress', 0), status="error", error_message=str(e))
                 await manager.broadcast(session.session_id, {"event":"status","status":"error","message":str(e)})
 
         asyncio.create_task(run(), name=f"critique-{session.session_id}")
+
         return CritiqueResponse(
             session_id=session.session_id,
             status="processing",
@@ -627,25 +658,21 @@ async def start_critique(req: StartCritiqueRequest):
 @app.get("/api/critique/status/{session_id}")
 async def get_critique_status(session_id: str):
     """Get the current status of a critique session."""
-    session = session_manager.get(session_id)
+    session = session_manager.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Unknown session")
 
-    # Convert status enum to string using safe accessor
-    status = enum_value(session.status)
-
-    response = {
+    # String-based enums are directly JSON-serializable
+    current_status = {
         "session_id": session_id,
         "title": session.paper_title,
         "mode": getattr(session, 'mode', 'STANDARD'),
-        "status": status,
+        "status": session.status,
         "progress": session.overall_progress,
-        # Optional: include a small summary or a flag that results exist
         "has_result": session.result is not None,
-        # "result": session.result,  # include if your UI wants it here
     }
 
-    return response
+    return current_status
 
 @app.get("/api/critique/results/{session_id}", response_model=ResultsResponse)
 async def get_critique_results(session_id: str):
@@ -656,9 +683,8 @@ async def get_critique_results(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Convert status enum to string using safe accessor
-    status = enum_value(session.status)
-    if status != "completed":
+    # String-based enums can be compared directly with strings
+    if session.status != "completed":
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
     if not session.overall_score and not session.final_critique:
@@ -685,18 +711,17 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
         # Send initial status
         session = session_manager.get_session(session_id)
         if session:
-            # Convert status enum to string using safe accessor
-            status = enum_value(session.status)
+            # String-based enums are directly JSON-serializable
             current_status = {
                 "session_id": session_id,
-                "state": status,
+                "state": session.status,
                 "paper_title": session.paper_title,
                 "created_at": session.created_at.isoformat() if session.created_at else None,
                 "updated_at": session.updated_at.isoformat() if session.updated_at else None,
                 "error": session.error_message,
                 "progress": session.overall_progress
             }
-            if status == "completed":
+            if session.status == "completed":
                 current_status["result"] = {
                     "overall_score": session.overall_score,
                     "final_critique": session.final_critique,
@@ -704,11 +729,10 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
                 }
             await manager.send_message(session_id, current_status)
 
-        # Keep connection alive and handle any messages
+        # Keep connection alive
         while True:
             try:
-                # Receive messages to keep the connection alive or process client commands
-                await websocket.receive_json() # Use receive_json for structured data
+                await websocket.receive_json()
             except WebSocketDisconnect:
                 logger.info(f"WebSocket disconnected for session {session_id}")
                 break
@@ -730,9 +754,8 @@ async def download_critique_report(session_id: str, format: str = Query("pdf", d
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Convert status enum to string using safe accessor
-    status = enum_value(session.status)
-    if status != "completed": # Use the mapped status 'completed'
+    # String-based enums can be compared directly with strings
+    if session.status != "completed":
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
     report_filename = getattr(session, 'report_filename', None)
@@ -741,14 +764,16 @@ async def download_critique_report(session_id: str, format: str = Query("pdf", d
 
     try:
         if format.lower() == "pdf":
-            # For PDF, we assume the report is already generated and its path is known
-            # In a more complex system, you might regenerate it here or fetch it from storage
             pdf_path = os.path.join("/tmp", report_filename) # Assuming reports are stored in /tmp
             if not os.path.exists(pdf_path):
                  # Fallback to mock generation if file not found
                  if MOCK_MODE:
-                     pdf_filename_mock = generate_pact_pdf_report_fallback(session_id, {})
-                     pdf_path = os.path.join("/tmp", pdf_filename_mock)
+                     # This is a placeholder for a fallback PDF generation if needed
+                     # In a real scenario, you'd call the actual PDF generation function.
+                     # pdf_filename_mock = generate_pact_pdf_report_fallback(session_id, {})
+                     # pdf_path = os.path.join("/tmp", pdf_filename_mock)
+                     logger.warning("MOCK_MODE: PDF report not found, cannot generate fallback.")
+                     raise HTTPException(status_code=500, detail="PDF report file not found and mock mode cannot generate it.")
                  else:
                     raise HTTPException(status_code=500, detail="PDF report file not found.")
 
@@ -759,8 +784,7 @@ async def download_critique_report(session_id: str, format: str = Query("pdf", d
             )
 
         elif format.lower() == "html":
-            # Generate HTML report
-            results_data = session.get("result")
+            results_data = getattr(session, 'result', None)
             if not results_data:
                  raise HTTPException(status_code=500, detail="Result data missing for HTML report generation.")
             html_content = generate_html_report(results_data)
@@ -772,8 +796,7 @@ async def download_critique_report(session_id: str, format: str = Query("pdf", d
             )
 
         elif format.lower() == "md":
-            # Generate Markdown report
-            results_data = session.get("result")
+            results_data = getattr(session, 'result', None)
             if not results_data:
                  raise HTTPException(status_code=500, detail="Result data missing for Markdown report generation.")
             md_content = generate_markdown_report(results_data)
@@ -800,9 +823,8 @@ async def preview_critique_report(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Convert status enum to string using safe accessor
-    status = enum_value(session.status)
-    if status != "completed": # Use the mapped status 'completed'
+    # String-based enums can be compared directly with strings
+    if session.status != "completed":
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
     results_data = getattr(session, 'result', None)
@@ -824,15 +846,12 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
     try:
         logger.info("Launching supervisor task for session %s", session_id)
 
-        # Get session object
         session = session_manager.get_session(session_id)
         if not session:
             raise Exception(f"Session {session_id} not found")
 
-        # Create supervisor
         supervisor = make_supervisor()
 
-        # Set initial status and broadcast
         session_manager.update_session_status(session_id, "running", overall_progress=1)
         await manager.broadcast(session_id, {
             "event": "status",
@@ -840,35 +859,30 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             "progress": 1
         })
 
-        # Run the analysis
         result = await supervisor.ainvoke(
             {"paper_content": paper_content, "paper_title": paper_title, "mode": mode},
             session_id=session_id
         )
 
-        # ✅ persist results so /status (or later GET) can return them
         session_manager.update_session_results(session_id, result)
 
-        # ✅ set final status/progress and broadcast
         session_manager.update_progress(session_id, 100, status="completed")
         await manager.broadcast(session_id, {"event": "status", "status": "completed", "progress": 100})
 
-        # If the supervisor didn't already send a summary, send it here too:
         await manager.broadcast(session_id, {"event": "summary", "payload": result})
 
         logger.info("Critique completed for session %s", session_id)
 
     except Exception as e:
         logger.exception("Critique failed for session %s", session_id)
-        session_manager.update_session_status(session_id, "error", error_message=str(e))
+        session_manager.update_progress(session_id, getattr(session, 'overall_progress', 0), status="error", error_message=str(e))
         await manager.broadcast(session_id, {
             "event": "status",
             "status": "error",
             "message": str(e)
         })
 
-
-# Progress callback class (can be used if LangGraph is integrated more deeply)
+# Progress callback class
 class CritiqueProgressCallback:
     """Callback to track LangGraph execution progress."""
 
@@ -877,59 +891,42 @@ class CritiqueProgressCallback:
         self.current_node = ""
 
     async def on_chain_start(self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs):
-        """Called when a chain starts."""
-        logger.debug(f"Chain start: {serialized.get('name')}")
         pass
 
     async def on_chain_end(self, outputs: Dict[str, Any], **kwargs):
-        """Called when a chain ends."""
-        logger.debug("Chain end.")
         pass
 
     async def on_llm_start(self, serialized: Dict[str, Any], prompts: list, **kwargs):
-        """Called when LLM starts."""
-        logger.debug(f"LLM start: {serialized.get('name')}")
         pass
 
     async def on_llm_end(self, response, **kwargs):
-        """Called when LLM ends."""
-        logger.debug("LLM end.")
         pass
 
     async def on_tool_start(self, serialized: Dict[str, Any], args: Dict[str, Any], **kwargs):
-        """Called when a tool starts."""
-        logger.debug(f"Tool start: {serialized.get('name')}")
         pass
 
     async def on_tool_end(self, output, **kwargs):
-        """Called when a tool ends."""
-        logger.debug("Tool end.")
         pass
 
     async def on_agent_action(self, action, **kwargs):
-        """Called when an agent takes an action."""
         logger.debug(f"Agent action: {action}")
-        agent_id = action.tool # Assuming tool name is agent ID
+        agent_id = action.tool
         message = action.tool_input if isinstance(action.tool_input, str) else str(action.tool_input)
         if agent_id:
             session_manager.update_agent_status(self.session_id, agent_id, "ACTIVE", message)
-            await update_session_status(self.session_id, "processing", 50, f"Agent {agent_id} is running...") # Example progress update
+            await update_session_status(self.session_id, "processing", 50, f"Agent {agent_id} is running...")
 
     async def on_agent_finish(self, finish, **kwargs):
-        """Called when an agent finishes."""
-        logger.debug(f"Agent finish: {finish}")
-        # Potentially update session status or agent status based on finish output
         pass
 
 async def notify_websocket_clients(session_id: str):
     """Send progress updates to WebSocket clients."""
     session = session_manager.get_session(session_id)
     if session:
-        # Convert status enum to string using safe accessor
-        status = enum_value(session.status)
+        # String-based enums are directly JSON-serializable
         progress_data = {
             "session_id": session_id,
-            "state": status,
+            "state": session.status,
             "progress": {
                 "overall_progress": getattr(session, 'overall_progress', 0),
                 "current_stage": getattr(session, 'current_stage', "Initializing"),
@@ -966,13 +963,11 @@ async def health_check():
 # ===== DEVELOPMENT SERVER =====
 
 if __name__ == "__main__":
-    # Note: In a real application, you would not run this directly if deploying with a production server like Gunicorn.
-    # This is for local development and testing.
     logger.info("Starting FastAPI server for PACT Critique System (Development Mode)...")
     uvicorn.run(
         "api_server:app", # Assumes this file is named api_server.py
         host="0.0.0.0",
         port=8000,
-        reload=True, # Enable auto-reloading during development
+        reload=True,
         log_level="info"
     )

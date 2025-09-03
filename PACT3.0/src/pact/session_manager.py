@@ -39,7 +39,7 @@ def _coerce_enums(obj):
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class CritiqueStatus(Enum):
+class CritiqueStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"
     PLANNING = "planning"
@@ -48,7 +48,7 @@ class CritiqueStatus(Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
-class AgentStatus(Enum):
+class AgentStatus(str, Enum):
     WAITING = "waiting"
     ACTIVE = "active"
     COMPLETED = "completed"
@@ -166,23 +166,25 @@ class SessionManager:
         if not session:
             return False
 
-        # Handle both string and enum status values
+        # Handle both string and enum status values with mapping for common aliases
         if isinstance(status, str):
             status_map = {
-                "pending": CritiqueStatus.PENDING,
-                "processing": CritiqueStatus.PROCESSING,
                 "running": CritiqueStatus.PROCESSING,
-                "planning": CritiqueStatus.PLANNING,
-                "evaluating": CritiqueStatus.EVALUATING,
-                "synthesizing": CritiqueStatus.SYNTHESIZING,
-                "completed": CritiqueStatus.COMPLETED,
                 "complete": CritiqueStatus.COMPLETED,
-                "failed": CritiqueStatus.FAILED,
                 "error": CritiqueStatus.FAILED
             }
-            status = status_map.get(status, CritiqueStatus.PENDING)
-
-        session.status = status
+            # Use mapped value if exists, otherwise try to create enum directly
+            mapped_status = status_map.get(status)
+            if mapped_status:
+                session.status = mapped_status
+            else:
+                try:
+                    session.status = CritiqueStatus(status)
+                except ValueError:
+                    # If status string doesn't match any enum value, default to PENDING
+                    session.status = CritiqueStatus.PENDING
+        else:
+            session.status = status
         session.updated_at = datetime.now()
 
         if current_stage:
@@ -250,22 +252,25 @@ class SessionManager:
         
         session.overall_progress = float(progress)
         if status:
-            # Handle both string and enum status values
+            # Handle both string and enum status values with mapping for common aliases
             if isinstance(status, str):
                 status_map = {
-                    "pending": CritiqueStatus.PENDING,
-                    "processing": CritiqueStatus.PROCESSING,
                     "running": CritiqueStatus.PROCESSING,
-                    "planning": CritiqueStatus.PLANNING,
-                    "evaluating": CritiqueStatus.EVALUATING,
-                    "synthesizing": CritiqueStatus.SYNTHESIZING,
-                    "completed": CritiqueStatus.COMPLETED,
                     "complete": CritiqueStatus.COMPLETED,
-                    "failed": CritiqueStatus.FAILED,
                     "error": CritiqueStatus.FAILED
                 }
-                status = status_map.get(status, CritiqueStatus.PENDING)
-            session.status = status
+                # Use mapped value if exists, otherwise try to create enum directly
+                mapped_status = status_map.get(status)
+                if mapped_status:
+                    session.status = mapped_status
+                else:
+                    try:
+                        session.status = CritiqueStatus(status)
+                    except ValueError:
+                        # If status string doesn't match any enum value, default to PENDING
+                        session.status = CritiqueStatus.PENDING
+            else:
+                session.status = status
             
         if status == "completed":
             session.updated_at = datetime.now()
@@ -315,13 +320,13 @@ class SessionManager:
 
         return {
             "session_id": session_id,
-            "status": enum_value(session.status),
+            "status": session.status,
             "overall_progress": session.overall_progress,
             "current_stage": session.current_stage,
             "agents": {
                 agent_id: {
                     "name": agent.agent_name,
-                    "status": enum_value(agent.status),
+                    "status": agent.status,
                     "message": agent.message,
                     "progress": agent.progress
                 }
@@ -379,7 +384,8 @@ class SessionManager:
 
         # Convert session to dict, handling dataclasses and enums
         session_data = asdict(session)
-        session_data['status'] = enum_value(session.status)
+        # String-based enums are already JSON-serializable, no need for enum_value
+        session_data['status'] = session.status
         session_data['created_at'] = session.created_at.isoformat()
         session_data['updated_at'] = session.updated_at.isoformat()
         session_data['mode'] = getattr(session, 'mode', 'STANDARD')
@@ -387,9 +393,7 @@ class SessionManager:
         # Convert agent data - handle both AgentProgress objects and other types
         for agent_id, agent in session_data['agents'].items():
             if isinstance(agent, dict):
-                # Already a dict, just convert status and times
-                if 'status' in agent:
-                    agent['status'] = enum_value(agent['status'])
+                # Already a dict, just convert times (status is already string-serializable)
                 if agent.get('start_time'):
                     agent['start_time'] = agent['start_time'].isoformat() if hasattr(agent['start_time'], 'isoformat') else agent['start_time']
                 if agent.get('end_time'):
@@ -397,7 +401,7 @@ class SessionManager:
             elif hasattr(agent, '__dict__'):
                 # Convert object to dict first if it's not already a dict
                 agent_dict = asdict(agent) if hasattr(agent, '__dataclass_fields__') else agent.__dict__
-                agent_dict['status'] = enum_value(agent_dict['status'])
+                # String-based enums are already JSON-serializable
                 if agent_dict.get('start_time'):
                     agent_dict['start_time'] = agent_dict['start_time'].isoformat() if hasattr(agent_dict['start_time'], 'isoformat') else agent_dict['start_time']
                 if agent_dict.get('end_time'):
