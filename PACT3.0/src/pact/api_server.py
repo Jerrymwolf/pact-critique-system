@@ -427,6 +427,7 @@ class StartCritiqueRequest(BaseModel):
     paper_text: Optional[str] = None
     paper_content: Optional[str] = None
     mode: str = "STANDARD"
+    paper_type: str = "research"
 
     @model_validator(mode="after")
     def ensure_text_present(self):
