@@ -1,0 +1,226 @@
+{
+  "session_id": "e3957aeb-3e91-46b7-9040-6f7780097682",
+  "status": "completed",
+  "paper_content": "",
+  "created_at": "2025-09-03T16:33:31.867812",
+  "updated_at": "2025-09-03T16:34:14.630961",
+  "paper_title": "Pre-Work  - Brief Topic Description",
+  "paper_type": "research",
+  "mode": "STANDARD",
+  "overall_progress": 100.0,
+  "agents": {
+    "supervisor": {
+      "agent_id": "supervisor",
+      "agent_name": "Supervisor",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "1": {
+      "agent_id": "1",
+      "agent_name": "Research Foundations",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "2": {
+      "agent_id": "2",
+      "agent_name": "Methodological Rigor",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "3": {
+      "agent_id": "3",
+      "agent_name": "Structure & Coherence",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "4": {
+      "agent_id": "4",
+      "agent_name": "Academic Precision",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "5": {
+      "agent_id": "5",
+      "agent_name": "Critical Sophistication",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    }
+  },
+  "current_stage": "",
+  "dimension_critiques": {
+    "1.0.0": {
+      "dimension_name": "Research Foundations",
+      "dimension_score": 60,
+      "strengths": [
+        "Identifies a salient, socially significant problem and situates it within several relevant literatures (affective polarization, contact theory, deliberation, echo chambers).",
+        "Demonstrates reflexivity by disclosing personal biases and articulates plausible gaps (reconnection in everyday settings; emotional repair and belonging)."
+      ],
+      "weaknesses": [
+        "Lacks precise research questions, theoretical model, and operational definitions for key constructs such as connection, hostility, and reconciliation.",
+        "Asymmetric partisan framing (emphasis on Democrats reaching MAGA Republicans) risks normative bias and constrains theory-building and generalizability."
+      ],
+      "key_strengths": [
+        "Paper addresses relevant topic in 1.0.0",
+        "Appropriate academic structure maintained for 1.0.0"
+      ],
+      "issues": [
+        {
+          "title": "Consider strengthening evidence base",
+          "why_it_matters": "Academic rigor requires strong evidentiary support",
+          "suggestions": [
+            "Add supporting citations",
+            "Include additional examples"
+          ],
+          "exemplar_rewrites": [
+            "Research shows X (Author, 2023), supporting the claim that..."
+          ],
+          "quotes": [
+            "[Citation needed]",
+            "[Additional evidence required]"
+          ],
+          "location_hint": "Throughout document",
+          "priority": "medium"
+        }
+      ],
+      "next_steps": []
+    },
+    "2.0.0": {
+      "dimension_name": "Methodological Rigor",
+      "dimension_score": 35,
+      "strengths": [
+        "Openness about starting from scratch and recognizing the need to engage existing empirical work suggests readiness to build a design informed by prior evidence.",
+        "Acknowledges multiple mechanisms worth studying (identity, emotion, trust), creating a basis for testable hypotheses and mixed-method approaches."
+      ],
+      "weaknesses": [
+        "No articulated research design, sampling plan, measures, hypotheses, or analysis strategy; heavy reliance on anecdote and AI summaries instead of scholarly sources.",
+        "Potential threats to validity and ethics are unaddressed (selection and social desirability biases, causal identification, dyadic dynamics, potential harm in recontact)."
+      ],
+      "key_strengths": [
+        "Paper addresses relevant topic in 2.0.0",
+        "Appropriate academic structure maintained for 2.0.0"
+      ],
+      "issues": [],
+      "next_steps": []
+    },
+    "3.0.0": {
+      "dimension_name": "Structure & Coherence",
+      "dimension_score": 50,
+      "strengths": [
+        "Clear motivation and accessible prose that convey the human stakes of the topic.",
+        "Logical progression from interest to preliminary literature domains and perceived gaps."
+      ],
+      "weaknesses": [
+        "Redundancy and minor inconsistencies (duplicated prompt, uneven numbering) detract from coherence and professionalism.",
+        "Blends advocacy, personal aims, and research goals without a distinct transition to a disciplined academic plan, limiting clarity of purpose."
+      ],
+      "key_strengths": [
+        "Paper addresses relevant topic in 3.0.0",
+        "Appropriate academic structure maintained for 3.0.0"
+      ],
+      "issues": [],
+      "next_steps": []
+    }
+  },
+  "final_critique": "The pre-work articulates a timely and socially consequential problem: how individuals across the U.S. partisan divide can connect and reduce interpersonal and affective polarization. The author motivates the topic with compelling personal and professional experiences and demonstrates nascent awareness of relevant literatures (affective polarization, contact theory, deliberation, and social media echo chambers). The memo also candidly surfaces potential biases, which is commendable for reflexivity. However, at this stage the document remains an interest statement rather than a research blueprint. It lacks a clearly specified research question, theoretical framing, operational definitions, proposed design, measurement plan, sampling strategy, and analytic approach. The framing leans asymmetrically toward one partisan direction, risking confirmatory bias and reduced external validity. Reliance on anecdote, AI-generated scoping, and goals tied to partisan electoral outcomes may further complicate research neutrality and ethics. To advance, the project needs to (1) formulate precise, testable questions (e.g., which interventions reduce cross-partisan relational strain in dyads? which mechanisms\u2014empathy, perspective-taking, identity affirmation\u2014mediate effects?); (2) define key constructs and outcomes (e.g., affective polarization, willingness to interact, perceived relationship quality, trust, misperception accuracy); (3) adopt a balanced, symmetrical design that treats both partisan groups consistently; and (4) specify a rigorous methodology (e.g., mixed-methods: preregistered field experiments with measured behavioral outcomes, complemented by qualitative dyadic interviews). Attention to sampling (cross-partisan dyads, geographic diversity), measurement validity (established scales, behavioral indicators, longitudinal follow-up), ethics (informed consent, potential harm in re-engaging strained relationships), and transparency (preregistration, open materials) will be essential. With these steps, the project can move from an important motivation to a credible, generalizable contribution on rebuilding cross-ideological relationships.",
+  "overall_score": 50,
+  "result": {
+    "paper_title": "Pre-Work  - Brief Topic Description",
+    "overall_score": 50,
+    "final_critique": "The pre-work articulates a timely and socially consequential problem: how individuals across the U.S. partisan divide can connect and reduce interpersonal and affective polarization. The author motivates the topic with compelling personal and professional experiences and demonstrates nascent awareness of relevant literatures (affective polarization, contact theory, deliberation, and social media echo chambers). The memo also candidly surfaces potential biases, which is commendable for reflexivity. However, at this stage the document remains an interest statement rather than a research blueprint. It lacks a clearly specified research question, theoretical framing, operational definitions, proposed design, measurement plan, sampling strategy, and analytic approach. The framing leans asymmetrically toward one partisan direction, risking confirmatory bias and reduced external validity. Reliance on anecdote, AI-generated scoping, and goals tied to partisan electoral outcomes may further complicate research neutrality and ethics. To advance, the project needs to (1) formulate precise, testable questions (e.g., which interventions reduce cross-partisan relational strain in dyads? which mechanisms\u2014empathy, perspective-taking, identity affirmation\u2014mediate effects?); (2) define key constructs and outcomes (e.g., affective polarization, willingness to interact, perceived relationship quality, trust, misperception accuracy); (3) adopt a balanced, symmetrical design that treats both partisan groups consistently; and (4) specify a rigorous methodology (e.g., mixed-methods: preregistered field experiments with measured behavioral outcomes, complemented by qualitative dyadic interviews). Attention to sampling (cross-partisan dyads, geographic diversity), measurement validity (established scales, behavioral indicators, longitudinal follow-up), ethics (informed consent, potential harm in re-engaging strained relationships), and transparency (preregistration, open materials) will be essential. With these steps, the project can move from an important motivation to a credible, generalizable contribution on rebuilding cross-ideological relationships.",
+    "dimension_critiques": {
+      "1.0.0": {
+        "dimension_name": "Research Foundations",
+        "dimension_score": 60,
+        "strengths": [
+          "Identifies a salient, socially significant problem and situates it within several relevant literatures (affective polarization, contact theory, deliberation, echo chambers).",
+          "Demonstrates reflexivity by disclosing personal biases and articulates plausible gaps (reconnection in everyday settings; emotional repair and belonging)."
+        ],
+        "weaknesses": [
+          "Lacks precise research questions, theoretical model, and operational definitions for key constructs such as connection, hostility, and reconciliation.",
+          "Asymmetric partisan framing (emphasis on Democrats reaching MAGA Republicans) risks normative bias and constrains theory-building and generalizability."
+        ],
+        "key_strengths": [
+          "Paper addresses relevant topic in 1.0.0",
+          "Appropriate academic structure maintained for 1.0.0"
+        ],
+        "issues": [
+          {
+            "title": "Consider strengthening evidence base",
+            "why_it_matters": "Academic rigor requires strong evidentiary support",
+            "suggestions": [
+              "Add supporting citations",
+              "Include additional examples"
+            ],
+            "exemplar_rewrites": [
+              "Research shows X (Author, 2023), supporting the claim that..."
+            ],
+            "quotes": [
+              "[Citation needed]",
+              "[Additional evidence required]"
+            ],
+            "location_hint": "Throughout document",
+            "priority": "medium"
+          }
+        ],
+        "next_steps": []
+      },
+      "2.0.0": {
+        "dimension_name": "Methodological Rigor",
+        "dimension_score": 35,
+        "strengths": [
+          "Openness about starting from scratch and recognizing the need to engage existing empirical work suggests readiness to build a design informed by prior evidence.",
+          "Acknowledges multiple mechanisms worth studying (identity, emotion, trust), creating a basis for testable hypotheses and mixed-method approaches."
+        ],
+        "weaknesses": [
+          "No articulated research design, sampling plan, measures, hypotheses, or analysis strategy; heavy reliance on anecdote and AI summaries instead of scholarly sources.",
+          "Potential threats to validity and ethics are unaddressed (selection and social desirability biases, causal identification, dyadic dynamics, potential harm in recontact)."
+        ],
+        "key_strengths": [
+          "Paper addresses relevant topic in 2.0.0",
+          "Appropriate academic structure maintained for 2.0.0"
+        ],
+        "issues": [],
+        "next_steps": []
+      },
+      "3.0.0": {
+        "dimension_name": "Structure & Coherence",
+        "dimension_score": 50,
+        "strengths": [
+          "Clear motivation and accessible prose that convey the human stakes of the topic.",
+          "Logical progression from interest to preliminary literature domains and perceived gaps."
+        ],
+        "weaknesses": [
+          "Redundancy and minor inconsistencies (duplicated prompt, uneven numbering) detract from coherence and professionalism.",
+          "Blends advocacy, personal aims, and research goals without a distinct transition to a disciplined academic plan, limiting clarity of purpose."
+        ],
+        "key_strengths": [
+          "Paper addresses relevant topic in 3.0.0",
+          "Appropriate academic structure maintained for 3.0.0"
+        ],
+        "issues": [],
+        "next_steps": []
+      }
+    }
+  },
+  "original_text": null,
+  "error_message": null,
+  "retry_count": 0
+}
