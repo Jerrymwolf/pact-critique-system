@@ -99,8 +99,46 @@ async def critique_dimension_enhanced(state: PaperCritiqueState, dimension_id: s
     Returns:
         Dictionary with the detailed dimension critique
     """
+    dimension_info = PACT_DIMENSIONS.get(dimension_id, {})
+    dimension_name = dimension_info.get('name', '')
+
     # Create enhanced critique prompt
     prompt = create_enhanced_dimension_critique_prompt(state['paper_content'], dimension_id)
+
+    # Define the system prompt for the enhanced feedback
+    system_prompt = f"""You are the {dimension_name} specialist in the PACT Academic Critique System.
+
+Your role: Analyze the provided academic paper focusing EXCLUSIVELY on {dimension_name}.
+
+CRITICAL REQUIREMENTS:
+1. Output ONLY JSON following the DimensionCritique schema - no prose
+2. Minimum quality standards:
+   - At least 2 key_strengths with quotes and location hints
+   - At least 3 issues for weak/average drafts, 2 for strong drafts
+   - Every issue MUST have exemplar_rewrites and ≥2 quotes
+   - All feedback must be grounded in specific textual evidence
+
+For EVERY issue, provide:
+- title: Short descriptive title
+- why_it_matters: Tie to academic standards/PACT rubric
+- suggestions: Actionable steps (list of 1-3 items)
+- exemplar_rewrites: 1-2 concrete rewrite examples showing improvement
+- quotes: Minimum 2 direct quotes as evidence
+- location_hint: Specific location ("Intro ¶2", "Methods > Sampling", etc.)
+- priority: "high" (methods/validity/ethics), "medium" (organization/clarity), "low" (style/citations)
+
+For strengths, provide:
+- strength: Specific positive aspect
+- evidence: Supporting quote
+- location_hint: Where this strength appears
+
+Auto-assign priority levels:
+- HIGH: Methods transparency, validity issues, ethics, missing research question, claim-evidence mismatch
+- MEDIUM: Organization/flow problems, clarity issues requiring rewrites
+- LOW: Style polish, citation formatting
+
+Focus exclusively on {dimension_name}. Be dense, specific, and actionable."""
+
 
     # Get detailed critique from model using function_calling method to avoid schema issues
     structured_model = critique_model.with_structured_output(DetailedDimensionCritique, method="function_calling")

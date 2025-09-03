@@ -489,7 +489,7 @@
                                 </button>
                                 <button class="inline-flex items-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684 Scientology 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
                                     </svg>
                                     Share
                                 </button>
@@ -1110,7 +1110,7 @@
                 // Start WebSocket connection for real-time updates
                 await connectWebSocket(currentSessionId);
 
-                // Start polling for progress (fallback if WebSocket fails)
+                // Start polling for progress for progress (fallback if WebSocket fails)
                 startProgressPolling(currentSessionId);
 
             } catch (error) {
@@ -1442,55 +1442,50 @@
             console.log('Converting API results:', apiResults);
 
             const dimensionAnalyses = apiResults.dimension_critiques || {};
-            const dimensions = [];
-            const strengths = [];
-            const improvements = [];
-            const nextSteps = [];
-            const checklistItems = [];
 
-            // Process dimension critiques for qualitative approach
-            if (dimensionAnalyses) {
-                for (const [dimId, critique] of Object.entries(dimensionAnalyses)) {
-                    dimensions.push({
-                        id: dimId,
-                        name: critique.dimension_name || dimId,
-                        overall_assessment: critique.overall_assessment || 'Competent',
-                        key_strengths: critique.key_strengths || [],
-                        priority_improvements: critique.priority_improvements || [],
-                        issues: critique.issues || [],
-                        subsections: critique.subsections || {},
-                        executive_summary: critique.executive_summary || ''
-                    });
+            // Collect all issues and categorize by priority
+            const allIssues = [];
+            const allStrengths = [];
+            const allNextSteps = [];
 
-                    // Collect strengths and improvements without slicing
-                    if (critique.key_strengths && Array.isArray(critique.key_strengths)) {
-                        strengths.push(...critique.key_strengths.map(s => s.strength || s));
-                    }
-                    if (critique.priority_improvements && Array.isArray(critique.priority_improvements)) {
-                        improvements.push(...critique.priority_improvements.map(i => i.recommendation || i));
-                    }
+            const dimensions = Object.values(dimensionAnalyses).map(d => {
+                // Add dimension issues to global collections
+                if (d.issues) {
+                    allIssues.push(...d.issues.map(issue => ({...issue, dimension: d.dimension_name})));
                 }
-            }
+                if (d.key_strengths) {
+                    allStrengths.push(...d.key_strengths.map(strength => ({...strength, dimension: d.dimension_name})));
+                }
+                if (d.next_steps) {
+                    allNextSteps.push(...d.next_steps.map(step => ({...step, dimension: d.dimension_name})));
+                }
 
-            // Process next steps and checklist items
-            if (apiResults.next_steps && Array.isArray(apiResults.next_steps)) {
-                nextSteps.push(...apiResults.next_steps);
-            }
+                return {
+                    name: d.dimension_name,
+                    overall_assessment: d.overall_assessment,
+                    key_strengths: d.key_strengths || [],
+                    issues: d.issues || [],
+                    next_steps: d.next_steps || [],
+                    executive_summary: d.executive_summary || ''
+                };
+            });
 
-            if (apiResults.checklist_items && Array.isArray(apiResults.checklist_items)) {
-                checklistItems.push(...apiResults.checklist_items);
-            }
+            // Categorize issues by priority
+            const criticalIssues = allIssues.filter(issue => issue.priority === 'high');
+            const improvementIssues = allIssues.filter(issue => issue.priority === 'medium');
+            const polishIssues = allIssues.filter(issue => issue.priority === 'low');
 
             return {
                 qualitativeMode: true,
                 dimensions: dimensions,
                 dimensionAnalyses: dimensionAnalyses,
-                summary: apiResults.executive_summary || extractSummaryFromCritique(apiResults.final_critique) || 'Analysis completed successfully. Your paper has been evaluated across multiple PACT dimensions.',
-                strengths: strengths.length > 0 ? strengths : ['Analysis completed successfully', 'Paper structure is coherent', 'Research topic is well-defined'],
-                improvements: improvements.length > 0 ? improvements : ['Consider strengthening methodology section', 'Review citation formatting'],
-                nextSteps: nextSteps.length > 0 ? nextSteps : ['Review detailed feedback', 'Address priority improvements', 'Consider revision timeline'],
-                checklistItems: checklistItems,
-                submissionReadiness: apiResults.submission_readiness
+                summary: apiResults.executive_summary || extractSummaryFromCritique(apiResults.final_critique) || 'Analysis completed successfully.',
+                strengths: allStrengths,
+                criticalIssues: criticalIssues,
+                improvementIssues: improvementIssues,
+                polishIssues: polishIssues,
+                nextSteps: allNextSteps,
+                checklistItems: apiResults.checklist_items || []
             };
         }
 
@@ -2685,7 +2680,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                 <ul class="space-y-1">
                                     ${dimension.key_strengths.map(s => `
                                         <li class="text-sm text-green-700">
-                                            <strong>${s.strength || s}:</strong> ${s.evidence || 'Well executed in this area'}
+                                            <strong>${s.strength}:</strong> ${s.evidence || 'Well executed in this area'}
                                         </li>
                                     `).join('')}
                                 </ul>
@@ -2698,7 +2693,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                 <ul class="space-y-1">
                                     ${dimension.priority_improvements.map(i => `
                                         <li class="text-sm text-orange-700">
-                                            <strong>${i.area || i}:</strong> ${i.recommendation || 'Consider strengthening this aspect'}
+                                            <strong>${i.area}:</strong> ${i.recommendation || 'Consider strengthening this aspect'}
                                         </li>
                                     `).join('')}
                                 </ul>

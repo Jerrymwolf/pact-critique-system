@@ -6,7 +6,8 @@ matching the professional PACT Analysis Report structure.
 """
 
 from typing import Dict, List, Optional, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
+from enum import Enum
 
 # Assessment levels matching the PACT rubric
 AssessmentLevel = Literal["Inadequate", "Developing", "Competent", "Strong", "Exemplary"]
