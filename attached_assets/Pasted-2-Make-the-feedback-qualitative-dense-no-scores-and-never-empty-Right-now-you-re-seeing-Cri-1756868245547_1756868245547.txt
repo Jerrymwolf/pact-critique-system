@@ -1,0 +1,42 @@
+2) Make the feedback qualitative & dense (no scores) — and never empty
+Right now you’re seeing:
+“Critical Issues (1)” → too few issues surfaced
+“Strengths (0)” → strengths array empty
+This is fixable with three small changes:
+A) Tighten agent contracts (return rich items, not summaries)
+Give every specialist the same qualitative JSON contract (no numbers):
+For EVERY issue:
+ - title (short)
+ - why_it_matters (tie to rubric)
+ - suggestions (actionable steps)
+ - exemplar_rewrites (1–2 concrete rewrites)
+ - quotes (≥2) with character spans "start:end"
+ - location_hint ("Intro ¶2", "Methods > Sampling")
+ - priority ("high" | "medium" | "low")
+Also return strengths[] (bullet claims with quotes) and next_steps[] (checklist).
+Output ONLY JSON for YOUR dimension; no prose.
+And require minimums:
+at least 2 strengths
+at least 3 issues for weak/average drafts (let the judge decide “weak/avg” based on content—see C)
+B) Judge merge that drops fluff and inflates depth
+After collecting 5 agent JSONs:
+Deduplicate issues across agents by semantic similarity of titles/evidence.
+Drop any issue missing exemplar_rewrites or <2 quotes.
+Guarantee non-empty strengths:
+If merged strengths for a dimension are <2, run a micro “Strengths Harvester” pass (one cheap call) that extracts 2–3 grounded positives with quotes.
+Guarantee ≥3 issues in total:
+If the merged list is <3, ask the judge to add specific, local improvements (e.g., “Add sampling frame details; specify N, inclusion/exclusion, recruitment channel”), each with a rewrite snippet.
+This keeps advice concrete while avoiding “no strengths” moments.
+C) Triage clearly (so your checklist looks meaningful)
+Set priority automatically if an agent didn’t:
+high if the issue touches methods transparency, validity, ethics, missing research question, or claim–evidence mismatch
+medium for organization/flow and clarity rewrites
+low for style/citation polish
+On the frontend, show:
+Critical Issues = priority === "high"
+Areas for Improvement = priority === "medium"
+Polish = priority === "low"
+D) Don’t slice arrays in the UI
+Your current UI likely does slice(0,2) on strengths/improvements. Remove those slices in the data conversion and render all items with a collapsible UI (accordion/cards).
+E) Require exemplar rewrites & quotes (enforced in prompts and judge)
+If an issue lacks exemplar rewrites or quotes, it shouldn’t make it through. This alone makes feedback feel 2× more actionable.
