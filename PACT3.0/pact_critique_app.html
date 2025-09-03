@@ -488,7 +488,7 @@
                                     </svg>
                                     Export PDF
                                 </button>
-                                <button class="inline-flex items-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <button onclick="shareResults()" class="inline-flex items-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm9.316 0a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
                                     </svg>
@@ -522,6 +522,19 @@
                                         </span>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- PACT Spider Chart Visualization -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                PACT Dimensions Overview
+                            </h3>
+                            <div class="chart-container flex justify-center">
+                                <canvas id="dimension-chart" style="max-width: 400px; max-height: 400px;"></canvas>
                             </div>
                         </div>
 
@@ -1837,8 +1850,8 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             // Show results section
             showResults();
 
-            // Display the results in the UI
-            displayResults(results);
+            // Display the results in the UI with enhancements
+            displayResultsEnhanced(results);
 
             // Clean up polling/websocket
             if (pollAbort) {
@@ -1992,33 +2005,29 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
         }
 
         function countCriticalIssues(data) {
-            if (data.dimensionAnalyses) {
-                return Object.values(data.dimensionAnalyses).reduce((count, dim) => {
-                    if (dim.dimension_score && dim.dimension_score < 40) count++; // Score < 2 on 5-point scale
-                    return count;
-                }, 0);
-            }
-            return 0;
+            const dimensions = data.dimensionAnalyses || data.dimension_critiques || {};
+            return Object.values(dimensions).reduce((count, dim) => {
+                if (dim.dimension_score && dim.dimension_score < 40) count++; // Score < 40/100
+                return count;
+            }, 0);
         }
 
         function countImprovements(data) {
-            if (data.dimensionAnalyses) {
-                return Object.values(data.dimensionAnalyses).reduce((count, dim) => {
-                    if (dim.dimension_score && dim.dimension_score >= 40 && dim.dimension_score < 80) count++;
-                    return count;
-                }, 0);
-            }
-            return data.improvements ? data.improvements.length : 0;
+            const dimensions = data.dimensionAnalyses || data.dimension_critiques || {};
+            const dimensionImprovements = Object.values(dimensions).reduce((count, dim) => {
+                if (dim.dimension_score && dim.dimension_score >= 40 && dim.dimension_score < 80) count++;
+                return count;
+            }, 0);
+            return dimensionImprovements || (data.improvements ? data.improvements.length : 0);
         }
 
         function countStrengths(data) {
-            if (data.dimensionAnalyses) {
-                return Object.values(data.dimensionAnalyses).reduce((count, dim) => {
-                    if (dim.dimension_score && dim.dimension_score >= 80) count++;
-                    return count;
-                }, 0);
-            }
-            return data.strengths ? data.strengths.length : 0;
+            const dimensions = data.dimensionAnalyses || data.dimension_critiques || {};
+            const dimensionStrengths = Object.values(dimensions).reduce((count, dim) => {
+                if (dim.dimension_score && dim.dimension_score >= 80) count++;
+                return count;
+            }, 0);
+            return dimensionStrengths || (data.strengths ? data.strengths.length : 0);
         }
 
         function populateDetailedFindings(data) {
@@ -2079,44 +2088,50 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
 
         function getCriticalIssuesFromData(data) {
             const issues = [];
-            if (data.dimensionAnalyses) {
-                Object.values(data.dimensionAnalyses).forEach(dim => {
-                    if (dim.dimension_score && dim.dimension_score < 40) {
-                        issues.push({
-                            name: dim.dimension_name,
-                            description: dim.priority_improvements?.[0]?.recommendation || 'Requires significant improvement'
-                        });
-                    }
-                });
-            }
+            const dimensions = data.dimensionAnalyses || data.dimension_critiques || {};
+            Object.values(dimensions).forEach(dim => {
+                if (dim.dimension_score && dim.dimension_score < 40) {
+                    issues.push({
+                        name: dim.dimension_name,
+                        description: dim.weaknesses?.[0] || dim.priority_improvements?.[0]?.recommendation || 'Requires significant improvement'
+                    });
+                }
+            });
             return issues;
         }
 
         function getImprovementIssuesFromData(data) {
             const issues = [];
-            if (data.dimensionAnalyses) {
-                Object.values(data.dimensionAnalyses).forEach(dim => {
-                    if (dim.dimension_score && dim.dimension_score >= 40 && dim.dimension_score < 80) {
-                        issues.push({
-                            name: dim.dimension_name,
-                            description: dim.priority_improvements?.[0]?.recommendation || 'Could be strengthened'
-                        });
-                    }
-                });
-            }
+            const dimensions = data.dimensionAnalyses || data.dimension_critiques || {};
+            Object.values(dimensions).forEach(dim => {
+                if (dim.dimension_score && dim.dimension_score >= 40 && dim.dimension_score < 80) {
+                    issues.push({
+                        name: dim.dimension_name,
+                        description: dim.weaknesses?.[0] || dim.priority_improvements?.[0]?.recommendation || 'Could be strengthened'
+                    });
+                }
+            });
             return issues;
         }
 
         function getStrengthElementsFromData(data) {
             const elements = [];
-            if (data.dimensionAnalyses) {
-                Object.values(data.dimensionAnalyses).forEach(dim => {
-                    if (dim.dimension_score && dim.dimension_score >= 80) {
-                        elements.push({
-                            name: dim.dimension_name,
-                            description: dim.key_strengths?.[0]?.strength || 'Well-executed dimension'
-                        });
-                    }
+            const dimensions = data.dimensionAnalyses || data.dimension_critiques || {};
+            Object.values(dimensions).forEach(dim => {
+                if (dim.dimension_score && dim.dimension_score >= 80) {
+                    elements.push({
+                        name: dim.dimension_name,
+                        description: dim.strengths?.[0] || dim.key_strengths?.[0]?.strength || 'Well-executed dimension'
+                    });
+                }
+            });
+            // Also add general strengths
+            if (data.strengths && data.strengths.length > 0) {
+                data.strengths.forEach(strength => {
+                    elements.push({
+                        name: 'General Strength',
+                        description: strength
+                    });
                 });
             }
             return elements;
@@ -2539,6 +2554,53 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const activeBtn = document.getElementById(`dim-tab-${dimensionId}`);
             activeBtn.classList.remove('border-transparent', 'text-gray-500');
             activeBtn.classList.add('border-blue-500', 'text-blue-600');
+        }
+
+        // Share functionality
+        async function shareResults() {
+            if (!currentSessionId) {
+                alert('No analysis results available to share.');
+                return;
+            }
+
+            try {
+                const shareData = {
+                    title: 'PACT Analysis Results',
+                    text: 'Check out my comprehensive PACT academic paper analysis',
+                    url: window.location.href + '?session=' + currentSessionId
+                };
+
+                if (navigator.share && navigator.canShare(shareData)) {
+                    await navigator.share(shareData);
+                } else {
+                    // Fallback: copy to clipboard
+                    await navigator.clipboard.writeText(shareData.url);
+                    showNotification('Analysis link copied to clipboard!', 'success');
+                }
+            } catch (err) {
+                console.error('Error sharing:', err);
+                showNotification('Unable to share results. Please try again.', 'error');
+            }
+        }
+
+        // Enhanced displayResults to include spider chart
+        function displayResultsEnhanced(data) {
+            // Call the original displayResults function
+            displayResults(data);
+
+            // Add spider chart if dimension data is available
+            if (data.dimensions || data.dimension_critiques) {
+                const dimensions = data.dimensions || Object.entries(data.dimension_critiques || {}).map(([id, critique]) => ({
+                    id: id,
+                    name: critique.dimension_name || `Dimension ${id}`,
+                    score: critique.dimension_score || 0
+                }));
+
+                if (dimensions.length > 0) {
+                    // Create spider chart
+                    createDimensionChart(dimensions);
+                }
+            }
         }
     </script>
 </body>
