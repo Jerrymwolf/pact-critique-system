@@ -1,0 +1,153 @@
+{
+  "session_id": "f92bbf90-df94-475f-a5f4-dffc62919e26",
+  "status": "failed",
+  "paper_content": "",
+  "created_at": "2025-09-02T22:12:25.457545",
+  "updated_at": "2025-09-02T22:12:57.438523",
+  "paper_title": "Pre-Work  - Brief Topic Description",
+  "paper_type": null,
+  "mode": "STANDARD",
+  "overall_progress": 1.0,
+  "agents": {
+    "supervisor": {
+      "agent_id": "supervisor",
+      "agent_name": "Supervisor",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "1": {
+      "agent_id": "1",
+      "agent_name": "Research Foundations",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "2": {
+      "agent_id": "2",
+      "agent_name": "Methodological Rigor",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "3": {
+      "agent_id": "3",
+      "agent_name": "Structure & Coherence",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "4": {
+      "agent_id": "4",
+      "agent_name": "Academic Precision",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "5": {
+      "agent_id": "5",
+      "agent_name": "Critical Sophistication",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    }
+  },
+  "current_stage": "",
+  "dimension_critiques": {
+    "1.0.0": {
+      "dimension_name": "Research Foundations",
+      "dimension_score": 58,
+      "strengths": [
+        "Identifies and connects to core literatures (affective polarization, intergroup contact, deliberation, echo chambers) and flags plausible gaps around reconciliation and emotion",
+        "Demonstrates high societal relevance and candid reflexivity about political bias, enabling an explicit plan for neutrality safeguards"
+      ],
+      "weaknesses": [
+        "Claims about gaps and prior findings are uncited and rely on AI summaries rather than a systematic, source-based review",
+        "Problem framing mixes normative aims (for example, helping one party win) with scholarly inquiry, threatening theoretical neutrality and construct validity"
+      ]
+    },
+    "2.0.0": {
+      "dimension_name": "Methodological Rigor",
+      "dimension_score": 24,
+      "strengths": [
+        "Articulates concrete practical outcomes of interest (relationship repair and reconnection) and has potential recruitment access via a talk-show platform",
+        "Acknowledges biases upfront, creating the opportunity for pre-registration, blinding, and reflexive practices"
+      ],
+      "weaknesses": [
+        "Lacks specific research questions or hypotheses, operational definitions, measurement plan, sampling strategy, and analysis framework",
+        "No discussion of ethics, risk mitigation, or procedures to reduce demand characteristics and partisan framing effects"
+      ]
+    },
+    "3.0.0": {
+      "dimension_name": "Structure & Coherence",
+      "dimension_score": 42,
+      "strengths": [
+        "Clear articulation of motivation and stakes, with accessible narrative that could aid recruitment and stakeholder engagement",
+        "Includes an explicit biases-and-assumptions section that clarifies the author\u2019s standpoint"
+      ],
+      "weaknesses": [
+        "Redundant sections (duplicate prompts), uneven organization, and mingling of advocacy with research objectives obscure the throughline",
+        "Key terms (for example, connect, reconnection, hostility) are used loosely without definitions, leading to scope creep and ambiguity"
+      ]
+    }
+  },
+  "final_critique": "This pre-work effectively motivates a timely, socially consequential thesis on bridging cross-partisan divides, and it displays welcome reflexivity about the author's positionality. It maps the topic to several core literatures (affective polarization, contact theory, deliberation, echo chambers) and gestures toward gaps around reconciliation in everyday relationships and the role of identity and emotion. However, as a research prospectus it remains underdeveloped: the research problem is broad, the goals are partly normative and partisan, and there is no concrete research design, sampling frame, or operationalization of key constructs. The framing occasionally conflates scholarly inquiry with advocacy (for example, helping Democrats win), which risks threatening neutrality, measurement validity, and participant trust. Foundational claims about literature gaps rely on AI summaries rather than citable, systematic review. The document would benefit from a sharper theoretical scaffold, testable questions, and a feasible, ethically robust methodology. To strengthen the foundations, anchor the work in an integrated framework that connects intergroup contact conditions (equal status, common goals, cooperation, institutional support), motivated reasoning, social identity and intergroup emotions, and deliberative practice. Specify what outcomes constitute reconnection (for example, relationship continuity, trust, warmth, willingness to discuss politics, frequency of contact), and link them to validated measures (for example, feeling thermometers, social distance scales, trait ratings, trust measures, perceived respect and empathy scales). Predefine primary endpoints and time horizons to assess durability. Methodologically, consider a mixed-methods plan: (1) qualitative interviews across partisan dyads to surface mechanisms and context-specific barriers; (2) a pre-registered field experiment comparing dialogue modalities (for example, structured listening, values affirmation, shared-goal tasks) that adhere to contact-theory conditions; and (3) a longitudinal follow-up to test persistence and spillovers into nonpolitical domains. Ensure sampling spans ideological intensity, geography, media ecosystems, and socio-demographics to mitigate selection bias; the talk-show platform can assist recruitment but should not be the sole source. Incorporate blinding where possible, minimize demand characteristics, and include manipulation checks. Analytically, plan power calculations, model heterogeneity of effects (for example, by identity strength or media consumption), and test mediators such as perceived respect, empathy, and threat. Ethically, secure IRB approval, anticipate risks of rekindling conflict, and implement safeguards (informed consent, de-escalation protocols, confidentiality, resource referrals). Finally, reframe the contribution away from partisan advantage toward generalizable, evidence-based guidance for reducing affective hostility and repairing relationships across differences. With a tightened scope, credible theory-to-measure links, and a transparent, preregistered design, this project could make a meaningful scholarly and practical contribution.",
+  "overall_score": 44,
+  "result": {
+    "paper_title": "Pre-Work  - Brief Topic Description",
+    "overall_score": 44,
+    "final_critique": "This pre-work effectively motivates a timely, socially consequential thesis on bridging cross-partisan divides, and it displays welcome reflexivity about the author's positionality. It maps the topic to several core literatures (affective polarization, contact theory, deliberation, echo chambers) and gestures toward gaps around reconciliation in everyday relationships and the role of identity and emotion. However, as a research prospectus it remains underdeveloped: the research problem is broad, the goals are partly normative and partisan, and there is no concrete research design, sampling frame, or operationalization of key constructs. The framing occasionally conflates scholarly inquiry with advocacy (for example, helping Democrats win), which risks threatening neutrality, measurement validity, and participant trust. Foundational claims about literature gaps rely on AI summaries rather than citable, systematic review. The document would benefit from a sharper theoretical scaffold, testable questions, and a feasible, ethically robust methodology. To strengthen the foundations, anchor the work in an integrated framework that connects intergroup contact conditions (equal status, common goals, cooperation, institutional support), motivated reasoning, social identity and intergroup emotions, and deliberative practice. Specify what outcomes constitute reconnection (for example, relationship continuity, trust, warmth, willingness to discuss politics, frequency of contact), and link them to validated measures (for example, feeling thermometers, social distance scales, trait ratings, trust measures, perceived respect and empathy scales). Predefine primary endpoints and time horizons to assess durability. Methodologically, consider a mixed-methods plan: (1) qualitative interviews across partisan dyads to surface mechanisms and context-specific barriers; (2) a pre-registered field experiment comparing dialogue modalities (for example, structured listening, values affirmation, shared-goal tasks) that adhere to contact-theory conditions; and (3) a longitudinal follow-up to test persistence and spillovers into nonpolitical domains. Ensure sampling spans ideological intensity, geography, media ecosystems, and socio-demographics to mitigate selection bias; the talk-show platform can assist recruitment but should not be the sole source. Incorporate blinding where possible, minimize demand characteristics, and include manipulation checks. Analytically, plan power calculations, model heterogeneity of effects (for example, by identity strength or media consumption), and test mediators such as perceived respect, empathy, and threat. Ethically, secure IRB approval, anticipate risks of rekindling conflict, and implement safeguards (informed consent, de-escalation protocols, confidentiality, resource referrals). Finally, reframe the contribution away from partisan advantage toward generalizable, evidence-based guidance for reducing affective hostility and repairing relationships across differences. With a tightened scope, credible theory-to-measure links, and a transparent, preregistered design, this project could make a meaningful scholarly and practical contribution.",
+    "dimension_critiques": {
+      "1.0.0": {
+        "dimension_name": "Research Foundations",
+        "dimension_score": 58,
+        "strengths": [
+          "Identifies and connects to core literatures (affective polarization, intergroup contact, deliberation, echo chambers) and flags plausible gaps around reconciliation and emotion",
+          "Demonstrates high societal relevance and candid reflexivity about political bias, enabling an explicit plan for neutrality safeguards"
+        ],
+        "weaknesses": [
+          "Claims about gaps and prior findings are uncited and rely on AI summaries rather than a systematic, source-based review",
+          "Problem framing mixes normative aims (for example, helping one party win) with scholarly inquiry, threatening theoretical neutrality and construct validity"
+        ]
+      },
+      "2.0.0": {
+        "dimension_name": "Methodological Rigor",
+        "dimension_score": 24,
+        "strengths": [
+          "Articulates concrete practical outcomes of interest (relationship repair and reconnection) and has potential recruitment access via a talk-show platform",
+          "Acknowledges biases upfront, creating the opportunity for pre-registration, blinding, and reflexive practices"
+        ],
+        "weaknesses": [
+          "Lacks specific research questions or hypotheses, operational definitions, measurement plan, sampling strategy, and analysis framework",
+          "No discussion of ethics, risk mitigation, or procedures to reduce demand characteristics and partisan framing effects"
+        ]
+      },
+      "3.0.0": {
+        "dimension_name": "Structure & Coherence",
+        "dimension_score": 42,
+        "strengths": [
+          "Clear articulation of motivation and stakes, with accessible narrative that could aid recruitment and stakeholder engagement",
+          "Includes an explicit biases-and-assumptions section that clarifies the author\u2019s standpoint"
+        ],
+        "weaknesses": [
+          "Redundant sections (duplicate prompts), uneven organization, and mingling of advocacy with research objectives obscure the throughline",
+          "Key terms (for example, connect, reconnection, hostility) are used loosely without definitions, leading to scope creep and ambiguity"
+        ]
+      }
+    }
+  },
+  "error_message": null,
+  "retry_count": 0
+}
