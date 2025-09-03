@@ -68,6 +68,22 @@ class DimensionCritique(BaseModel):
         description="Alternative dimension label for compatibility",
         default=None
     )
+    overall_assessment: str = Field(
+        description="Qualitative assessment (e.g., 'Developing', 'Proficient')",
+        default="Developing"
+    )
+    issues: List[Dict[str, Any]] = Field(
+        description="Structured issues with rubric mapping and evidence",
+        default_factory=list
+    )
+    key_strengths: List[str] = Field(
+        description="Key strengths identified in this dimension",
+        default_factory=list
+    )
+    priority_improvements: List[str] = Field(
+        description="Priority areas for improvement",
+        default_factory=list
+    )
     strengths: List[str] = Field(
         description="Specific strengths identified in this dimension",
         default_factory=list

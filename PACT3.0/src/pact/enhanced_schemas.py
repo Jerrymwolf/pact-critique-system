@@ -50,16 +50,50 @@ class SectionAnalysis(BaseModel):
         default_factory=dict
     )
 
-class DetailedDimensionCritique(BaseModel):
-    """Comprehensive dimension critique following proper hierarchy."""
-    dimension_id: str = Field(description="PACT dimension ID (e.g., '1.0.0')")
-    dimension_label: str = Field(description="Full dimension name")
-    overall_score: float = Field(description="Overall dimension score (0-100)", ge=0, le=100)
-    rationale: str = Field(description="Overall rationale for this dimension")
+class Issue(BaseModel):
+    """
+    Individual issue identified in a dimension with structured feedback.
+    """
+    title: str = Field(description="Brief, clear title of the issue")
+    rubric_id: Optional[str] = Field(description="PACT rubric reference (e.g., '4.4.2')", default=None)
+    why_it_matters: str = Field(description="Why this issue is important, tied to academic standards")
+    evidence: List[str] = Field(description="Specific quotes or citations from the paper", default_factory=list)
+    rewrite: Optional[str] = Field(description="Suggested revision or exemplar text", default=None)
+    priority: str = Field(description="Priority level: Critical, Important, or Standard", default="Standard")
 
-    # Proper hierarchy: dimensions have sections, sections have subsections
-    sections: Dict[str, SectionAnalysis] = Field(
-        description="Analysis of sections within this dimension",
+class DetailedDimensionCritique(BaseModel):
+    """
+    Enhanced schema for detailed dimension critique with structured issues.
+    """
+    dimension_id: str = Field(description="PACT dimension ID (e.g., '1.0.0')")
+    dimension_name: str = Field(description="Human readable dimension name")
+    dimension_label: Optional[str] = Field(description="Alternative label", default=None)
+    dimension_score: int = Field(description="Overall dimension score (0-100)", ge=0, le=100)
+
+    # Qualitative assessment
+    overall_assessment: str = Field(
+        description="Qualitative overall assessment (e.g., 'Developing', 'Proficient', 'Exemplary')"
+    )
+
+    # Structured issues with rubric mapping
+    issues: List[Issue] = Field(
+        description="Detailed issues found in this dimension",
+        default_factory=list
+    )
+
+    # Key findings
+    key_strengths: List[str] = Field(
+        description="Major strengths identified in this dimension",
+        default_factory=list
+    )
+    priority_improvements: List[str] = Field(
+        description="Priority areas needing improvement",
+        default_factory=list
+    )
+
+    # Detailed subsection analysis
+    subsection_critiques: Dict[str, Dict] = Field(
+        description="Detailed critique for each subsection",
         default_factory=dict
     )
 
@@ -119,7 +153,7 @@ PACT_DIMENSIONS = {
         "name": "Research Foundations",
         "subsections": {
             "1.1.1": "Problem Identification and Significance",
-            "1.1.2": "Research Question Formulation", 
+            "1.1.2": "Research Question Formulation",
             "1.3.1": "Literature Synthesis as Argument",
             "1.3.2": "Critical Source Engagement",
             "1.3.3": "Gap Identification and Significance",
@@ -139,7 +173,7 @@ PACT_DIMENSIONS = {
         }
     },
     "3.0.0": {
-        "name": "Structure & Coherence", 
+        "name": "Structure & Coherence",
         "subsections": {
             "3.1.2": "Introduction and Conclusion Excellence",
             "3.2.1": "Paragraph Focus and Unity",
@@ -153,7 +187,7 @@ PACT_DIMENSIONS = {
         "subsections": {
             "4.1.1": "Term Definition and Consistency",
             "4.1.2": "Sentence Construction and Clarity",
-            "4.2.1": "Citation Accuracy and Integrity", 
+            "4.2.1": "Citation Accuracy and Integrity",
             "4.3.1": "Grammar, Syntax, and Spelling"
         }
     },

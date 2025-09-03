@@ -24,7 +24,7 @@ critique_model = ChatOpenAI(
 
 def create_enhanced_dimension_critique_prompt(paper_content: str, dimension_id: str) -> str:
     """
-    Create an enhanced critique prompt for detailed PACT analysis.
+    Create an enhanced critique prompt for detailed PACT analysis with structured issues.
     """
     dimension_info = PACT_DIMENSIONS.get(dimension_id, {})
     dimension_name = dimension_info.get('name', '')
@@ -48,13 +48,22 @@ PAPER TO CRITIQUE:
 ---
 
 Provide a structured critique with:
-1. Overall dimension score (0-100) and rationale
-2. For each subsection listed above:
-   - Subsection score (0-100)
-   - List of specific strengths found
-   - List of specific improvements needed
 
-Be thorough, specific, and constructive in your feedback.
+1. **Overall Assessment**: A qualitative rating (e.g., "Developing", "Proficient", "Exemplary")
+
+2. **Structured Issues**: For each significant problem found, create an issue with:
+   - **Title**: Brief, clear description of the problem
+   - **Rubric ID**: Reference to relevant PACT rubric section (e.g., "{dimension_id}.1", "{dimension_id}.2")
+   - **Why it matters**: Explain the academic/scholarly importance
+   - **Evidence**: Direct quotes or specific citations from the paper
+   - **Rewrite**: Suggested revision or exemplar text
+   - **Priority**: "Critical", "Important", or "Standard"
+
+3. **Key Strengths**: Major strengths identified in this dimension
+
+4. **Priority Improvements**: High-level areas needing attention
+
+Focus on providing actionable, rubric-grounded feedback that helps authors improve their scholarly work.
 """
 
 def format_dimension_criteria(dimension_data: Dict[str, Any]) -> str:
