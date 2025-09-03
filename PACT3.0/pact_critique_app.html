@@ -2739,9 +2739,9 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
         }
         
         function populateKeyFindingsCardsProfessional(data) {
-            const criticalCount = countCriticalIssues(data);
-            const improvementCount = countImprovementAreas(data);
-            const strengthCount = countStrengths(data);
+            const criticalCount = countCriticalIssuesProfessional(data);
+            const improvementCount = countImprovementAreasProfessional(data);
+            const strengthCount = countStrengthsProfessional(data);
             
             document.getElementById('critical-count').textContent = criticalCount;
             document.getElementById('improvement-count').textContent = improvementCount;
@@ -2901,6 +2901,37 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             `;
             
             list.appendChild(item);
+        }
+        
+        // Professional count functions for the new format
+        function countCriticalIssuesProfessional(data) {
+            const dimensions = data.dimension_critiques || {};
+            return Object.values(dimensions).filter(critique => 
+                critique.dimension_score < 40
+            ).length;
+        }
+        
+        function countImprovementAreasProfessional(data) {
+            const dimensions = data.dimension_critiques || {};
+            return Object.values(dimensions).filter(critique => 
+                critique.dimension_score >= 40 && critique.dimension_score < 70
+            ).length;
+        }
+        
+        function countStrengthsProfessional(data) {
+            const dimensions = data.dimension_critiques || {};
+            let totalStrengths = 0;
+            Object.values(dimensions).forEach(critique => {
+                if (critique.strengths && critique.strengths.length > 0) {
+                    totalStrengths += critique.strengths.length;
+                }
+            });
+            return totalStrengths;
+        }
+        
+        // Compatibility functions for any remaining calls to old names
+        function countImprovementAreas(data) {
+            return countImprovementAreasProfessional(data);
         }
     </script>
 </body>
