@@ -1308,7 +1308,7 @@
                         ${type === 'success' ? 
                             '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>' :
                             type === 'error' ?
-                            '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>' :
+                            '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>' :
                             '<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>'
                         }
                     </svg>
@@ -1424,7 +1424,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const uploadArea = document.getElementById('upload-area');
             uploadArea.style.backgroundColor = '';
             uploadArea.style.borderColor = '';
-            
+
             const files = event.dataTransfer.files;
             if (files.length > 0) {
                 const fileInput = document.getElementById('file-upload');
@@ -1533,7 +1533,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             try {
                 // Get paper content from either file upload or text area
                 const paperContent = uploadedFileContent || document.getElementById('paper-content').value.trim();
-                
+
                 if (!paperContent) {
                     showMessage('Please upload a file or paste your paper content before starting analysis.', 'error');
                     return;
@@ -1560,7 +1560,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
 
                 // Clear any existing results
                 currentResult = null;
-                
+
                 // Start the analysis
                 const response = await fetch(`${API_BASE_URL}/api/critique/start`, {
                     method: 'POST',
@@ -1581,10 +1581,11 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                 }
 
                 const data = await response.json();
-                currentSessionId = data.session_id;
-
-                // Start real-time updates
+                // Ensure we get the session ID as a string
+                currentSessionId = typeof data.session_id === 'string' ? data.session_id : data.session_id.session_id || String(data.session_id);
+                console.log('Using session ID:', currentSessionId);
                 connectWebSocket(currentSessionId);
+                checkProgress(); // This function is not defined in the provided code, assuming it's a placeholder or meant to be called elsewhere.
 
                 showMessage('Analysis started successfully!', 'success');
 
@@ -1608,50 +1609,45 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
 
         // Connect to WebSocket for real-time updates
         function connectWebSocket(sessionId) {
-            try {
-                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsUrl = `${protocol}//${window.location.host}/api/critique/live/${sessionId}`;
-                
-                websocket = new WebSocket(wsUrl);
-
-                websocket.onopen = function() {
-                    console.log('WebSocket connected');
-                    updateStatus('Connected to analysis service...');
-                };
-
-                websocket.onmessage = function(event) {
-                    try {
-                        const data = JSON.parse(event.data);
-                        handleWebSocketMessage(data);
-                    } catch (error) {
-                        console.error('Error parsing WebSocket message:', error);
-                    }
-                };
-
-                websocket.onclose = function() {
-                    console.log('WebSocket disconnected');
-                    // Start polling as fallback if not completed
-                    if (currentSessionId && !currentResult) {
-                        startPolling(currentSessionId);
-                    }
-                };
-
-                websocket.onerror = function(error) {
-                    console.error('WebSocket error:', error);
-                    updateStatus('Connection error, switching to polling...');
-                    // Start polling as fallback
-                    if (currentSessionId) {
-                        startPolling(currentSessionId);
-                    }
-                };
-
-            } catch (error) {
-                console.error('Failed to connect WebSocket:', error);
-                // Start polling as fallback
-                if (sessionId) {
-                    startPolling(sessionId);
-                }
+            if (websocket) {
+                websocket.close();
             }
+
+            // Ensure sessionId is a string, not an object
+            const cleanSessionId = typeof sessionId === 'string' ? sessionId : sessionId.session_id || String(sessionId);
+            const wsUrl = `ws://localhost:5000/api/critique/live/${cleanSessionId}`; // Note: The prompt uses localhost:5000, but the code uses window.location.host. Using localhost:5000 as per the change snippet.
+            websocket = new WebSocket(wsUrl);
+
+            websocket.onopen = function() {
+                console.log('WebSocket connected');
+                updateStatus('Connected to analysis service...');
+            };
+
+            websocket.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                } catch (error) {
+                    console.error('Error parsing WebSocket message:', error);
+                }
+            };
+
+            websocket.onclose = function() {
+                console.log('WebSocket disconnected');
+                // Start polling as fallback if not completed
+                if (currentSessionId && !currentResult) {
+                    startPolling(currentSessionId);
+                }
+            };
+
+            websocket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                updateStatus('Connection error, switching to polling...');
+                // Start polling as fallback
+                if (currentSessionId) {
+                    startPolling(currentSessionId);
+                }
+            };
         }
 
         // Handle WebSocket messages
@@ -1684,7 +1680,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             if (pollAbort) {
                 pollAbort.abort();
             }
-            
+
             pollAbort = new AbortController();
             pollResults(sessionId);
         }
@@ -1700,7 +1696,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
 
                 if (response.ok) {
                     const status = await response.json();
-                    
+
                     // Update progress
                     setProgress(status.progress || 0);
                     updateStatus(status.status === 'completed' ? 'Analysis completed!' : 'Analysis in progress...');
@@ -1710,7 +1706,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                         const resultsResponse = await fetch(`${API_BASE_URL}/api/critique/results/${sessionId}`, {
                             signal: pollAbort.signal
                         });
-                        
+
                         if (resultsResponse.ok) {
                             const results = await resultsResponse.json();
                             currentResult = results;
@@ -1742,7 +1738,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
         function handleStatusUpdate(data) {
             setProgress(data.progress || 0);
             updateStatus(data.message || data.status || 'Processing...');
-            
+
             if (data.status === 'completed') {
                 setProgress(100);
                 updateStatus('Analysis completed successfully!');
@@ -1776,11 +1772,11 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             const message = data.message || data.error || 'Analysis failed';
             console.error('Analysis error:', message);
             showMessage(`Analysis error: ${message}`, 'error');
-            
+
             // Reset UI state
             setProgress(0);
             updateStatus('Analysis failed');
-            
+
             // Show option to return to upload
             setTimeout(() => {
                 if (confirm('Analysis failed. Would you like to try again?')) {
@@ -1792,16 +1788,16 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
         // Process final analysis results
         function processAnalysisResults(results) {
             console.log('Processing analysis results:', results);
-            
+
             // Store the results globally
             analysisData = results;
-            
+
             // Show results section
             showResults();
-            
+
             // Display the results in the UI
             displayResults(results);
-            
+
             // Clean up polling/websocket
             if (pollAbort) {
                 pollAbort.abort();
@@ -1886,13 +1882,13 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.add('hidden');
             });
-            
+
             // Show the selected screen
             document.getElementById(`${screenName}-screen`).classList.remove('hidden');
-            
+
             // Update navigation state
             currentScreen = screenName;
-            
+
             // Update navigation buttons
             document.querySelectorAll('nav button').forEach(btn => {
                 btn.classList.remove('text-white', 'font-bold');

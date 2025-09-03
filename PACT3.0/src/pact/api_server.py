@@ -661,7 +661,7 @@ async def start_critique(req: StartCritiqueRequest, request: Request):
         # Start background analysis
         asyncio.create_task(run_critique_analysis(session_id, req.text, req.title, req.mode))
 
-        return {"session_id": session, "status": "started"}
+        return {"session_id": session_id, "status": "started"}
 
     except HTTPException:
         raise
@@ -711,25 +711,37 @@ async def get_critique_results(session_id: str):
     """
     Get the final results of a completed critique session.
     """
+    logger.info(f"Getting results for session {session_id}")
     session = session_manager.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    logger.info(f"Session status: {session.status}")
     # String-based enums can be compared directly with strings
     if session.status != "completed":
         raise HTTPException(status_code=400, detail="Session not yet completed")
 
-    if not session.overall_score and not session.final_critique:
+    # Check both individual fields and result object
+    has_score = getattr(session, 'overall_score', None) is not None
+    has_critique = getattr(session, 'final_critique', None) is not None
+    has_result = getattr(session, 'result', None) is not None
+    
+    logger.info(f"Has score: {has_score}, has critique: {has_critique}, has result: {has_result}")
+    
+    if not has_score and not has_critique and not has_result:
         raise HTTPException(status_code=500, detail="Results not found for completed session")
 
+    # Get data from either individual fields or result object
+    result_data = getattr(session, 'result', {}) or {}
+    
     return ResultsResponse(**{
         "session_id": session_id,
-        "paper_title": session.paper_title,
-        "overall_score": session.overall_score,
-        "final_critique": session.final_critique,
-        "dimension_critiques": session.dimension_critiques or {},
-        "created_at": session.created_at.isoformat() if session.created_at else None,
-        "updated_at": session.updated_at.isoformat() if session.updated_at else None
+        "paper_title": getattr(session, 'paper_title', None) or result_data.get('paper_title'),
+        "overall_score": getattr(session, 'overall_score', None) or result_data.get('overall_score'),
+        "final_critique": getattr(session, 'final_critique', None) or result_data.get('final_critique'),
+        "dimension_critiques": getattr(session, 'dimension_critiques', {}) or result_data.get('dimension_critiques', {}),
+        "created_at": session.created_at.isoformat() if hasattr(session, 'created_at') and session.created_at else None,
+        "updated_at": session.updated_at.isoformat() if hasattr(session, 'updated_at') and session.updated_at else None
     })
 
 @app.websocket("/api/critique/live/{session_id}")
@@ -897,7 +909,16 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
             session_id=session_id
         )
 
+        # Store the result properly
         session_manager.update_session_results(session_id, result)
+        
+        # Also update individual fields for compatibility
+        session = session_manager.get_session(session_id)
+        if session:
+            session.result = result
+            session.overall_score = result.get('overall_score')
+            session.final_critique = result.get('final_critique')
+            session.dimension_critiques = result.get('dimension_critiques', {})
 
         session_manager.update_progress(session_id, 100, status="completed")
         await manager.send_message(session_id, {"event": "status", "status": "completed", "progress": 100})
