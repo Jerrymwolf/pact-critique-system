@@ -1,0 +1,226 @@
+{
+  "session_id": "c81c139e-0b42-4167-a0ca-786370024ba2",
+  "status": "completed",
+  "paper_content": "",
+  "created_at": "2025-09-03T16:52:06.678636",
+  "updated_at": "2025-09-03T16:52:42.508770",
+  "paper_title": "Pre-Work  - Brief Topic Description",
+  "paper_type": "research",
+  "mode": "STANDARD",
+  "overall_progress": 100.0,
+  "agents": {
+    "supervisor": {
+      "agent_id": "supervisor",
+      "agent_name": "Supervisor",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "1": {
+      "agent_id": "1",
+      "agent_name": "Research Foundations",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "2": {
+      "agent_id": "2",
+      "agent_name": "Methodological Rigor",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "3": {
+      "agent_id": "3",
+      "agent_name": "Structure & Coherence",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "4": {
+      "agent_id": "4",
+      "agent_name": "Academic Precision",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "5": {
+      "agent_id": "5",
+      "agent_name": "Critical Sophistication",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    }
+  },
+  "current_stage": "",
+  "dimension_critiques": {
+    "1.0.0": {
+      "dimension_name": "Research Foundations",
+      "dimension_score": 60,
+      "strengths": [
+        "Timely, socially important topic with awareness of core literatures (affective polarization, contact theory, deliberation, and social media effects).",
+        "Explicit acknowledgement of personal biases and initial articulation of plausible research gaps (reconnection in everyday settings; identity and emotion)."
+      ],
+      "weaknesses": [
+        "Central research question and theoretical model remain vague, with conflated aims (relationship repair, depolarization, and electoral advantage).",
+        "Reliance on AI prompts rather than a curated, critical literature review; lack of operational definitions for key constructs."
+      ],
+      "key_strengths": [
+        "Paper addresses relevant topic in 1.0.0",
+        "Appropriate academic structure maintained for 1.0.0"
+      ],
+      "issues": [
+        {
+          "title": "Consider strengthening evidence base",
+          "why_it_matters": "Academic rigor requires strong evidentiary support",
+          "suggestions": [
+            "Add supporting citations",
+            "Include additional examples"
+          ],
+          "exemplar_rewrites": [
+            "Research shows X (Author, 2023), supporting the claim that..."
+          ],
+          "quotes": [
+            "[Citation needed]",
+            "[Additional evidence required]"
+          ],
+          "location_hint": "Throughout document",
+          "priority": "medium"
+        }
+      ],
+      "next_steps": []
+    },
+    "2.0.0": {
+      "dimension_name": "Methodological Rigor",
+      "dimension_score": 28,
+      "strengths": [
+        "Topic lends itself to testable hypotheses and mixed-methods designs integrating mechanisms from contact and identity-threat literatures.",
+        "Acknowledged bias creates an opening for reflexive practices, preregistration, and blinded coding to strengthen validity."
+      ],
+      "weaknesses": [
+        "No proposed study design, sampling strategy, measurement plan, or analysis approach; outcomes and mechanisms are unspecified.",
+        "Normative goal of aiding one party risks allegiance effects, sampling bias, and compromised participant trust."
+      ],
+      "key_strengths": [
+        "Paper addresses relevant topic in 2.0.0",
+        "Appropriate academic structure maintained for 2.0.0"
+      ],
+      "issues": [],
+      "next_steps": []
+    },
+    "3.0.0": {
+      "dimension_name": "Structure & Coherence",
+      "dimension_score": 52,
+      "strengths": [
+        "Clear motivational narrative and logical progression from problem salience to potential research spaces.",
+        "Concise enumeration of interests and preliminary gap identification provides a usable starting point."
+      ],
+      "weaknesses": [
+        "Redundancy (duplicate prompt sections), informal tone, and inconsistent formatting reduce clarity and professional polish.",
+        "Scope creep across micro-level reconciliation and macro-level persuasion obscures a coherent throughline."
+      ],
+      "key_strengths": [
+        "Paper addresses relevant topic in 3.0.0",
+        "Appropriate academic structure maintained for 3.0.0"
+      ],
+      "issues": [],
+      "next_steps": []
+    }
+  },
+  "final_critique": "This pre-work articulates a timely, socially consequential aim: understanding how citizens with opposing partisan identities connect across difference and how interpersonal relationships might be repaired. The author demonstrates authentic motivation, acknowledges personal biases, and identifies several relevant literatures (affective polarization, contact theory, deliberative democracy, and echo chambers). The statement also attempts to surface potential gaps (reconnection in everyday settings, partisan asymmetries in outreach, and the role of identity and emotion). These are promising foundations. However, in its current form the proposal remains under-specified, normatively loaded, and methodologically undeveloped. The central research question is not yet clearly formulated, and the document conflates multiple goals: reducing affective polarization, improving familial relationships, and helping a specific party win elections. That instrumental political objective risks compromising research neutrality and threatens external credibility with cross-partisan participants. The scope is also diffuse (micro-level dyadic reconciliation vs. mass-level persuasion). Methodologically, there is no study design, sampling frame, measurement plan, or analytic strategy. The work leans on AI-suggested literature rather than a curated, critical review, and it lacks an explicit theoretical model connecting interventions (e.g., conversational practices) to mechanisms (e.g., perceived respect, reduced identity threat) and outcomes (e.g., willingness to re-engage, relationship quality, affective polarization). To strengthen the project: 1) Clarify scope and research questions. Example: Under what conditions do structured cross-partisan conversations improve willingness to sustain contact and perceived relationship quality among close ties? 2) Articulate a conceptual framework integrating contact conditions (equal status, common goals, institutional support), identity-threat reduction, and emotion regulation. Hypothesize mediators (perceived respect, empathic accuracy) and moderators (partisan identity centrality, media diet, authoritarianism, moral foundations). 3) Define outcomes and measures. Consider affective thermometer distances, social distance indices, willingness-to-discuss scales, Inclusion-of-Other-in-the-Self (IOS), relationship closeness, and behavioral indicators (voluntary follow-up contact). Plan pre/post and follow-up measurement to test durability. 4) Propose a mixed-method design: Phase 1 qualitative interviews or dyadic case studies (including strained family pairs) to surface mechanisms; Phase 2 pre-registered survey experiments testing conversation protocols (e.g., deep canvassing, motivational interviewing\u2013informed reflective listening) across partisan strata; Phase 3 field pilot with structured dialogues, with randomization at dyad or group level and multilevel modeling. 5) Sampling and recruitment. Use stratified sampling across parties and ideological intensity; avoid over-reliance on the author\u2019s audience to mitigate selection bias. 6) Rigor and bias mitigation. Pre-register hypotheses, preregister exclusion rules, use blinded coders for qualitative analysis, include bipartisan advisory input, and conduct power analyses. 7) Ethics. Anticipate relational risk, ensure informed consent for both members of dyads, establish safety protocols, and avoid instrumentalizing personal relationships for partisan gain. 8) Deliverables. A systematic literature review, preregistered protocols, and transparent materials to enhance credibility and reuse. With sharper questions, a neutral framing focused on relational and civic outcomes, and a concrete mixed-methods plan, the project can make a meaningful scholarly and practical contribution to the reconciliation of cross-partisan relationships.",
+  "overall_score": 54,
+  "result": {
+    "paper_title": "Pre-Work  - Brief Topic Description",
+    "overall_score": 54,
+    "final_critique": "This pre-work articulates a timely, socially consequential aim: understanding how citizens with opposing partisan identities connect across difference and how interpersonal relationships might be repaired. The author demonstrates authentic motivation, acknowledges personal biases, and identifies several relevant literatures (affective polarization, contact theory, deliberative democracy, and echo chambers). The statement also attempts to surface potential gaps (reconnection in everyday settings, partisan asymmetries in outreach, and the role of identity and emotion). These are promising foundations. However, in its current form the proposal remains under-specified, normatively loaded, and methodologically undeveloped. The central research question is not yet clearly formulated, and the document conflates multiple goals: reducing affective polarization, improving familial relationships, and helping a specific party win elections. That instrumental political objective risks compromising research neutrality and threatens external credibility with cross-partisan participants. The scope is also diffuse (micro-level dyadic reconciliation vs. mass-level persuasion). Methodologically, there is no study design, sampling frame, measurement plan, or analytic strategy. The work leans on AI-suggested literature rather than a curated, critical review, and it lacks an explicit theoretical model connecting interventions (e.g., conversational practices) to mechanisms (e.g., perceived respect, reduced identity threat) and outcomes (e.g., willingness to re-engage, relationship quality, affective polarization). To strengthen the project: 1) Clarify scope and research questions. Example: Under what conditions do structured cross-partisan conversations improve willingness to sustain contact and perceived relationship quality among close ties? 2) Articulate a conceptual framework integrating contact conditions (equal status, common goals, institutional support), identity-threat reduction, and emotion regulation. Hypothesize mediators (perceived respect, empathic accuracy) and moderators (partisan identity centrality, media diet, authoritarianism, moral foundations). 3) Define outcomes and measures. Consider affective thermometer distances, social distance indices, willingness-to-discuss scales, Inclusion-of-Other-in-the-Self (IOS), relationship closeness, and behavioral indicators (voluntary follow-up contact). Plan pre/post and follow-up measurement to test durability. 4) Propose a mixed-method design: Phase 1 qualitative interviews or dyadic case studies (including strained family pairs) to surface mechanisms; Phase 2 pre-registered survey experiments testing conversation protocols (e.g., deep canvassing, motivational interviewing\u2013informed reflective listening) across partisan strata; Phase 3 field pilot with structured dialogues, with randomization at dyad or group level and multilevel modeling. 5) Sampling and recruitment. Use stratified sampling across parties and ideological intensity; avoid over-reliance on the author\u2019s audience to mitigate selection bias. 6) Rigor and bias mitigation. Pre-register hypotheses, preregister exclusion rules, use blinded coders for qualitative analysis, include bipartisan advisory input, and conduct power analyses. 7) Ethics. Anticipate relational risk, ensure informed consent for both members of dyads, establish safety protocols, and avoid instrumentalizing personal relationships for partisan gain. 8) Deliverables. A systematic literature review, preregistered protocols, and transparent materials to enhance credibility and reuse. With sharper questions, a neutral framing focused on relational and civic outcomes, and a concrete mixed-methods plan, the project can make a meaningful scholarly and practical contribution to the reconciliation of cross-partisan relationships.",
+    "dimension_critiques": {
+      "1.0.0": {
+        "dimension_name": "Research Foundations",
+        "dimension_score": 60,
+        "strengths": [
+          "Timely, socially important topic with awareness of core literatures (affective polarization, contact theory, deliberation, and social media effects).",
+          "Explicit acknowledgement of personal biases and initial articulation of plausible research gaps (reconnection in everyday settings; identity and emotion)."
+        ],
+        "weaknesses": [
+          "Central research question and theoretical model remain vague, with conflated aims (relationship repair, depolarization, and electoral advantage).",
+          "Reliance on AI prompts rather than a curated, critical literature review; lack of operational definitions for key constructs."
+        ],
+        "key_strengths": [
+          "Paper addresses relevant topic in 1.0.0",
+          "Appropriate academic structure maintained for 1.0.0"
+        ],
+        "issues": [
+          {
+            "title": "Consider strengthening evidence base",
+            "why_it_matters": "Academic rigor requires strong evidentiary support",
+            "suggestions": [
+              "Add supporting citations",
+              "Include additional examples"
+            ],
+            "exemplar_rewrites": [
+              "Research shows X (Author, 2023), supporting the claim that..."
+            ],
+            "quotes": [
+              "[Citation needed]",
+              "[Additional evidence required]"
+            ],
+            "location_hint": "Throughout document",
+            "priority": "medium"
+          }
+        ],
+        "next_steps": []
+      },
+      "2.0.0": {
+        "dimension_name": "Methodological Rigor",
+        "dimension_score": 28,
+        "strengths": [
+          "Topic lends itself to testable hypotheses and mixed-methods designs integrating mechanisms from contact and identity-threat literatures.",
+          "Acknowledged bias creates an opening for reflexive practices, preregistration, and blinded coding to strengthen validity."
+        ],
+        "weaknesses": [
+          "No proposed study design, sampling strategy, measurement plan, or analysis approach; outcomes and mechanisms are unspecified.",
+          "Normative goal of aiding one party risks allegiance effects, sampling bias, and compromised participant trust."
+        ],
+        "key_strengths": [
+          "Paper addresses relevant topic in 2.0.0",
+          "Appropriate academic structure maintained for 2.0.0"
+        ],
+        "issues": [],
+        "next_steps": []
+      },
+      "3.0.0": {
+        "dimension_name": "Structure & Coherence",
+        "dimension_score": 52,
+        "strengths": [
+          "Clear motivational narrative and logical progression from problem salience to potential research spaces.",
+          "Concise enumeration of interests and preliminary gap identification provides a usable starting point."
+        ],
+        "weaknesses": [
+          "Redundancy (duplicate prompt sections), informal tone, and inconsistent formatting reduce clarity and professional polish.",
+          "Scope creep across micro-level reconciliation and macro-level persuasion obscures a coherent throughline."
+        ],
+        "key_strengths": [
+          "Paper addresses relevant topic in 3.0.0",
+          "Appropriate academic structure maintained for 3.0.0"
+        ],
+        "issues": [],
+        "next_steps": []
+      }
+    }
+  },
+  "original_text": null,
+  "error_message": null,
+  "retry_count": 0
+}
