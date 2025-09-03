@@ -1,0 +1,52 @@
+The fix (make all error responses JSON-safe)
+1) Add a safe error serializer
+# pact/api_server.py (top-level)
+from fastapi.encoders import jsonable_encoder
+
+def _err_payload(exc: Exception):
+    return {"detail": "internal_error",
+            "error": {"type": exc.__class__.__name__, "message": str(exc)}}
+2) Harden your global exception handlers
+from fastapi import Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error("422 on %s: %s", request.url, exc.errors())
+    return JSONResponse(status_code=422,
+                        content=jsonable_encoder({"detail": "validation_error", "errors": exc.errors()}))
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("500 on %s", request.url)
+    return JSONResponse(status_code=500, content=jsonable_encoder(_err_payload(exc)))
+3) Fix /api/critique/start error paths
+@router.post("/api/critique/start")
+async def start_critique(req: StartCritiqueRequest, request: Request):
+    try:
+        ...
+    except Exception as e:
+        logger.exception("Error starting critique")
+        return JSONResponse(status_code=500, content=jsonable_encoder(_err_payload(e)))
+4) Fix WS error broadcasts (stringify exceptions)
+except Exception as e:
+    session_manager.update_progress(session.id, session.progress, status="error")
+    await manager.broadcast(session.id, {
+        "event": "status", "status": "error", "message": str(e)  # ← not the exception object
+    })
+Quick greps to catch remaining offenders
+Run these and replace any uses that pass exception objects directly:
+grep -R --line-number "detail\s*=" src/pact | grep -v jsonable_encoder
+grep -R --line-number "JSONResponse(.*content=" src/pact
+grep -R --line-number "broadcast(.*error" src/pact
+grep -R --line-number "message:\s*e\>" src/pact
+If you see detail=e or content={"error": e} → change to str(e) or wrap with jsonable_encoder(_err_payload(e)).
+If any place does return {"detail": e} from a route → switch to JSONResponse(..., content=jsonable_encoder(...)).
+Sanity test
+# Simulate an error in the handler (temporarily raise ValueError(...))
+curl -sS -X POST http://0.0.0.0:5000/api/critique/start \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"t","paper_text":"x"}' | jq
+# Expect: {"detail":"internal_error","error":{"type":"ValueError","message":"..."}}
+This removes the 500 caused by serialization and lets you see the real upstream error message in the client instead of “Load failed”.
