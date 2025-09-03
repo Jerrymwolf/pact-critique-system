@@ -244,6 +244,7 @@
                             rows="12" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="Or paste your paper content here..."
+                            oninput="updateWordCount()"
                         ></textarea>
                         <div class="flex justify-between mt-2">
                             <span class="text-sm text-gray-500">
@@ -1400,6 +1401,42 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
 
         let uploadedFileContent = null;
 
+        // Drag and drop handlers
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const uploadArea = document.getElementById('upload-area');
+            uploadArea.style.backgroundColor = '#f0f9ff';
+            uploadArea.style.borderColor = '#3b82f6';
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const uploadArea = document.getElementById('upload-area');
+            uploadArea.style.backgroundColor = '';
+            uploadArea.style.borderColor = '';
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const uploadArea = document.getElementById('upload-area');
+            uploadArea.style.backgroundColor = '';
+            uploadArea.style.borderColor = '';
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                const fileInput = document.getElementById('file-upload');
+                fileInput.files = files;
+                handleFileUpload({ target: fileInput });
+            }
+        }
+
+        function triggerFileUpload() {
+            document.getElementById('file-upload').click();
+        }
+
         async function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1472,6 +1509,21 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             document.getElementById('upload-area').style.display = 'block';
             // showMessage('File removed', 'info'); // Removed to avoid redundant messages
             updateWordCount(); // Update word count after clearing file
+        }
+
+        function updateWordCount() {
+            const content = document.getElementById('paper-content').value || '';
+            const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+            document.getElementById('word-count').textContent = wordCount;
+        }
+
+        function enableAnalysisButton() {
+            const button = document.getElementById('analyze-btn');
+            button.disabled = false;
+        }
+
+        function showMessage(message, type = 'info') {
+            showNotification(message, type);
         }
 
         // ===== COMPREHENSIVE INTERFACE FUNCTIONS =====
