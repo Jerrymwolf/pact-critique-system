@@ -593,12 +593,24 @@ async def start_critique(req: StartCritiqueRequest):
                     {"paper_title": title, "paper_content": text, "mode": session.mode},
                     session_id=session.session_id
                 )
-                session_manager.update_session_results(session.session_id, result)
+                
+                # Send summary first (most important for UI)
+                await manager.broadcast(session.session_id, {"event":"summary","payload":result})
+                
+                # Try to persist results, but don't fail if this step fails
+                try:
+                    session_manager.update_session_results(session.session_id, result)
+                except Exception as e:
+                    logger.warning("Non-fatal: failed to persist results for session %s: %s", session.session_id, e)
+                    # keep going; we already broadcasted summary
+
                 session_manager.update_progress(session.session_id, 100, status="completed")
                 await manager.broadcast(session.session_id, {"event":"status","status":"completed","progress":100})
-                await manager.broadcast(session.session_id, {"event":"summary","payload":result})
+                
             except Exception as e:
-                session_manager.update_progress(session.session_id, session.progress, status="error")
+                logger.exception("Critique failed for session %s", session.session_id)
+                # only send error if we truly didn't finish the analysis
+                session_manager.update_progress(session.session_id, getattr(session, 'progress', 0), status="error")
                 await manager.broadcast(session.session_id, {"event":"status","status":"error","message":str(e)})
 
         asyncio.create_task(run(), name=f"critique-{session.session_id}")
