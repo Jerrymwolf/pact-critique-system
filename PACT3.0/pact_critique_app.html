@@ -876,6 +876,10 @@
         let websocket = null;
         let currentResult = null; // To store the final result payload
 
+        // Polling variables
+        let usePolling = false;      // turn on only if WS closes
+        let pollAbort = null;
+
         // Configure API base URL
         const API_BASE_URL = window.location.protocol + '//' + window.location.host;
 
@@ -1124,6 +1128,8 @@
 
                 websocket.onopen = function(event) {
                     console.log('WebSocket connected');
+                    usePolling = false; // Disable polling when WebSocket is active
+                    if (pollAbort) pollAbort.abort(); // Stop any active polling
                     updateStatus('Analysis started, receiving updates via WebSocket.');
                 };
 
@@ -1154,27 +1160,31 @@
                 };
 
                 websocket.onclose = function(event) {
-                    console.log('WebSocket closed');
+                    console.log('WebSocket closed, falling back to polling');
                     websocket = null;
-                    updateStatus('WebSocket connection closed. Polling for updates.');
-                    // If the connection closes unexpectedly, start polling as a fallback
-                    if (!currentSessionId) return; // Avoid starting polls if no session active
-                    startProgressPolling(currentSessionId);
+                    usePolling = true; // Enable polling fallback
+                    updateStatus('WebSocket connection closed. Falling back to polling.');
+                    if (currentSessionId) {
+                        startProgressPolling(currentSessionId);
+                    }
                 };
 
                 websocket.onerror = function(error) {
                     console.error('WebSocket error:', error);
                     updateStatus('WebSocket error. Falling back to polling.');
-                    // On error, also fall back to polling
-                    if (!currentSessionId) return;
-                    startProgressPolling(currentSessionId);
+                    usePolling = true; // Enable polling fallback
+                    if (currentSessionId) {
+                        startProgressPolling(currentSessionId);
+                    }
                 };
 
             } catch (error) {
                 console.error('Failed to connect WebSocket:', error);
-                updateStatus('Failed to connect WebSocket. Falling back to polling.');
-                if (!currentSessionId) return;
-                startProgressPolling(currentSessionId);
+                updateStatus('WebSocket error. Falling back to polling.');
+                usePolling = true;
+                if (currentSessionId) {
+                    startProgressPolling(currentSessionId);
+                }
             }
         }
 
@@ -2525,14 +2535,14 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                                 </div>
                                                 ${issue.rubric_id ? `<p class="text-xs text-gray-500 mb-2">Rubric: ${issue.rubric_id}</p>` : ''}
                                             </div>
-                                            
+
                                             ${issue.why_it_matters ? `
                                                 <div class="mb-3">
                                                     <h6 class="text-sm font-medium text-gray-700 mb-1">Why it matters:</h6>
                                                     <p class="text-sm text-gray-600">${issue.why_it_matters}</p>
                                                 </div>
                                             ` : ''}
-                                            
+
                                             ${issue.evidence ? `
                                                 <div class="mb-3">
                                                     <h6 class="text-sm font-medium text-gray-700 mb-1">Evidence:</h6>
@@ -2541,7 +2551,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                                     </div>
                                                 </div>
                                             ` : ''}
-                                            
+
                                             ${issue.rewrite ? `
                                                 <div>
                                                     <h6 class="text-sm font-medium text-gray-700 mb-1">Suggested revision:</h6>

@@ -665,21 +665,39 @@ async def start_critique(req: StartCritiqueRequest, request: Request):
 @app.get("/api/critique/status/{session_id}")
 async def get_critique_status(session_id: str):
     """Get the current status of a critique session."""
-    session = session_manager.get_session(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Unknown session")
+    try:
+        session = session_manager.get_session(session_id)
+        if not session:
+            return JSONResponse(
+                status_code=404, 
+                content={"detail": "Session not found", "session_id": session_id}
+            )
 
-    # String-based enums are directly JSON-serializable
-    current_status = {
-        "session_id": session_id,
-        "title": session.paper_title,
-        "mode": getattr(session, 'mode', 'STANDARD'),
-        "status": session.status,  # No .value needed - string enum is JSON-serializable
-        "progress": session.overall_progress,
-        "has_result": session.result is not None,
-    }
+        # Check if session exists but has no results yet
+        if session.status == "pending" or (session.status == "running" and not hasattr(session, 'result')):
+            return JSONResponse(
+                status_code=409,
+                content={"detail": "Analysis not ready yet", "session_id": session_id, "status": session.status}
+            )
 
-    return current_status
+        # String-based enums are directly JSON-serializable
+        current_status = {
+            "session_id": session_id,
+            "title": getattr(session, 'paper_title', 'Untitled'),
+            "mode": getattr(session, 'mode', 'STANDARD'),
+            "status": session.status,  # No .value needed - string enum is JSON-serializable
+            "progress": getattr(session, 'overall_progress', 0),
+            "has_result": hasattr(session, 'result') and session.result is not None,
+        }
+
+        return JSONResponse(content=current_status)
+
+    except Exception as e:
+        logger.exception("Error getting critique status for session %s", session_id)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Internal error: {str(e)}", "session_id": session_id}
+        )
 
 @app.get("/api/critique/results/{session_id}", response_model=ResultsResponse)
 async def get_critique_results(session_id: str):
