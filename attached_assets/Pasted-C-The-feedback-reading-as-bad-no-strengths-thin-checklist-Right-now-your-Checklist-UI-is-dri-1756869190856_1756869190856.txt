@@ -1,0 +1,55 @@
+C) The feedback reading as “bad” (no strengths, thin checklist)
+Right now your “Checklist” UI is driven by checklistItems. If that array doesn’t get populated from the richer qualitative output (per-dimension strengths/issues), you’ll see:
+“Strengths (0)”
+“Areas for Improvement (2)” with vague entries
+Generic “Requires significant improvement” labels
+Populate checklistItems from qualitative result (no slicing)
+After you have result from the server:
+function buildChecklistFromQualitative(result) {
+  const out = [];
+  const dims = result.dimension_feedback || {};
+
+  for (const [dimName, d] of Object.entries(dims)) {
+    // strengths → completed items
+    for (let i=0; i<(d.strengths || []).length; i++) {
+      const s = d.strengths[i];
+      out.push({
+        code: `${dimName.slice(0,3).toUpperCase()}-S${i+1}`,
+        name: s.length > 80 ? s.slice(0,77) + '…' : s,
+        description: s,
+        completed: true
+      });
+    }
+    // issues → uncompleted items with action
+    for (let i=0; i<(d.issues || []).length; i++) {
+      const it = d.issues[i];
+      const firstSuggestion = (it.suggestions && it.suggestions[0]) || '';
+      out.push({
+        code: `${dimName.slice(0,3).toUpperCase()}-I${i+1}`,
+        name: it.title || firstSuggestion || 'Revise',
+        description: firstSuggestion || it.why_it_matters || '',
+        completed: false,
+        priority: it.priority || 'medium'
+      });
+    }
+  }
+
+  // Guarantee at least 2 strengths overall (never show “0”)
+  const totalStrengths = out.filter(x => x.completed).length;
+  if (totalStrengths < 2) {
+    // simple, local fallback (non-LLM): pick two positive sentences from final_summary if present
+    const pos = (result.final_summary || '').split(/[.!?]\s+/).filter(s => /clear|well|effective|strong|compelling|coherent/i.test(s)).slice(0, 2);
+    pos.forEach((s, i) => out.push({ code: `GEN-S${i+1}`, name: s.slice(0,80), description: s, completed: true }));
+  }
+
+  return out;
+}
+Use it where you currently set checklistItems—and stop slicing arrays when rendering. Your current UI cuts content to 1–2 bullets in several places, which is why it feels generic.
+const checklistItems = buildChecklistFromQualitative(result);
+renderChecklist(checklistItems); // renders *all* items; group by priority
+And in your “Detailed Findings” pane, render per-issue cards with:
+Why it matters
+Concrete suggestions
+Exemplar rewrites (show a “Copy” button)
+Quotes (2+) with spans
+(That structure is already in your qualitative JSON; the UI just needs to show it, not compress it.)
