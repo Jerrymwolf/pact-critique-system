@@ -25,6 +25,9 @@ import PyPDF2
 import logging
 from langchain_core.messages import HumanMessage
 
+# Configure logger
+logger = logging.getLogger("pact.api_server")
+
 # Local imports for PACT components
 try:
     from .pact_critique_agent import pact_critique_agent
