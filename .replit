@@ -32,3 +32,6 @@ args = "cd PACT3.0 && python start_server.py"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[agent]
+expertMode = true
