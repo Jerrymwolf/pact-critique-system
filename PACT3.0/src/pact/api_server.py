@@ -25,6 +25,9 @@ import PyPDF2
 import logging
 from langchain_core.messages import HumanMessage
 
+# Configure logging first
+logger = logging.getLogger(__name__)
+
 # Local imports for PACT components
 try:
     from .pact_critique_agent import pact_critique_agent
@@ -668,7 +671,7 @@ async def get_critique_status(session_id: str):
         "title": session.paper_title,
         "mode": getattr(session, 'mode', 'STANDARD'),
         "status": session.status,
-        "progress": session.overall_progress,
+        "progress": getattr(session, 'overall_progress', 0),
         "has_result": session.result is not None,
     }
 
@@ -718,8 +721,8 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
                 "paper_title": session.paper_title,
                 "created_at": session.created_at.isoformat() if session.created_at else None,
                 "updated_at": session.updated_at.isoformat() if session.updated_at else None,
-                "error": session.error_message,
-                "progress": session.overall_progress
+                "error": getattr(session, 'error_message', None),
+                "progress": getattr(session, 'overall_progress', 0)
             }
             if session.status == "completed":
                 current_status["result"] = {
