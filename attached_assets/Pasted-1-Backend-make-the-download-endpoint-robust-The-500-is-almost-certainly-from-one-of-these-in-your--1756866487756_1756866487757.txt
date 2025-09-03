@@ -1,0 +1,90 @@
+1) Backend: make the download endpoint robust
+The 500 is almost certainly from one of these in your handler:
+session not found / no result yet
+unsupported format
+trying to serialize Enums / non-JSON objects
+assembling the “comprehensive” file using a missing original_text
+Drop-in endpoint (safe + helpful errors)
+# pact/api_server.py
+from fastapi import HTTPException
+from starlette.responses import JSONResponse, PlainTextResponse
+from datetime import datetime
+from typing import Any, Dict
+from pact.session_manager import session_manager
+from pact.utils.enum_safety import enum_value  # returns .value if Enum, else the string
+
+def _build_markdown_report(title: str, result: Dict[str, Any], original_text: str | None) -> str:
+    lines = []
+    lines.append(f"# PACT Critique — {title}\n")
+    if "overall_score" in result:
+        lines.append(f"**Overall Score:** {result['overall_score']}\n")
+    lines.append("## Executive Summary\n")
+    lines.append(result.get("final_critique", "—"))
+    lines.append("\n")
+
+    dims = result.get("dimension_critiques") or {}
+    if isinstance(dims, dict) and dims:
+        lines.append("## Dimension Critiques\n")
+        for dim, info in dims.items():
+            lines.append(f"### {dim}")
+            if isinstance(info, dict):
+                score = info.get("score", "—")
+                comments = info.get("comments") or info.get("critique") or "—"
+                recs = info.get("recommendations") or []
+                lines.append(f"- **Score:** {score}")
+                lines.append(f"- **Critique:** {comments}")
+                if recs:
+                    lines.append("- **Recommendations:**")
+                    for r in recs:
+                        lines.append(f"  - {r}")
+            else:
+                lines.append(str(info))
+            lines.append("")
+    if original_text:
+        lines.append("## Original Submission\n")
+        lines.append("```text")
+        lines.append(original_text)
+        lines.append("```")
+    lines.append(f"\n_Generated: {datetime.utcnow().isoformat()}Z_")
+    return "\n".join(lines)
+
+@app.get("/api/critique/download/{session_id}")
+async def download_report(session_id: str, format: str = "json"):
+    s = session_manager.get(session_id)
+    if not s:
+        raise HTTPException(status_code=404, detail="Unknown session")
+    if not getattr(s, "result", None):
+        # 409: the session exists but isn’t ready
+        raise HTTPException(status_code=409, detail="No analysis results for this session yet")
+
+    fmt = (format or "json").lower()
+    if fmt in ("json", "raw"):
+        payload = {
+            "session_id": s.id,
+            "title": s.title,
+            "mode": enum_value(getattr(s, "mode", "STANDARD")),
+            "status": enum_value(getattr(s, "status", "completed")),
+            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "result": s.result,  # s.result should already be JSON-safe
+        }
+        headers = {"Content-Disposition": f'attachment; filename="PACT-{s.id}.json"'}
+        return JSONResponse(payload, headers=headers)
+
+    if fmt in ("md", "markdown", "comprehensive"):
+        original_text = getattr(s, "original_text", None)
+        md = _build_markdown_report(s.title, s.result, original_text)
+        headers = {"Content-Disposition": f'attachment; filename="PACT-{s.id}.md"'}
+        return PlainTextResponse(md, headers=headers, media_type="text/markdown; charset=utf-8")
+
+    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
+Make sure you stored the original submission text
+Add this once when starting the analysis:
+# in /api/critique/start, after creating the session and extracting text
+session_manager.attach_text(session.id, text)
+And in your session manager:
+# pact/session_manager.py
+def attach_text(self, session_id: str, text: str):
+    s = self.sessions.get(session_id)
+    if s:
+        s.original_text = text
+(Add original_text: Optional[str] = None to your CritiqueSession model/dataclass.)

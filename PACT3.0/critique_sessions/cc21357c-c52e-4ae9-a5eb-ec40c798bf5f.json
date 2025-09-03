@@ -1,0 +1,153 @@
+{
+  "session_id": "cc21357c-c52e-4ae9-a5eb-ec40c798bf5f",
+  "status": "completed",
+  "paper_content": "",
+  "created_at": "2025-09-03T02:21:26.351797",
+  "updated_at": "2025-09-03T02:22:09.281611",
+  "paper_title": "Pre-Work  - Brief Topic Description",
+  "paper_type": null,
+  "mode": "STANDARD",
+  "overall_progress": 100.0,
+  "agents": {
+    "supervisor": {
+      "agent_id": "supervisor",
+      "agent_name": "Supervisor",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "1": {
+      "agent_id": "1",
+      "agent_name": "Research Foundations",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "2": {
+      "agent_id": "2",
+      "agent_name": "Methodological Rigor",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "3": {
+      "agent_id": "3",
+      "agent_name": "Structure & Coherence",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "4": {
+      "agent_id": "4",
+      "agent_name": "Academic Precision",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "5": {
+      "agent_id": "5",
+      "agent_name": "Critical Sophistication",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    }
+  },
+  "current_stage": "",
+  "dimension_critiques": {
+    "1.0.0": {
+      "dimension_name": "Research Foundations",
+      "dimension_score": 58,
+      "strengths": [
+        "Clear articulation of a socially significant problem with initial mapping to core literatures (affective polarization, contact theory, deliberation, echo chambers).",
+        "Transparent disclosure of positionality and preliminary identification of potential research gaps (reconnection in everyday settings; role of identity and emotion)."
+      ],
+      "weaknesses": [
+        "Lacks precise research questions, theoretical framework, and operational definitions for key constructs (e.g., connection, reconciliation, hostility).",
+        "Partisan instrumental framing (e.g., helping one party win) risks biasing problem formulation and undermining scholarly neutrality."
+      ]
+    },
+    "2.0.0": {
+      "dimension_name": "Methodological Rigor",
+      "dimension_score": 25,
+      "strengths": [
+        "Recognizes relevant contexts (family, workplace) and acknowledges emotion/identity processes that could inform variables and interventions.",
+        "Openness to learning and starting from scratch provides flexibility to adopt appropriate mixed methods or experimental designs."
+      ],
+      "weaknesses": [
+        "No specified design, sampling plan, measures, hypotheses, analysis strategy, or ethical safeguards; reliance on anecdote rather than data.",
+        "Potential confounds and moderators (e.g., media diet, strength of partisan identity) are not considered, threatening validity."
+      ]
+    },
+    "3.0.0": {
+      "dimension_name": "Structure & Coherence",
+      "dimension_score": 52,
+      "strengths": [
+        "Motivation and intended contributions are conveyed clearly with accessible prose.",
+        "Bias disclosure and practical anecdotes help explain real-world relevance and intended applications."
+      ],
+      "weaknesses": [
+        "Redundancies (duplicated prompts), informal tone, and absence of citations impede academic clarity and credibility.",
+        "Organization centers on personal narrative rather than a coherent arc from background to questions to methods."
+      ]
+    }
+  },
+  "final_critique": "This pre-work articulates an important and timely problem: how to foster reconnection across partisan divides amid growing affective polarization. The motivation is clear, socially consequential, and grounded in professional experience. You acknowledge positionality and begin to map relevant literatures (affective polarization, contact theory, deliberation, echo chambers), which is a productive starting point. However, as a basis for a master\u2019s thesis, the document remains a topic sketch rather than a research plan. It lacks precise research questions, a defined theoretical framework, operational definitions of key constructs (e.g., connection, reconciliation, hostility), and any proposed methodology. The current framing also risks partisan goal alignment (e.g., \u201chelping Democrats win elections\u201d), which could undermine both design choices and the credibility of findings in an academic context. To progress, the project should transition from broad motivation to a focused, theory-driven, methodologically rigorous design. Recommended actions: 1) Narrow the scope and specify research questions. For example: What conversational interventions increase relational closeness and willingness to engage across partisan lines in family dyads? Or: Does structured, empathy-centered conversation (vs. unstructured discussion) reduce perceived out-party threat and increase future contact intentions among discordant pairs? 2) Establish a theoretical framework and hypotheses. Integrate social identity theory, motivated reasoning, contact theory (equal status, common goals, institutional support), and emotion/identity repair. Pre-register directional hypotheses (e.g., perspective-taking plus shared identity prime will reduce out-party animus more than control). 3) Define constructs and measures. Clarify \u201creconnection\u201d and \u201chostility.\u201d Consider multi-dimensional outcomes: affective polarization (feeling thermometers), social distance, trust scales, willingness to engage, perceived understanding, frequency of sustained contact at follow-up, and dyadic relational closeness. Include mediators such as empathy, perceived respect, and shared identity; and moderators such as media diet, MAGA identification strength, RWA/SDO, education, religiosity, geography. 4) Propose a rigorous design. A mixed-methods approach is promising: qualitative interviews to surface mechanisms and language; followed by a randomized field or online experiment testing conversation structures (e.g., deep canvassing script, values affirmation, shared goals framing) against control. Use dyads (family/friends) or matched cross-partisan pairs; stratify by partisan identity and intensity. Plan sample size via power analysis, include pre/post and 4\u20138 week follow-up, and consider multilevel models to handle dyadic nesting. 5) Strengthen analytic strategy. Pre-register outcomes and analyses; specify exclusion criteria; ensure inter-rater reliability for qualitative coding; consider text/sentiment/emotion analysis of conversation transcripts; use intent-to-treat for field trials and robustness checks for attrition. 6) Address ethics and reflexivity. Minimize risk of interpersonal harm, ensure confidentiality, obtain informed consent from both parties in dyads, and establish de-escalation protocols. Separate scholarly aims from electoral objectives; consider a cross-partisan advisory board and a reflexivity statement to manage bias. 7) Improve sourcing and balance. Replace AI summaries with primary literature. Situate findings in recent work on misperceptions of polarization, persuasion and deep canvassing, and the limited prevalence of backfire effects. Provide full citations (including for the Yahoo News/YouGov statistic) and describe methodologies before drawing inferences. 8) Feasibility. Define recruitment channels, compensation, inclusion/exclusion criteria, and timeline. Pilot protocols to refine measures and conversation guides before scaling. With these enhancements, the project can move from well-motivated concept to a credible, theory-informed contribution offering actionable, evidence-based strategies for cross-partisan reconnection.",
+  "overall_score": 45,
+  "result": {
+    "paper_title": "Pre-Work  - Brief Topic Description",
+    "overall_score": 45,
+    "final_critique": "This pre-work articulates an important and timely problem: how to foster reconnection across partisan divides amid growing affective polarization. The motivation is clear, socially consequential, and grounded in professional experience. You acknowledge positionality and begin to map relevant literatures (affective polarization, contact theory, deliberation, echo chambers), which is a productive starting point. However, as a basis for a master\u2019s thesis, the document remains a topic sketch rather than a research plan. It lacks precise research questions, a defined theoretical framework, operational definitions of key constructs (e.g., connection, reconciliation, hostility), and any proposed methodology. The current framing also risks partisan goal alignment (e.g., \u201chelping Democrats win elections\u201d), which could undermine both design choices and the credibility of findings in an academic context. To progress, the project should transition from broad motivation to a focused, theory-driven, methodologically rigorous design. Recommended actions: 1) Narrow the scope and specify research questions. For example: What conversational interventions increase relational closeness and willingness to engage across partisan lines in family dyads? Or: Does structured, empathy-centered conversation (vs. unstructured discussion) reduce perceived out-party threat and increase future contact intentions among discordant pairs? 2) Establish a theoretical framework and hypotheses. Integrate social identity theory, motivated reasoning, contact theory (equal status, common goals, institutional support), and emotion/identity repair. Pre-register directional hypotheses (e.g., perspective-taking plus shared identity prime will reduce out-party animus more than control). 3) Define constructs and measures. Clarify \u201creconnection\u201d and \u201chostility.\u201d Consider multi-dimensional outcomes: affective polarization (feeling thermometers), social distance, trust scales, willingness to engage, perceived understanding, frequency of sustained contact at follow-up, and dyadic relational closeness. Include mediators such as empathy, perceived respect, and shared identity; and moderators such as media diet, MAGA identification strength, RWA/SDO, education, religiosity, geography. 4) Propose a rigorous design. A mixed-methods approach is promising: qualitative interviews to surface mechanisms and language; followed by a randomized field or online experiment testing conversation structures (e.g., deep canvassing script, values affirmation, shared goals framing) against control. Use dyads (family/friends) or matched cross-partisan pairs; stratify by partisan identity and intensity. Plan sample size via power analysis, include pre/post and 4\u20138 week follow-up, and consider multilevel models to handle dyadic nesting. 5) Strengthen analytic strategy. Pre-register outcomes and analyses; specify exclusion criteria; ensure inter-rater reliability for qualitative coding; consider text/sentiment/emotion analysis of conversation transcripts; use intent-to-treat for field trials and robustness checks for attrition. 6) Address ethics and reflexivity. Minimize risk of interpersonal harm, ensure confidentiality, obtain informed consent from both parties in dyads, and establish de-escalation protocols. Separate scholarly aims from electoral objectives; consider a cross-partisan advisory board and a reflexivity statement to manage bias. 7) Improve sourcing and balance. Replace AI summaries with primary literature. Situate findings in recent work on misperceptions of polarization, persuasion and deep canvassing, and the limited prevalence of backfire effects. Provide full citations (including for the Yahoo News/YouGov statistic) and describe methodologies before drawing inferences. 8) Feasibility. Define recruitment channels, compensation, inclusion/exclusion criteria, and timeline. Pilot protocols to refine measures and conversation guides before scaling. With these enhancements, the project can move from well-motivated concept to a credible, theory-informed contribution offering actionable, evidence-based strategies for cross-partisan reconnection.",
+    "dimension_critiques": {
+      "1.0.0": {
+        "dimension_name": "Research Foundations",
+        "dimension_score": 58,
+        "strengths": [
+          "Clear articulation of a socially significant problem with initial mapping to core literatures (affective polarization, contact theory, deliberation, echo chambers).",
+          "Transparent disclosure of positionality and preliminary identification of potential research gaps (reconnection in everyday settings; role of identity and emotion)."
+        ],
+        "weaknesses": [
+          "Lacks precise research questions, theoretical framework, and operational definitions for key constructs (e.g., connection, reconciliation, hostility).",
+          "Partisan instrumental framing (e.g., helping one party win) risks biasing problem formulation and undermining scholarly neutrality."
+        ]
+      },
+      "2.0.0": {
+        "dimension_name": "Methodological Rigor",
+        "dimension_score": 25,
+        "strengths": [
+          "Recognizes relevant contexts (family, workplace) and acknowledges emotion/identity processes that could inform variables and interventions.",
+          "Openness to learning and starting from scratch provides flexibility to adopt appropriate mixed methods or experimental designs."
+        ],
+        "weaknesses": [
+          "No specified design, sampling plan, measures, hypotheses, analysis strategy, or ethical safeguards; reliance on anecdote rather than data.",
+          "Potential confounds and moderators (e.g., media diet, strength of partisan identity) are not considered, threatening validity."
+        ]
+      },
+      "3.0.0": {
+        "dimension_name": "Structure & Coherence",
+        "dimension_score": 52,
+        "strengths": [
+          "Motivation and intended contributions are conveyed clearly with accessible prose.",
+          "Bias disclosure and practical anecdotes help explain real-world relevance and intended applications."
+        ],
+        "weaknesses": [
+          "Redundancies (duplicated prompts), informal tone, and absence of citations impede academic clarity and credibility.",
+          "Organization centers on personal narrative rather than a coherent arc from background to questions to methods."
+        ]
+      }
+    }
+  },
+  "error_message": null,
+  "retry_count": 0
+}
