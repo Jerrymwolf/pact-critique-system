@@ -1,4 +1,3 @@
-
 """
 PACT Critique Supervisor Agent
 
@@ -56,22 +55,22 @@ def create_synthesis_prompt(state: PaperCritiqueState) -> str:
         critiques_text += f"\n\n--- {critique['dimension_name']} ({dim_id}) ---\n"
         critiques_text += f"Score: {critique['dimension_score']}/100\n"
         critiques_text += f"Severity: {critique['severity']}\n"
-        
+
         if critique['strengths']:
             critiques_text += f"Strengths:\n"
             for strength in critique['strengths']:
                 critiques_text += f"  • {strength}\n"
-        
+
         if critique['weaknesses']:
             critiques_text += f"Weaknesses:\n"
             for weakness in critique['weaknesses']:
                 critiques_text += f"  • {weakness}\n"
-        
+
         if critique['recommendations']:
             critiques_text += f"Recommendations:\n"
             for rec in critique['recommendations']:
                 critiques_text += f"  • {rec}\n"
-    
+
     return f"""
 You are synthesizing feedback from multiple expert reviewers into a cohesive, actionable critique.
 
@@ -100,11 +99,11 @@ async def plan_critique(state: PaperCritiqueState) -> Command[Literal["evaluate_
     """
     # Create planning prompt
     prompt = create_planning_prompt(state['paper_content'])
-    
+
     # Get structured plan from model
     structured_model = supervisor_model.with_structured_output(CritiquePlan)
     plan = await structured_model.ainvoke([HumanMessage(content=prompt)])
-    
+
     # Format plan as string for state
     plan_text = f"""
 Paper Summary: {plan.paper_summary}
@@ -116,7 +115,7 @@ Dimensions to Evaluate: {', '.join(plan.dimensions_to_evaluate)}
 Special Considerations:
 {"; ".join(plan.special_considerations) if plan.special_considerations else "None"}
 """
-    
+
     return Command(
         goto="evaluate_dimensions",
         update={"critique_plan": plan_text}
@@ -128,11 +127,11 @@ async def synthesize_critique(state: PaperCritiqueState) -> Dict[str, Any]:
     """
     # Create synthesis prompt
     prompt = create_synthesis_prompt(state)
-    
+
     # Get structured final critique from model
     structured_model = supervisor_model.with_structured_output(FinalCritique)
     final_critique = await structured_model.ainvoke([HumanMessage(content=prompt)])
-    
+
     # Format final critique as markdown
     critique_text = f"""
 # Academic Paper Critique Report
@@ -148,29 +147,28 @@ async def synthesize_critique(state: PaperCritiqueState) -> Dict[str, Any]:
 
 ## Dimension Evaluations
 """
-    
+
     for dim_id, summary in final_critique.dimension_summaries.items():
-        critique_text += f"\n### {dim_id}
-{summary}\n"
-    
+        critique_text += f"\n### {dim_id}\n{summary}\n"
+
     critique_text += f"""
 ## Key Strengths
 """
     for strength in final_critique.key_strengths:
         critique_text += f"- {strength}\n"
-    
+
     critique_text += f"""
 ## Priority Areas for Improvement
 """
     for improvement in final_critique.priority_improvements:
         critique_text += f"- {improvement}\n"
-    
+
     critique_text += f"""
 ## Actionable Next Steps
 """
     for i, step in enumerate(final_critique.actionable_next_steps, 1):
         critique_text += f"{i}. {step}\n"
-    
+
     return {
         "final_critique": critique_text,
         "overall_score": final_critique.overall_score,
