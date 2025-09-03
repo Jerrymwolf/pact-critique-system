@@ -11,6 +11,7 @@ import json
 from typing import Dict, Any, Optional
 from datetime import datetime
 from contextlib import asynccontextmanager
+from enum import Enum
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect, Query, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,7 +20,7 @@ from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from starlette.responses import PlainTextResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 import uvicorn
 import io
 from docx import Document
@@ -634,7 +635,7 @@ async def start_critique(req: StartCritiqueRequest, request: Request):
         logger.info(f"Created session {session_id}")
 
         # Start background analysis
-        asyncio.create_task(run_critique_analysis(session_id))
+        asyncio.create_task(run_critique_analysis(session_id, req.text, req.title, req.mode))
 
         return {"session_id": session_id, "status": "started"}
 
