@@ -13,16 +13,17 @@ from enum import Enum
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import logging
+import os
 
 from .utils.enum_safety import safe_status_value
 
 def _coerce_enums(obj):
     """
     Recursively coerce Enums to strings for safe JSON serialization.
-    
+
     Args:
         obj: Any object that may contain Enums
-        
+
     Returns:
         Object with all Enums converted to strings
     """
@@ -85,6 +86,7 @@ class CritiqueSession:
     final_critique: Optional[str] = None
     overall_score: Optional[float] = None
     result: Optional[Dict[str, Any]] = None
+    original_text: Optional[str] = None  # Added for original text storage
 
     # Error handling
     error_message: Optional[str] = None
@@ -140,7 +142,7 @@ class SessionManager:
             updated_at=datetime.now(),
             mode=mode
         )
-        
+
         # Handle any additional kwargs
         for key, value in kwargs.items():
             if hasattr(session, key):
@@ -249,7 +251,7 @@ class SessionManager:
         session = self.sessions.get(session_id)
         if not session:
             return
-        
+
         session.overall_progress = float(progress)
         if status:
             # Handle both string and enum status values with mapping for common aliases
@@ -271,10 +273,10 @@ class SessionManager:
                         session.status = CritiqueStatus.PENDING
             else:
                 session.status = status
-            
+
         if status == "completed":
             session.updated_at = datetime.now()
-            
+
         session.updated_at = datetime.now()
         self.save_session(session)
 
@@ -286,7 +288,7 @@ class SessionManager:
 
         # Store the complete result with enums coerced to strings
         session.result = _coerce_enums(result)
-        
+
         # Update individual result fields for backward compatibility
         if 'overall_score' in result:
             session.overall_score = result['overall_score']
@@ -356,22 +358,43 @@ class SessionManager:
             "updated_at": session.updated_at.isoformat()
         }
 
+    def attach_text(self, session_id: str, text: str):
+        """Attach original text to session for comprehensive reports."""
+        s = self.sessions.get(session_id)
+        if s:
+            s.original_text = text # Directly assign to the attribute
+            self._save_session(session_id)
+
     def cleanup_old_sessions(self, max_age_hours: int = 24) -> int:
         """Remove sessions older than max_age_hours."""
-        cutoff = datetime.now() - timedelta(hours=max_age_hours)
-        to_remove = []
+        if not os.path.exists(self.storage_dir): # Corrected attribute name
+            return 0
 
-        for session_id, session in self.sessions.items():
-            if session.updated_at < cutoff:
-                to_remove.append(session_id)
+        current_time = datetime.now()
+        removed_count = 0
 
-        for session_id in to_remove:
-            del self.sessions[session_id]
-            session_file = self.storage_dir / f"{session_id}.json"
-            if session_file.exists():
-                session_file.unlink()
+        for filename in os.listdir(self.storage_dir): # Corrected attribute name
+            if not filename.endswith('.json'):
+                continue
 
-        return len(to_remove)
+            file_path = os.path.join(self.storage_dir, filename) # Corrected attribute name
+            try:
+                # Check file modification time
+                file_mtime = datetime.fromtimestamp(os.path.getmtime(file_path))
+                age_hours = (current_time - file_mtime).total_seconds() / 3600
+
+                if age_hours > max_age_hours:
+                    os.remove(file_path)
+                    session_id = filename[:-5]  # Remove .json extension
+                    if session_id in self.sessions:
+                        del self.sessions[session_id]
+                    removed_count += 1
+                    logger.info(f"Cleaned up old session: {session_id}")
+
+            except Exception as e:
+                logger.error(f"Error cleaning up session file {filename}: {e}")
+
+        return removed_count
 
     def get_session_results(self, session_id: str) -> Optional[Dict[str, Any]]:
         """Get the final results for a session."""
@@ -389,6 +412,8 @@ class SessionManager:
         session_data['created_at'] = session.created_at.isoformat()
         session_data['updated_at'] = session.updated_at.isoformat()
         session_data['mode'] = getattr(session, 'mode', 'STANDARD')
+        # Ensure original_text is included and serializable
+        session_data['original_text'] = session.original_text
 
         # Convert agent data - handle both AgentProgress objects and other types
         for agent_id, agent in session_data['agents'].items():
@@ -411,6 +436,15 @@ class SessionManager:
         with open(session_file, 'w') as f:
             json.dump(session_data, f, indent=2)
 
+    def _save_session(self, session_id: str):
+        """Internal helper to save a specific session."""
+        session = self.sessions.get(session_id)
+        if session:
+            self.save_session(session)
+        else:
+            logger.warning(f"Attempted to save non-existent session: {session_id}")
+
+
     def load_sessions(self):
         """Load all sessions from disk."""
         for session_file in self.storage_dir.glob("*.json"):
@@ -423,6 +457,8 @@ class SessionManager:
                 data['created_at'] = datetime.fromisoformat(data['created_at'])
                 data['updated_at'] = datetime.fromisoformat(data['updated_at'])
                 data['mode'] = data.get('mode', 'STANDARD')
+                # Load original_text if it exists
+                data['original_text'] = data.get('original_text')
 
                 # Convert agent data
                 agents = {}
@@ -433,8 +469,8 @@ class SessionManager:
                         status=AgentStatus(agent_data['status']),
                         message=agent_data['message'],
                         progress=agent_data['progress'],
-                        start_time=datetime.fromisoformat(agent_data['start_time']) if agent_data['start_time'] else None,
-                        end_time=datetime.fromisoformat(agent_data['end_time']) if agent_data['end_time'] else None
+                        start_time=datetime.fromisoformat(agent_data['start_time']) if agent_data.get('start_time') else None,
+                        end_time=datetime.fromisoformat(agent_data['end_time']) if agent_data.get('end_time') else None
                     )
                     agents[agent_id] = agent
 

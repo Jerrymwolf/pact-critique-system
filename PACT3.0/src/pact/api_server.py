@@ -16,6 +16,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocke
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
+from starlette.responses import PlainTextResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
 import uvicorn
@@ -617,6 +618,9 @@ async def start_critique(req: StartCritiqueRequest, request: Request):
         # 1) create session (make sure your create_session signature matches)
         session = session_manager.create_session(title=title, mode=req.mode or "STANDARD")
         logger.info("Session created %s", session.session_id)
+        
+        # Store original text for comprehensive reports
+        session_manager.attach_text(session.session_id, text)
 
         # 2) set initial status + broadcast (use enum-safe strings)
         session.status = "running"
@@ -748,74 +752,74 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
     finally:
         manager.disconnect(session_id, None)
 
+def _build_markdown_report(title: str, result: Dict[str, Any], original_text: str | None) -> str:
+    lines = []
+    lines.append(f"# PACT Critique — {title}\n")
+    if "overall_score" in result:
+        lines.append(f"**Overall Score:** {result['overall_score']}\n")
+    lines.append("## Executive Summary\n")
+    lines.append(result.get("final_critique", "—"))
+    lines.append("\n")
+
+    dims = result.get("dimension_critiques") or {}
+    if isinstance(dims, dict) and dims:
+        lines.append("## Dimension Critiques\n")
+        for dim, info in dims.items():
+            lines.append(f"### {dim}")
+            if isinstance(info, dict):
+                score = info.get("score", "—")
+                comments = info.get("comments") or info.get("critique") or "—"
+                recs = info.get("recommendations") or []
+                lines.append(f"- **Score:** {score}")
+                lines.append(f"- **Critique:** {comments}")
+                if recs:
+                    lines.append("- **Recommendations:**")
+                    for r in recs:
+                        lines.append(f"  - {r}")
+            else:
+                lines.append(str(info))
+            lines.append("")
+    if original_text:
+        lines.append("## Original Submission\n")
+        lines.append("```text")
+        lines.append(original_text)
+        lines.append("```")
+    lines.append(f"\n_Generated: {datetime.utcnow().isoformat()}Z_")
+    return "\n".join(lines)
+
 @app.get("/api/critique/download/{session_id}")
-async def download_critique_report(session_id: str, format: str = Query("pdf", description="Report format: pdf, html, md")):
-    """
-    Download the critique report in the specified format.
-    """
-    session = session_manager.get_session(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+async def download_report(session_id: str, format: str = "json"):
+    s = session_manager.get_session(session_id)
+    if not s:
+        raise HTTPException(status_code=404, detail="Unknown session")
+    if not getattr(s, "result", None):
+        # 409: the session exists but isn't ready
+        raise HTTPException(status_code=409, detail="No analysis results for this session yet")
 
-    # String-based enums can be compared directly with strings
-    if session.status != "completed":
-        raise HTTPException(status_code=400, detail="Session not yet completed")
+    fmt = (format or "json").lower()
+    if fmt in ("json", "raw"):
+        payload = {
+            "session_id": s.get("session_id") or s.get("id"),
+            "title": s.get("paper_title"),
+            "mode": enum_value(s.get("mode", "STANDARD")),
+            "status": enum_value(s.get("status", "completed")),
+            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "result": s.get("result"),  # s.result should already be JSON-safe
+        }
+        headers = {"Content-Disposition": f'attachment; filename="PACT-{s.get("session_id", session_id)}.json"'}
+        return JSONResponse(payload, headers=headers)
 
-    report_filename = getattr(session, 'report_filename', None)
-    if not report_filename:
-        raise HTTPException(status_code=500, detail="Report filename not found for completed session")
+    if fmt in ("md", "markdown", "comprehensive"):
+        original_text = s.get("original_text", None)
+        md = _build_markdown_report(s.get("paper_title", "Untitled"), s.get("result", {}), original_text)
+        headers = {"Content-Disposition": f'attachment; filename="PACT-{s.get("session_id", session_id)}.md"'}
+        return StreamingResponse(
+            io.StringIO(md),
+            headers=headers,
+            media_type="text/markdown; charset=utf-8"
+        )
 
-    try:
-        if format.lower() == "pdf":
-            pdf_path = os.path.join("/tmp", report_filename) # Assuming reports are stored in /tmp
-            if not os.path.exists(pdf_path):
-                 # Fallback to mock generation if file not found
-                 if MOCK_MODE:
-                     # This is a placeholder for a fallback PDF generation if needed
-                     # In a real scenario, you'd call the actual PDF generation function.
-                     # pdf_filename_mock = generate_pact_pdf_report_fallback(session_id, {})
-                     # pdf_path = os.path.join("/tmp", pdf_filename_mock)
-                     logger.warning("MOCK_MODE: PDF report not found, cannot generate fallback.")
-                     raise HTTPException(status_code=500, detail="PDF report file not found and mock mode cannot generate it.")
-                 else:
-                    raise HTTPException(status_code=500, detail="PDF report file not found.")
-
-            return FileResponse(
-                path=pdf_path,
-                filename=report_filename,
-                media_type="application/pdf"
-            )
-
-        elif format.lower() == "html":
-            results_data = getattr(session, 'result', None)
-            if not results_data:
-                 raise HTTPException(status_code=500, detail="Result data missing for HTML report generation.")
-            html_content = generate_html_report(results_data)
-
-            return StreamingResponse(
-                io.StringIO(html_content),
-                media_type="text/html",
-                headers={"Content-Disposition": f"attachment; filename=PACT_Report_{session_id[:8]}.html"}
-            )
-
-        elif format.lower() == "md":
-            results_data = getattr(session, 'result', None)
-            if not results_data:
-                 raise HTTPException(status_code=500, detail="Result data missing for Markdown report generation.")
-            md_content = generate_markdown_report(results_data)
-
-            return StreamingResponse(
-                io.StringIO(md_content),
-                media_type="text/markdown",
-                headers={"Content-Disposition": f"attachment; filename=PACT_Report_{session_id[:8]}.md"}
-            )
-
-        else:
-            raise HTTPException(status_code=400, detail="Unsupported format. Use: pdf, html, or md")
-
-    except Exception as e:
-        logger.error(f"Error generating report for session {session_id} in format {format}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate report: {str(e)}")
+    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
 
 @app.get("/api/critique/preview/{session_id}")
 async def preview_critique_report(session_id: str):
