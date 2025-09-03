@@ -511,6 +511,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     logger.error("422 on %s: %s", request.url, exc.errors())
     return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("500 on %s", request.url)
+    return JSONResponse(status_code=500, content={"detail": f"internal_error: {exc.__class__.__name__}: {exc}"})
+
 # Serve static files (the HTML app)
 # Assuming pact_critique_app.html is in the root directory
 app.mount("/static", StaticFiles(directory="."), name="static")
