@@ -107,13 +107,15 @@ if MOCK_MODE:
         def __init__(self):
             self.sessions = {}
 
-        def create_session(self, paper_content: str, paper_title: str = None, paper_type: str = None, mode: str = "STANDARD", **kwargs):
+        def create_session(self, title: str, mode: str = "STANDARD", paper_content: str = None, paper_type: str = None, **kwargs):
             session_id = str(uuid.uuid4())
             session_dict = {
                 "session_id": session_id,
-                "paper_title": paper_title,
+                "id": session_id,  # Add id property for compatibility
+                "paper_title": title,
                 "mode": mode,
                 "status": "pending", # Default status, matches enum
+                "progress": 0,  # Add progress property
                 "paper_content": paper_content, # Added for completeness
                 "paper_type": paper_type, # Added for completeness
                 "agents": {},
@@ -600,63 +602,56 @@ async def upload_file(file: UploadFile = File(...)):
         logger.error(f"Unexpected error processing file {file.filename}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
 
-@app.post("/api/critique/start", response_model=CritiqueResponse)
-async def start_critique(req: StartCritiqueRequest):
-    """
-    Submit a paper for PACT critique analysis.
-    """
+@app.post("/api/critique/start")
+async def start_critique(req: StartCritiqueRequest, request: Request):
     try:
         title = (req.title or "").strip() or "Untitled"
         text = req.text
-        if not text:
-            raise HTTPException(status_code=422, detail="paper_text or paper_content is required")
+        logger.info("START: title=%r mode=%r text_len=%d", title, req.mode, len(text))
 
-        # Create the session using the Pydantic model which accepts string for status
-        # MockSessionManager.create_session initializes status to "pending"
-        session = session_manager.create_session(paper_content=text, paper_title=title, mode=req.mode or "STANDARD")
+        # 1) create session (make sure your create_session signature matches)
+        session = session_manager.create_session(title=title, mode=req.mode or "STANDARD")
+        logger.info("Session created %s", session.id)
 
-        # Update session status and notify clients
-        session_manager.update_session_status(session.session_id, "running", overall_progress=1)
-        await manager.broadcast(session.session_id, {"event":"status","status":"running","progress":1})
+        # 2) set initial status + broadcast (use enum-safe strings)
+        session.status = "running"
+        session.progress = 1
+        await manager.broadcast(session.id, {"event":"status","status":"running","progress":1})
+        logger.info("Broadcasted initial status for %s", session.id)
 
-        # Launch background task for critique analysis
+        # 3) run background analysis (don't await here)
         async def run():
             try:
                 supervisor = make_supervisor()
+                await manager.broadcast(session.id, {"event":"progress","progress":5,"message":"Calling GPT-5"})
                 result = await supervisor.ainvoke(
                     {"paper_title": title, "paper_content": text, "mode": session.mode},
-                    session_id=session.session_id
+                    session_id=session.id
                 )
-
-                # Send summary first
-                await manager.broadcast(session.session_id, {"event":"summary","payload":result})
-
-                # Persist results
+                # persist results (non-fatal if it fails)
                 try:
-                    session_manager.update_session_results(session.session_id, result)
+                    session_manager.update_session_results(session.id, result)
                 except Exception as e:
-                    logger.warning("Non-fatal: failed to persist results for session %s: %s", session.session_id, e)
+                    logger.exception("Non-fatal: update_session_results failed: %s", e)
 
-                # Set final status and progress
-                session_manager.update_progress(session.session_id, 100, status="completed")
-                await manager.broadcast(session.session_id, {"event":"status","status":"completed","progress":100})
-
+                session_manager.update_progress(session.id, 100, status="completed")
+                await manager.broadcast(session.id, {"event":"status","status":"completed","progress":100})
+                # the supervisor should have already sent summary; resend for safety:
+                await manager.broadcast(session.id, {"event":"summary","payload":result})
+                logger.info("Completed analysis for %s", session.id)
             except Exception as e:
-                logger.exception("Critique failed for session %s", session.session_id)
-                session_manager.update_progress(session.session_id, getattr(session, 'overall_progress', 0), status="error", error_message=str(e))
-                await manager.broadcast(session.session_id, {"event":"status","status":"error","message":str(e)})
+                logger.exception("Critique run failed for %s", session.id)
+                session_manager.update_progress(session.id, session.progress, status="error")
+                await manager.broadcast(session.id, {"event":"status","status":"error","message":str(e)})
 
-        asyncio.create_task(run(), name=f"critique-{session.session_id}")
-
-        return CritiqueResponse(
-            session_id=session.session_id,
-            status="processing",
-            message="Paper submitted successfully. Analysis started."
-        )
-
+        asyncio.create_task(run(), name=f"critique-{session.id}")
+        return {"session_id": session.id}
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error starting critique: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to start critique: {str(e)}")
+        # This is the bit causing your 500—now you'll see exactly why in server logs and client error JSON
+        logger.exception("Error starting critique")
+        raise HTTPException(status_code=500, detail=f"start_failed: {e.__class__.__name__}: {e}")
 
 @app.get("/api/critique/status/{session_id}")
 async def get_critique_status(session_id: str):
