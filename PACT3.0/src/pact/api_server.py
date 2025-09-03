@@ -183,8 +183,24 @@ if MOCK_MODE:
         def cleanup_old_sessions(self, max_age_hours: int = 24) -> int:
             return 0
 
+    # Create mock implementations
+    class MockCritiqueSupervisor:
+        async def ainvoke(self, inputs, session_id=None):
+            """Mock supervisor that returns sample results."""
+            return {
+                "overall_score": 78.5,
+                "final_critique": "This is a mock comprehensive critique of the paper.",
+                "dimension_critiques": {
+                    "1.0.0": {"dimension_name": "Research Foundations", "dimension_score": 80},
+                    "2.0.0": {"dimension_name": "Methodological Rigor", "dimension_score": 75},
+                    "3.0.0": {"dimension_name": "Structure & Coherence", "dimension_score": 82},
+                    "4.0.0": {"dimension_name": "Academic Precision", "dimension_score": 77},
+                    "5.0.0": {"dimension_name": "Critical Sophistication", "dimension_score": 79}
+                }
+            }
+    
     session_manager = MockSessionManager()
-    websocket_manager = MockWebSocketManager()
+    manager = MockWebSocketManager()  # Set manager for compatibility
 else:
     # Assuming 'manager' is correctly imported from websocket_manager
     # If not, this will need to be defined or imported correctly.
@@ -193,7 +209,7 @@ else:
     # It's better to explicitly import or initialize it here if it's not in the global scope.
     try:
         from .websocket_manager import manager # Ensure manager is imported
-        websocket_manager = manager
+        manager = manager  # manager is already imported
         logger.info("Using real WebSocket manager.")
     except ImportError:
         logger.error("Failed to import WebSocket manager.")
@@ -626,19 +642,22 @@ async def start_critique(req: StartCritiqueRequest, request: Request):
             raise HTTPException(status_code=400, detail="Paper text is too short (minimum 100 characters)")
 
         # Create session
-        session_id = session_manager.create_session(
+        session = session_manager.create_session(
             title=req.title,
             text=req.text,
             mode=req.mode,
             paper_type=req.paper_type
         )
-
-        logger.info(f"Created session {session_id}")
+        
+        # Extract session_id properly
+        session_id = session.session_id if hasattr(session, 'session_id') else str(session)
+        logger.info(f"Created session {session_id} with title: {req.title}, mode: {req.mode}")
+        logger.info(f"Created session {session}")
 
         # Start background analysis
         asyncio.create_task(run_critique_analysis(session_id, req.text, req.title, req.mode))
 
-        return {"session_id": session_id, "status": "started"}
+        return {"session_id": session, "status": "started"}
 
     except HTTPException:
         raise
@@ -852,6 +871,7 @@ async def preview_critique_report(session_id: str):
 
 async def run_critique_analysis(session_id: str, paper_content: str, paper_title: str, mode: str):
     """Background task to run the critique analysis."""
+    session = None
     try:
         logger.info("Launching supervisor task for session %s", session_id)
 
@@ -862,7 +882,7 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         supervisor = make_supervisor()
 
         session_manager.update_session_status(session_id, "running", overall_progress=1)
-        await manager.broadcast(session_id, {
+        await manager.send_message(session_id, {
             "event": "status",
             "status": "running",
             "progress": 1
@@ -876,16 +896,17 @@ async def run_critique_analysis(session_id: str, paper_content: str, paper_title
         session_manager.update_session_results(session_id, result)
 
         session_manager.update_progress(session_id, 100, status="completed")
-        await manager.broadcast(session_id, {"event": "status", "status": "completed", "progress": 100})
+        await manager.send_message(session_id, {"event": "status", "status": "completed", "progress": 100})
 
-        await manager.broadcast(session_id, {"event": "summary", "payload": result})
+        await manager.send_message(session_id, {"event": "summary", "payload": result})
 
         logger.info("Critique completed for session %s", session_id)
 
     except Exception as e:
         logger.exception("Critique failed for session %s", session_id)
-        session_manager.update_progress(session_id, getattr(session, 'overall_progress', 0), status="error", error_message=str(e))
-        await manager.broadcast(session_id, {
+        current_progress = getattr(session, 'overall_progress', 0) if session else 0
+        session_manager.update_progress(session_id, current_progress, status="error", error_message=str(e))
+        await manager.send_message(session_id, {
             "event": "status",
             "status": "error",
             "message": str(e)
