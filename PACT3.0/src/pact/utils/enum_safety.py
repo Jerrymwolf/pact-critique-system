@@ -5,6 +5,8 @@ Safe Enum Value Accessor Utilities
 Provides safe methods to extract values from enums or strings without errors.
 """
 
+from enum import Enum
+
 def enum_value(x):
     """
     Safely extract value from enum or return the object if it's already a string/value.
@@ -44,3 +46,6 @@ def safe_mode_value(mode):
     if hasattr(mode, 'value'):
         return mode.value
     return str(mode) if mode else "STANDARD"
+
+# Alias for clarity
+safe_status_value = enum_value
