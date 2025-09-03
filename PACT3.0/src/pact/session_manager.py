@@ -14,7 +14,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 import logging
 
-from .utils.enum_safety import enum_value, safe_status_value
+from .utils.enum_safety import safe_status_value
 
 def _coerce_enums(obj):
     """
@@ -320,13 +320,13 @@ class SessionManager:
 
         return {
             "session_id": session_id,
-            "status": session.status,
+            "status": session.status,  # String enum, no .value needed
             "overall_progress": session.overall_progress,
             "current_stage": session.current_stage,
             "agents": {
                 agent_id: {
                     "name": agent.agent_name,
-                    "status": agent.status,
+                    "status": agent.status,  # String enum, no .value needed
                     "message": agent.message,
                     "progress": agent.progress
                 }

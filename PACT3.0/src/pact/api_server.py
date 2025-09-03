@@ -25,9 +25,6 @@ import PyPDF2
 import logging
 from langchain_core.messages import HumanMessage
 
-# Configure logging first
-logger = logging.getLogger(__name__)
-
 # Local imports for PACT components
 try:
     from .pact_critique_agent import pact_critique_agent
@@ -37,7 +34,7 @@ try:
     from .mode_config import AgentMode, mode_config
     from .supervisors.real_supervisor import RealCritiqueSupervisor
     from .supervisors.mock_supervisor import MockCritiqueSupervisor
-    from .utils.enum_safety import enum_value # Import the new helper
+    # Removed enum_value import - no longer needed with string-based enums
     logger.info("WS manager id (api_server)=%s", id(manager))
     MOCK_MODE = False
 except ImportError:
@@ -670,8 +667,8 @@ async def get_critique_status(session_id: str):
         "session_id": session_id,
         "title": session.paper_title,
         "mode": getattr(session, 'mode', 'STANDARD'),
-        "status": session.status,
-        "progress": getattr(session, 'overall_progress', 0),
+        "status": session.status,  # No .value needed - string enum is JSON-serializable
+        "progress": session.overall_progress,
         "has_result": session.result is not None,
     }
 
@@ -714,15 +711,15 @@ async def critique_progress_websocket(websocket: WebSocket, session_id: str):
         # Send initial status
         session = session_manager.get_session(session_id)
         if session:
-            # String-based enums are directly JSON-serializable
+            # String-based enums are directly JSON-serializable  
             current_status = {
                 "session_id": session_id,
-                "state": session.status,
+                "state": session.status,  # No .value needed - string enum
                 "paper_title": session.paper_title,
                 "created_at": session.created_at.isoformat() if session.created_at else None,
                 "updated_at": session.updated_at.isoformat() if session.updated_at else None,
-                "error": getattr(session, 'error_message', None),
-                "progress": getattr(session, 'overall_progress', 0)
+                "error": session.error_message,
+                "progress": session.overall_progress
             }
             if session.status == "completed":
                 current_status["result"] = {
@@ -929,7 +926,7 @@ async def notify_websocket_clients(session_id: str):
         # String-based enums are directly JSON-serializable
         progress_data = {
             "session_id": session_id,
-            "state": session.status,
+            "state": session.status,  # No .value needed - string enum
             "progress": {
                 "overall_progress": getattr(session, 'overall_progress', 0),
                 "current_stage": getattr(session, 'current_stage', "Initializing"),
