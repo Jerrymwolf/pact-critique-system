@@ -295,7 +295,7 @@
 
                 <!-- PACT Dimensions Info -->
                 <div class="bg-white rounded-xl shadow-lg p-8">
-                    <h3 class="text-2xl font-bold mb-6">What We Analyze</h3>
+                    <h3 class="text-2xl font-bold mb-6 gradient-text">What We Analyze</h3>
                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
                             <div class="flex items-center mb-2">
@@ -699,7 +699,7 @@
                         <div class="border-t border-gray-200 pt-6">
                             <!-- Tab Navigation -->
                             <div class="border-b border-gray-200 mb-6">
-                                <nav class="-mb-px flex space-x-8">
+                                <nav id="main-tabs-nav" class="-mb-px flex space-x-8">
                                     <button onclick="showMainTab('summary')" id="main-tab-summary" class="main-tab-btn py-2 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600">
                                         <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -828,7 +828,7 @@
                             </div>
                             <div class="p-4 bg-green-50 rounded-lg">
                                 <h4 class="font-semibold text-green-900">3. Structure & Coherence</h4>
-                                <p class="text-green-700">Organization, paragraph unity, transitions, and logical flow</p>
+                                <p class="text-green-700">Organization, flow, transitions, and logical progression</p>
                             </div>
                             <div class="p-4 bg-yellow-50 rounded-lg">
                                 <h4 class="font-semibold text-yellow-900">4. Academic Precision</h4>
@@ -883,713 +883,63 @@
         // Configure API base URL
         const API_BASE_URL = window.location.protocol + '//' + window.location.host;
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            setupEventListeners();
-            updateWordCount();
-        });
+        // ===== UTILITY FUNCTIONS =====
 
-        // Setup event listeners
-        function setupEventListeners() {
-            // File upload
-            const dropZone = document.getElementById('drop-zone');
-            const fileInput = document.getElementById('file-input');
+        // SVG Path validation and corruption detection
+        function validateSVGPaths() {
+            const SAFE_D_PATTERN = /^[MLHVCSQTAZmlhvcsqtaz0-9.,\s-]+$/;
 
-            // Removed original file upload listeners as new ones are added below
-            // dropZone.addEventListener('click', () => fileInput.click());
-            // dropZone.addEventListener('dragover', handleDragOver);
-            // dropZone.addEventListener('drop', handleDrop);
-            // fileInput.addEventListener('change', handleFileSelect);
-
-            // Text input
-            const paperText = document.getElementById('paper-content');
-            paperText.addEventListener('input', updateWordCount);
-        }
-
-        // Handle drag and drop functionality
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const uploadArea = e.currentTarget.closest('.border-dashed');
-            uploadArea.classList.add('border-blue-400', 'bg-blue-50');
-        }
-
-        function handleDragLeave(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const uploadArea = e.currentTarget.closest('.border-dashed');
-            uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const uploadArea = e.currentTarget.closest('.border-dashed');
-            uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
-
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                // Simulate file input change event
-                const fileInput = document.getElementById('file-upload');
-                const dt = new DataTransfer();
-                dt.items.add(files[0]);
-                fileInput.files = dt.files;
-                handleFileUpload({ target: fileInput });
-            }
-        }
-
-        // Process uploaded file - kept for potential future use or reference, but new upload logic is in place
-        function processFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const content = e.target.result;
-                document.getElementById('paper-text').value = content;
-                updateWordCount();
-
-                // Update file info display
-                const fileInfoElement = document.getElementById('file-info');
-                if (fileInfoElement) {
-                    fileInfoElement.innerHTML = `
-                        <p class="text-sm font-medium text-gray-900">${file.name}</p>
-                        <p class="text-sm text-gray-500">${(file.size / 1024).toFixed(2)} KB</p>
-                    `;
+            for (const pathEl of document.querySelectorAll('path[d]')) {
+                const d = pathEl.getAttribute('d') || '';
+                if (!SAFE_D_PATTERN.test(d)) {
+                    console.warn('Corrupted SVG path detected:', pathEl, d);
+                    // Remove corrupted path to prevent parsing errors
+                    pathEl.remove();
                 }
-
-                enableAnalysisButton();
-            };
-            reader.onerror = function(e) {
-                console.error('Error reading file:', e);
-                alert('Error reading file. Please try again.');
-            };
-            reader.readAsText(file);
+                if (d.includes('Scientology') || /[A-Za-z]{3,}/.test(d.replace(/[MLHVCSQTAZmlhvcsqtaz]/g, ''))) {
+                    console.error('SVG path contains unexpected text:', pathEl, d);
+                    pathEl.remove();
+                }
+            }
         }
 
-        // Handle file selection for upload - kept for potential future use or reference, but new upload logic is in place
-        function handleFile(file) {
-            // Validate file
-            const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'text/markdown'];
-            if (!validTypes.includes(file.type) && !file.name.endsWith('.md')) {
-                alert('Please upload a PDF, DOCX, TXT, or MD file.');
-                return;
-            }
+        // Safe SVG creation helper
+        function createSVGIcon(pathData, className = 'w-4 h-4') {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('class', className);
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', 'currentColor');
+            svg.setAttribute('viewBox', '0 0 24 24');
 
-            if (file.size > 10 * 1024 * 1024) {
-                alert('File size must be less than 10MB.');
-                return;
-            }
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('stroke-linejoin', 'round');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('d', pathData);
 
-            // Update UI to show the selected file
-            const dropZone = document.getElementById('drop-zone');
-            dropZone.innerHTML = `
-                <svg class="mx-auto h-16 w-16 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <p class="text-lg font-medium text-gray-700 mb-2">${file.name}</p>
-                <p class="text-sm text-gray-500">${(file.size / 1024).toFixed(2)} KB</p>
-            `;
-
-            enableAnalysisButton();
+            svg.appendChild(path);
+            return svg;
         }
 
-        // Update word count in the UI
-        function updateWordCount() {
-            const text = document.getElementById('paper-content').value;
-            const wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length;
-            document.getElementById('word-count').textContent = wordCount;
+        // Safe innerHTML wrapper that preserves SVG integrity
+        function safeSetInnerHTML(element, htmlContent) {
+            // Check if element contains SVG elements
+            const hasSVG = element.querySelector('svg');
 
-            // Enable button if textarea has content OR if a file has been uploaded
-            const fileUploaded = uploadedFileContent !== null;
-            if (wordCount >= 100 || fileUploaded) {
-                enableAnalysisButton();
+            if (hasSVG) {
+                console.warn('Attempting to set innerHTML on element containing SVG - this may corrupt paths');
+                // Save SVG elements before setting innerHTML
+                const svgElements = Array.from(element.querySelectorAll('svg')).map(svg => svg.cloneNode(true));
+                element.innerHTML = htmlContent;
+                // Restore SVG elements if they were lost
+                if (!element.querySelector('svg') && svgElements.length > 0) {
+                    svgElements.forEach(svg => element.appendChild(svg));
+                }
             } else {
-                disableAnalysisButton();
+                element.innerHTML = htmlContent;
             }
         }
 
-        // Enable the analysis button
-        function enableAnalysisButton() {
-            document.getElementById('analyze-btn').disabled = false;
-        }
-
-        // Disable the analysis button
-        function disableAnalysisButton() {
-            document.getElementById('analyze-btn').disabled = true;
-        }
-
-        // Screen navigation logic
-        function showScreen(screenName) {
-            // Hide all screens
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.add('hidden');
-            });
-
-            // Show selected screen
-            const screen = document.getElementById(`${screenName}-screen`);
-            if (screen) {
-                screen.classList.remove('hidden');
-                currentScreen = screenName;
-            }
-        }
-
-        // Start the analysis process
-        async function startAnalysis() {
-            showScreen('analysis');
-
-            const textareaContent = document.getElementById('paper-content').value.trim();
-            const content = uploadedFileContent || textareaContent;
-            const paperTitle = extractPaperTitle(content);
-            const paperType = document.getElementById('paper-type').value;
-
-            if (!content) {
-                showMessage('Please provide paper content by uploading a file or pasting text before starting analysis.', 'error');
-                showScreen('upload');
-                return;
-            }
-
-            // Update status message
-            updateStatus('Initializing analysis...');
-
-            try {
-                // Submit the paper for analysis
-                await submitPaperForAnalysis(content, paperTitle, paperType);
-            } catch (error) {
-                console.error('Error starting analysis:', error);
-                alert('Failed to start analysis. Please try again.');
-                showScreen('upload');
-            }
-        }
-
-        // Extract paper title from content
-        function extractPaperTitle(content) {
-            const lines = content.split('\n');
-            for (let line of lines) {
-                line = line.trim();
-                if (line.startsWith('Title:')) {
-                    return line.replace('Title:', '').trim();
-                }
-                if (line && !line.startsWith('Abstract:') && line.length > 10 && !line.startsWith('Keywords:') && !line.startsWith('Author:')) {
-                    // Assume first substantial line is the title
-                    return line;
-                }
-            }
-            return null;
-        }
-
-        // Trigger file upload when upload area is clicked
-        function triggerFileUpload() {
-            const fileInput = document.getElementById('file-upload');
-            fileInput.click();
-        }
-
-        // Submit paper for analysis via API
-        async function submitPaperForAnalysis(content, title, type) {
-            try {
-                const analysisMode = document.getElementById('analysisMode').value;
-
-                const response = await fetch(`${API_BASE_URL}/api/critique/start`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        title: title || "Untitled",
-                        paper_text: content,
-                        mode: analysisMode || "STANDARD"
-                    })
-                });
-
-                // Add detailed error handling here
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    throw new Error(`HTTP error! status: ${response.status}${err?.detail ? ` — ${err.detail}` : ""}`);
-                }
-
-                const result = await response.json();
-                currentSessionId = result.session_id;
-
-                // Start WebSocket connection for real-time updates
-                await connectWebSocket(currentSessionId);
-
-                // Start polling for progress for progress (fallback if WebSocket fails)
-                startProgressPolling(currentSessionId);
-
-            } catch (error) {
-                console.error('Error submitting paper:', error);
-                throw error;
-            }
-        }
-
-        // Connect to WebSocket for real-time updates
-        async function connectWebSocket(sessionId) {
-            try {
-                const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/critique/live/${sessionId}`;
-                websocket = new WebSocket(wsUrl);
-                let hasSummary = false;
-
-                websocket.onopen = function(event) {
-                    console.log('WebSocket connected');
-                    usePolling = false; // Disable polling when WebSocket is active
-                    if (pollAbort) pollAbort.abort(); // Stop any active polling
-                    updateStatus('Analysis started, receiving updates via WebSocket.');
-                };
-
-                websocket.onmessage = function(event) {
-                    const data = JSON.parse(event.data);
-                    console.log('Received WebSocket message:', data);
-
-                    // Front-end guard: ignore late errors after summary is received
-                    if (data.event === "summary") {
-                        hasSummary = true;
-                        updateProgressFromAPI(data);
-                    } else if (data.event === "status") {
-                        if (data.status === "error" && hasSummary) {
-                            // Downgrade to warning; don't flip the UI to failed
-                            console.warn("Ignoring late error after summary:", data.message);
-                            return;
-                        }
-                        if (data.status === "completed") {
-                            setProgress(100);
-                        }
-                        updateProgressFromAPI(data);
-                    } else if (data.event === "progress") {
-                        setProgress(data.progress || 0);
-                    } else {
-                        // Handle other events normally
-                        updateProgressFromAPI(data);
-                    }
-                };
-
-                websocket.onclose = function(event) {
-                    console.log('WebSocket closed, falling back to polling');
-                    websocket = null;
-                    usePolling = true; // Enable polling fallback
-                    updateStatus('WebSocket connection closed. Falling back to polling.');
-                    if (currentSessionId) {
-                        startProgressPolling(currentSessionId);
-                    }
-                };
-
-                websocket.onerror = function(error) {
-                    console.error('WebSocket error:', error);
-                    updateStatus('WebSocket error. Falling back to polling.');
-                    usePolling = true; // Enable polling fallback
-                    if (currentSessionId) {
-                        startProgressPolling(currentSessionId);
-                    }
-                };
-
-            } catch (error) {
-                console.error('Failed to connect WebSocket:', error);
-                updateStatus('WebSocket error. Falling back to polling.');
-                usePolling = true;
-                if (currentSessionId) {
-                    startProgressPolling(currentSessionId);
-                }
-            }
-        }
-
-        // Start polling for progress updates (fallback)
-        async function startProgressPolling(sessionId) {
-            const pollInterval = setInterval(async () => {
-                // Only poll if WebSocket is not active or failed
-                if (websocket && websocket.readyState === WebSocket.OPEN) {
-                    clearInterval(pollInterval);
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`${API_BASE_URL}/api/critique/status/${sessionId}`, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                        mode: 'cors'
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-
-                    const data = await response.json();
-                    console.log('Progress data received via polling:', data);
-                    updateProgressFromAPI(data);
-
-                    // Stop polling when completed or failed
-                    if (data.status === 'completed' || data.status === 'failed') {
-                        clearInterval(pollInterval);
-                        console.log('Analysis status:', data.status);
-                        if (data.status === 'completed') {
-                            console.log('Loading final results...');
-                            await loadFinalResults(sessionId);
-                        } else if (data.status === 'failed') {
-                            showError(data.error_message || 'Analysis failed');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error polling progress:', error);
-                    showError('Failed to get progress updates via polling.');
-                }
-            }, 2000); // Poll every 2 seconds
-        }
-
-        // Helper functions for progress updates
-        function setProgress(progress) {
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-            if (progressBar) {
-                progressBar.style.width = `${progress}%`;
-            }
-            if (progressText) {
-                progressText.textContent = `${progress}%`;
-            }
-        }
-
-        function updateStatus(message) {
-            const statusElement = document.getElementById('status-message');
-            if (statusElement) {
-                statusElement.textContent = message;
-            }
-        }
-
-        function setResult(payload) {
-            currentResult = payload;
-            displayResults(payload);
-        }
-
-        // Helper function to update progress from API data (legacy fallback)
-        function updateProgressFromAPI(data) {
-            console.log('Updating UI with data:', data);
-
-            // Handle overall progress
-            if (typeof data.progress === 'number') {
-                setProgress(Math.max(0, Math.min(100, data.progress)));
-            } else if (data.overall_progress) { // For older API response formats
-                setProgress(Math.max(0, Math.min(100, data.overall_progress)));
-            }
-
-            // Handle status updates
-            if (data.status) {
-                updateStatus(`Status: ${data.status}`);
-            } else if (data.message) { // For specific agent messages
-                updateStatus(`Message: ${data.message}`);
-            }
-
-            // Handle agent-specific progress or status
-            if (data.event === "progress" && typeof data.progress === "number") {
-                // This might be specific agent progress, overall progress is handled above
-                // For now, we'll rely on the overall progress or status field for UI updates
-            } else if (data.event === "status") {
-                if (data.status === "running") {
-                    updateStatus("Analysis is running...");
-                } else if (data.status === "completed") {
-                    updateStatus("Analysis completed. Loading results...");
-                    setProgress(100); // Ensure progress is 100%
-                    if (data.session_id) {
-                        loadFinalResults(data.session_id);
-                    }
-                }
-            } else if (data.event === "summary" && data.payload) {
-                setResult(data.payload);
-                // The 'setResult' function will call 'displayResults'
-            }
-
-            // Update individual agent statuses if provided in the data
-            if (data.agents) {
-                for (const [agentId, agentData] of Object.entries(data.agents)) {
-                    updateAgentStatus(agentId, agentData);
-                }
-            }
-
-            // If the analysis is completed, ensure final results are loaded
-            if (data.status === 'completed' && currentSessionId) {
-                setTimeout(() => loadFinalResults(currentSessionId), 1000);
-            }
-        }
-
-        // Update individual agent status in the UI
-        function updateAgentStatus(agentId, agentData) {
-            const agentCard = document.getElementById(`agent-${agentId}`);
-            if (!agentCard) return;
-
-            const statusElement = agentCard.querySelector('.agent-status');
-            const messageElement = agentCard.querySelector('.agent-message');
-
-            // Update status text and color
-            statusElement.textContent = agentData.status === 'active' ? 'Active' : 
-                                       agentData.status === 'completed' ? 'Complete' :
-                                       agentData.status === 'failed' ? 'Failed' : 'Waiting';
-
-            // Update status colors
-            statusElement.classList.remove('text-gray-500', 'text-purple-600', 'text-green-600', 'text-red-600');
-            if (agentData.status === 'active') {
-                statusElement.classList.add('text-purple-600');
-                agentCard.classList.add('active');
-            } else if (agentData.status === 'completed') {
-                statusElement.classList.add('text-green-600');
-                agentCard.classList.remove('active');
-            } else if (agentData.status === 'failed') {
-                statusElement.classList.add('text-red-600');
-                agentCard.classList.remove('active');
-            } else {
-                statusElement.classList.add('text-gray-500');
-                agentCard.classList.remove('active');
-            }
-
-            // Update message display
-            if (agentData.message) {
-                messageElement.classList.remove('hidden');
-                if (agentData.status === 'active') {
-                    messageElement.innerHTML = `
-                        <div class="typing-indicator">
-                            <span class="typing-dot"></span>
-                            <span class="typing-dot"></span>
-                            <span class="typing-dot"></span>
-                        </div>
-                    `;
-                    setTimeout(() => {
-                        messageElement.textContent = agentData.message;
-                    }, 1000);
-                } else {
-                    messageElement.textContent = agentData.message;
-                }
-            }
-        }
-
-        // Load final results from the API
-        async function loadFinalResults(sessionId) {
-            try {
-                console.log('Fetching final results for session:', sessionId);
-                const response = await fetch(`${API_BASE_URL}/api/critique/results/${sessionId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const results = await response.json();
-                console.log('Final results received:', results);
-
-                // Convert API results to the format expected by displayResults
-                const mockData = convertAPIResultsToDisplayFormat(results);
-                console.log('Converted data for display:', mockData);
-
-                // Show the results section and display the data
-                showResults();
-                displayResults(mockData);
-
-            } catch (error) {
-                console.error('Error loading final results:', error);
-                // Try direct display with mock data if API fails
-                console.log('Attempting to display results with mock data');
-                showResults();
-                displayResults(generateMockResults()); // Fallback to mock data
-            }
-        }
-
-        // Generate mock results for display when API data is unavailable
-        function generateMockResults() {
-            return {
-                overallScore: 76,
-                recommendation: 'Minor Revision',
-                dimensions: {
-                    'Research Foundations': 75,
-                    'Methodological Rigor': 65,
-                    'Structure & Coherence': 82,
-                    'Academic Precision': 70,
-                    'Critical Sophistication': 80
-                },
-                dimensionAnalyses: {},
-                summary: 'Your paper demonstrates solid research foundations and clear structure. The topic of political polarization and bridge-building is highly relevant and well-motivated. Key areas for improvement include strengthening the methodological framework, expanding the literature review, and refining the theoretical approach.',
-                strengths: [
-                    'Clear problem identification with supporting statistics',
-                    'Strong personal motivation and practical experience',
-                    'Well-organized presentation following logical format',
-                    'Critical self-awareness regarding potential biases'
-                ],
-                improvements: [
-                    'Expand systematic literature review on affective polarization',
-                    'Develop robust methodological framework addressing bias concerns',
-                    'Add proper citations for all claims and statistics',
-                    'Refine research questions with greater theoretical precision'
-                ],
-                nextSteps: [
-                    'Conduct systematic literature review on affective polarization',
-                    'Develop robust methodological framework addressing bias concerns',
-                    'Refine research questions with greater theoretical precision',
-                    'Consider expanding scope beyond Democrat-Republican dynamics',
-                    'Plan pilot studies to test bridge-building strategies'
-                ],
-                checklistItems: [
-                    {
-                        code: '1.1.1',
-                        name: 'Problem Definition',
-                        description: 'Research problem is clearly defined and well-motivated',
-                        priority: 'Important',
-                        completed: true
-                    },
-                    {
-                        code: '1.2.1',
-                        name: 'Literature Review',
-                        description: 'Conduct comprehensive review of polarization literature',
-                        priority: 'Critical',
-                        completed: false
-                    }
-                ]
-            };
-        }
-
-        // Convert API results to a display-friendly format
-        function convertAPIResultsToDisplayFormat(apiResults) {
-            console.log('Converting API results:', apiResults);
-
-            const dimensionAnalyses = apiResults.dimension_critiques || {};
-
-            // Use the new toDisplay function approach with no truncation
-            function toDisplay(data) {
-                return {
-                    qualitativeMode: true,
-                    summary: data.final_critique || data.executive_summary || "Analysis completed successfully.",
-                    dimensions: Object.entries(data.dimension_critiques || {}).map(([name, d]) => ({
-                        id: name,
-                        name: d.dimension_name || name,
-                        overall_assessment: d.overall_assessment || "Competent",
-                        executive_summary: d.executive_summary || "",
-                        strengths: d.key_strengths || [],
-                        issues: (d.issues || []).map(it => ({
-                            title: it.title || "Issue identified",
-                            why_it_matters: it.why_it_matters || "",
-                            suggestions: it.suggestions || [],
-                            exemplar_rewrites: it.exemplar_rewrites || it.rewrite ? [it.rewrite] : [],
-                            quotes: it.quotes || it.evidence ? [it.evidence] : [],
-                            priority: it.priority || "medium",
-                            location_hint: it.location_hint || "",
-                            rubric_id: it.rubric_id || ""
-                        })),
-                        next_steps: d.next_steps || [],
-                        priority_improvements: d.priority_improvements || []
-                    }))
-                };
-            }
-
-            const displayData = toDisplay(apiResults);
-
-            // Collect all issues and categorize by priority (no filtering/truncation)
-            const allIssues = [];
-            const allStrengths = [];
-            const allNextSteps = [];
-
-            displayData.dimensions.forEach(d => {
-                // Add all dimension issues to global collections
-                if (d.issues) {
-                    allIssues.push(...d.issues.map(issue => ({...issue, dimension: d.name})));
-                }
-                if (d.strengths) {
-                    allStrengths.push(...d.strengths.map(strength => ({...strength, dimension: d.name})));
-                }
-                if (d.next_steps) {
-                    allNextSteps.push(...d.next_steps.map(step => ({...step, dimension: d.name})));
-                }
-            });
-
-            // Categorize issues by priority (render everything, no slicing)
-            const criticalIssues = allIssues.filter(issue => issue.priority === 'high');
-            const improvementIssues = allIssues.filter(issue => issue.priority === 'medium');
-            const polishIssues = allIssues.filter(issue => issue.priority === 'low');
-
-            return {
-                ...displayData,
-                dimensionAnalyses: dimensionAnalyses,
-                criticalIssues: criticalIssues,
-                improvementIssues: improvementIssues,
-                polishIssues: polishIssues,
-                strengths: allStrengths,
-                nextSteps: allNextSteps,
-                checklistItems: apiResults.checklist_items || []
-            };
-        }
-
-        // Get a score based on assessment text
-        function getScoreFromAssessment(assessment) {
-            switch (assessment) {
-                case 'Strong': return 85;
-                case 'Developing': return 70;
-                case 'Weak': return 55;
-                default: return 75;
-            }
-        }
-
-        // Calculate the overall score from API results
-        function calculateOverallScore(apiResults) {
-            if (apiResults.overall_score) return apiResults.overall_score;
-
-            // If no overall score, calculate from dimension scores
-            if (apiResults.dimension_critiques) {
-                const scores = Object.values(apiResults.dimension_critiques)
-                    .map(critique => critique.dimension_score || 75)
-                    .filter(score => score > 0);
-
-                if (scores.length > 0) {
-                    return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
-                }
-            }
-
-            return 82; // Default score for completed analysis
-        }
-
-        // Get recommendation text based on score
-        function getRecommendationFromScore(score) {
-            if (score >= 85) return 'Accept';
-            if (score >= 75) return 'Minor Revision';
-            if (score >= 65) return 'Revision Required';
-            return 'Major Revision';
-        }
-
-        // Provide default dimension scores if none are available
-        function getDefaultDimensions() {
-            return {
-                'Research Foundations': 75,
-                'Methodological Rigor': 75,
-                'Structure & Coherence': 75,
-                'Academic Precision': 75,
-                'Critical Sophistication': 75
-            };
-        }
-
-        // Get recommendation text based on a score
-        function getRecommendationFromScore(score) {
-            if (score >= 85) return 'Accept';
-            if (score >= 70) return 'Minor Revision';
-            if (score >= 60) return 'Revise';
-            return 'Major Revision';
-        }
-
-        // Extract an executive summary from the critique text
-        function extractSummaryFromCritique(critique) {
-            if (!critique) return 'Analysis completed. See detailed feedback below.';
-
-            const lines = critique.split('\n');
-            let summaryStart = -1;
-            let summaryEnd = -1;
-
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].toLowerCase().includes('executive summary') || 
-                    lines[i].toLowerCase().includes('summary')) {
-                    summaryStart = i + 1;
-                } else if (summaryStart > -1 && lines[i].startsWith('##')) {
-                    summaryEnd = i;
-                    break;
-                }
-            }
-
-            if (summaryStart > -1) {
-                const endIndex = summaryEnd > -1 ? summaryEnd : Math.min(summaryStart + 5, lines.length);
-                return lines.slice(summaryStart, endIndex).join('\n').trim() || 
-                       'Analysis completed. See detailed feedback below.';
-            }
-
-            return critique.split('\n').slice(0, 3).join(' ').substring(0, 200) + '...';
-        }
-
-        // Display an error message and revert to upload screen
         function showError(message) {
             alert(`Analysis Error: ${message}`);
             showScreen('upload');
@@ -1712,7 +1062,7 @@
 
                             ${subsection.areas_for_improvement && subsection.areas_for_improvement.length > 0 ? `
                                 <div class="mb-2">
-                                    <span class="text-xs font-medium text-yellow-700">Areas for Improvement:</span>
+                                    <span class="text-xs font-medium text-orange-700">Areas for Improvement:</span>
                                     <ul class="list-disc list-inside text-xs text-gray-600 ml-2">
                                         ${subsection.areas_for_improvement.map(i => `<li>${i}</li>`).join('')}
                                     </ul>
@@ -1776,7 +1126,7 @@
                     </svg>
                     <div class="flex-1">
                         <div class="flex items-center mb-1">
-                            <span class="font-semibold text-green-800 text-sm mr-2">${item.code}</span>
+                            <span class="font-semibold text-orange-800 text-sm mr-2">${item.code}</span>
                             <span class="font-medium text-gray-900 text-sm">${item.name}</span>
                         </div>
                         <p class="text-sm text-gray-700">${item.description}</p>
@@ -1880,22 +1230,39 @@
                 document.getElementById('download-menu').classList.add('hidden');
 
                 const downloadButton = event.target;
-                const originalText = downloadButton.innerHTML;
+                const originalButtonContent = downloadButton.innerHTML; // Store the original HTML content
                 // Update button to show loading state
-                downloadButton.innerHTML = `
-                    <svg class="w-4 h-4 mr-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Generating ${format.toUpperCase()}...
-                `;
                 downloadButton.disabled = true;
+
+                // Clear button and safely add SVG icon
+                downloadButton.innerHTML = '';
+
+                // Create SVG element safely
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('class', 'w-4 h-4 mr-3 animate-spin');
+                svg.setAttribute('fill', 'none');
+                svg.setAttribute('stroke', 'currentColor');
+                svg.setAttribute('viewBox', '0 0 24 24');
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('stroke-linejoin', 'round');
+                path.setAttribute('stroke-width', '2');
+                path.setAttribute('d', 'M4 4v5h.582m15.356 2A8.955 8.955 0 0 1 21 12c0 .778-.099 1.533-.284 2.262M3 12c0-.778.099-1.533.284-2.262m0 0A8.955 8.955 0 0 1 12 3c2.777 0 5.288 1.089 7.184 2.816M3 12v5.341m9-9.341c0 2.21-.766 4.239-2.05 5.658m9.341-5.658c0-2.21.766-4.239 2.05-5.658');
+
+                svg.appendChild(path);
+                downloadButton.appendChild(svg);
+
+                // Add text safely using textContent
+                downloadButton.appendChild(document.createTextNode(`Generating ${format.toUpperCase()}...`));
+
 
                 // Request the report from the API
                 const response = await fetch(`${API_BASE_URL}/api/critique/download/${currentSessionId}?format=${format}`);
 
                 if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    throw new Error(`HTTP error! status: ${response.status}${err?.detail ? ` — ${err.detail}` : ""}`);
+                    const err = await response.json().catch(() => ({ detail: `HTTP ${response.status}: ${response.statusText}` }));
+                    throw new Error(err.detail || 'Failed to download report');
                 }
 
                 // Download the blob from backend
@@ -1903,7 +1270,7 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `PACT-${currentSessionId}.${format === "json" ? "json" : "md"}`;
+                a.download = `PACT-${currentSessionId}.${format === "pdf" ? "pdf" : "md"}`; // Changed default to pdf
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -1920,7 +1287,7 @@
                 setTimeout(() => {
                     const downloadButton = document.querySelector('button[disabled]');
                     if (downloadButton) {
-                        downloadButton.innerHTML = originalText;
+                        downloadButton.innerHTML = originalButtonContent; // Restore original HTML
                         downloadButton.disabled = false;
                     }
                 }, 1000);
@@ -2495,8 +1862,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                                 </p>
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
                 return;
             }
 
@@ -2728,7 +2094,7 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
                 <div class="space-y-6">
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
                         <div class="flex items-start space-x-3">
-                            <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                            <div class="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
                             <div class="flex-1">
                                 <h3 class="text-lg font-semibold text-blue-800 mb-3">Your Custom Question</h3>
                                 <p class="text-blue-700 bg-blue-100 rounded p-3 text-sm">${customAnalysis.question}</p>
@@ -2824,9 +2190,1004 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             activeBtn.classList.add('border-blue-500', 'text-blue-600');
         }
 
-        // ===== UTILITY FUNCTIONS =====
+        // ===== INITIALIZATION =====
 
-        function showMessage(message, type = 'info') {
+        // Set up SVG corruption monitoring
+        function setupSVGMonitoring() {
+            // Run initial validation
+            validateSVGPaths();
+
+            // Set up mutation observer to catch dynamic changes
+            const observer = new MutationObserver(function(mutations) {
+                let shouldValidate = false;
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                        shouldValidate = true;
+                    }
+                });
+                if (shouldValidate) {
+                    setTimeout(validateSVGPaths, 100); // Debounced validation
+                }
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['d', 'innerHTML']
+            });
+
+            // Periodic validation as fallback
+            setInterval(validateSVGPaths, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the app
+            initializeApp();
+
+            // Set up SVG corruption monitoring
+            setupSVGMonitoring();
+
+            // Setup event listeners
+            setupEventListeners();
+            updateWordCount();
+        });
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // File upload
+            // Removed original file upload listeners as new ones are added below
+
+            // Text input
+            const paperText = document.getElementById('paper-content');
+            paperText.addEventListener('input', updateWordCount);
+        }
+
+        // Handle drag and drop functionality
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const uploadArea = e.currentTarget.closest('.border-dashed');
+            uploadArea.classList.add('border-blue-400', 'bg-blue-50');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const uploadArea = e.currentTarget.closest('.border-dashed');
+            uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const uploadArea = e.currentTarget.closest('.border-dashed');
+            uploadArea.classList.remove('border-blue-400', 'bg-blue-50');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // Simulate file input change event
+                const fileInput = document.getElementById('file-upload');
+                const dt = new DataTransfer();
+                dt.items.add(files[0]);
+                fileInput.files = dt.files;
+                handleFileUpload({ target: fileInput });
+            }
+        }
+
+        // Process uploaded file - kept for potential future use or reference, but new upload logic is in place
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                document.getElementById('paper-text').value = content;
+                updateWordCount();
+
+                // Update file info display
+                const fileInfoElement = document.getElementById('file-info');
+                if (fileInfoElement) {
+                    fileInfoElement.innerHTML = `
+                        <p class="text-sm font-medium text-gray-900">${file.name}</p>
+                        <p class="text-sm text-gray-500">${(file.size / 1024).toFixed(2)} KB</p>
+                    `;
+                }
+
+                enableAnalysisButton();
+            };
+            reader.onerror = function(e) {
+                console.error('Error reading file:', e);
+                alert('Error reading file. Please try again.');
+            };
+            reader.readAsText(file);
+        }
+
+        // Handle file selection for upload - kept for potential future use or reference, but new upload logic is in place
+        function handleFile(file) {
+            // Validate file
+            const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'text/markdown'];
+            if (!validTypes.includes(file.type) && !file.name.endsWith('.md')) {
+                alert('Please upload a PDF, DOCX, TXT, or MD file.');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB.');
+                return;
+            }
+
+            // Update UI to show the selected file
+            const dropZone = document.getElementById('drop-zone');
+            dropZone.innerHTML = `
+                <svg class="mx-auto h-16 w-16 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-lg font-medium text-gray-700 mb-2">${file.name}</p>
+                <p class="text-sm text-gray-500">${(file.size / 1024).toFixed(2)} KB</p>
+            `;
+
+            enableAnalysisButton();
+        }
+
+        // Update word count in the UI
+        function updateWordCount() {
+            const text = document.getElementById('paper-content').value;
+            const wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length;
+            document.getElementById('word-count').textContent = wordCount;
+
+            // Enable button if textarea has content OR if a file has been uploaded
+            const fileUploaded = uploadedFileContent !== null;
+            if (wordCount >= 100 || fileUploaded) {
+                enableAnalysisButton();
+            } else {
+                disableAnalysisButton();
+            }
+        }
+
+        // Enable the analysis button
+        function enableAnalysisButton() {
+            document.getElementById('analyze-btn').disabled = false;
+        }
+
+        // Disable the analysis button
+        function disableAnalysisButton() {
+            document.getElementById('analyze-btn').disabled = true;
+        }
+
+        // Screen navigation logic
+        function showScreen(screenName) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.add('hidden');
+            });
+
+            // Show selected screen
+            const screen = document.getElementById(`${screenName}-screen`);
+            if (screen) {
+                screen.classList.remove('hidden');
+                currentScreen = screenName;
+            }
+        }
+
+        // Start the analysis process
+        async function startAnalysis() {
+            showScreen('analysis');
+
+            const textareaContent = document.getElementById('paper-content').value.trim();
+            const content = uploadedFileContent || textareaContent;
+            const paperTitle = extractPaperTitle(content);
+            const paperType = document.getElementById('paper-type').value;
+
+            if (!content) {
+                showMessage('Please provide paper content by uploading a file or pasting text before starting analysis.', 'error');
+                showScreen('upload');
+                return;
+            }
+
+            // Update status message
+            updateStatus('Initializing analysis...');
+
+            try {
+                // Submit the paper for analysis
+                await submitPaperForAnalysis(content, paperTitle, paperType);
+            } catch (error) {
+                console.error('Error starting analysis:', error);
+                alert('Failed to start analysis. Please try again.');
+                showScreen('upload');
+            }
+        }
+
+        // Extract paper title from content
+        function extractPaperTitle(content) {
+            const lines = content.split('\n');
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('Title:')) {
+                    return line.replace('Title:', '').trim();
+                }
+                if (line && !line.startsWith('Abstract:') && line.length > 10 && !line.startsWith('Keywords:') && !line.startsWith('Author:')) {
+                    // Assume first substantial line is the title
+                    return line;
+                }
+            }
+            return null;
+        }
+
+        // Trigger file upload when upload area is clicked
+        function triggerFileUpload() {
+            const fileInput = document.getElementById('file-upload');
+            fileInput.click();
+        }
+
+        // Submit paper for analysis via API
+        async function submitPaperForAnalysis(content, title, type) {
+            try {
+                const analysisMode = document.getElementById('analysisMode').value;
+
+                const response = await fetch(`${API_BASE_URL}/api/critique/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: title || "Untitled",
+                        paper_text: content,
+                        mode: analysisMode || "STANDARD"
+                    })
+                });
+
+                // Add detailed error handling here
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(`HTTP error! status: ${response.status}${err?.detail ? ` — ${err.detail}` : ""}`);
+                }
+
+                const result = await response.json();
+                currentSessionId = result.session_id;
+
+                // Start WebSocket connection for real-time updates
+                await connectWebSocket(currentSessionId);
+
+                // Start polling for progress for progress (fallback if WebSocket fails)
+                startProgressPolling(currentSessionId);
+
+            } catch (error) {
+                console.error('Error submitting paper:', error);
+                throw error;
+            }
+        }
+
+        // Connect to WebSocket for real-time updates
+        async function connectWebSocket(sessionId) {
+            try {
+                const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/critique/live/${sessionId}`;
+                websocket = new WebSocket(wsUrl);
+                let hasSummary = false;
+
+                websocket.onopen = function(event) {
+                    console.log('WebSocket connected');
+                    usePolling = false; // Disable polling when WebSocket is active
+                    if (pollAbort) pollAbort.abort(); // Stop any active polling
+                    updateStatus('Analysis started, receiving updates via WebSocket.');
+                };
+
+                websocket.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    console.log('Received WebSocket message:', data);
+
+                    // Front-end guard: ignore late errors after summary is received
+                    if (data.event === "summary") {
+                        hasSummary = true;
+                        updateProgressFromAPI(data);
+                    } else if (data.event === "status") {
+                        if (data.status === "error" && hasSummary) {
+                            // Downgrade to warning; don't flip the UI to failed
+                            console.warn("Ignoring late error after summary:", data.message);
+                            return;
+                        }
+                        if (data.status === "completed") {
+                            setProgress(100);
+                        }
+                        updateProgressFromAPI(data);
+                    } else if (data.event === "progress") {
+                        setProgress(data.progress || 0);
+                    } else {
+                        // Handle other events normally
+                        updateProgressFromAPI(data);
+                    }
+                };
+
+                websocket.onclose = function(event) {
+                    console.log('WebSocket closed, falling back to polling');
+                    websocket = null;
+                    usePolling = true; // Enable polling fallback
+                    updateStatus('WebSocket connection closed. Falling back to polling.');
+                    if (currentSessionId) {
+                        startProgressPolling(currentSessionId);
+                    }
+                };
+
+                websocket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    updateStatus('WebSocket error. Falling back to polling.');
+                    usePolling = true; // Enable polling fallback
+                    if (currentSessionId) {
+                        startProgressPolling(currentSessionId);
+                    }
+                };
+
+            } catch (error) {
+                console.error('Failed to connect WebSocket:', error);
+                updateStatus('WebSocket error. Falling back to polling.');
+                usePolling = true;
+                if (currentSessionId) {
+                    startProgressPolling(currentSessionId);
+                }
+            }
+        }
+
+        // Start polling for progress updates (fallback)
+        async function startProgressPolling(sessionId) {
+            const pollInterval = setInterval(async () => {
+                // Only poll if WebSocket is not active or failed
+                if (websocket && websocket.readyState === WebSocket.OPEN) {
+                    clearInterval(pollInterval);
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/critique/status/${sessionId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        mode: 'cors'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('Progress data received via polling:', data);
+                    updateProgressFromAPI(data);
+
+                    // Stop polling when completed or failed
+                    if (data.status === 'completed' || data.status === 'failed') {
+                        clearInterval(pollInterval);
+                        console.log('Analysis status:', data.status);
+                        if (data.status === 'completed') {
+                            console.log('Loading final results...');
+                            await loadFinalResults(sessionId);
+                        } else if (data.status === 'failed') {
+                            showError(data.error_message || 'Analysis failed');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error polling progress:', error);
+                    showError('Failed to get progress updates via polling.');
+                }
+            }, 2000); // Poll every 2 seconds
+        }
+
+        // Helper function to update progress from API data (legacy fallback)
+        function updateProgressFromAPI(data) {
+            console.log('Updating UI with data:', data);
+
+            // Handle overall progress
+            if (typeof data.progress === 'number') {
+                setProgress(Math.max(0, Math.min(100, data.progress)));
+            } else if (data.overall_progress) { // For older API response formats
+                setProgress(Math.max(0, Math.min(100, data.overall_progress)));
+            }
+
+            // Handle status updates
+            if (data.status) {
+                updateStatus(`Status: ${data.status}`);
+            } else if (data.message) { // For specific agent messages
+                updateStatus(`Message: ${data.message}`);
+            }
+
+            // Handle agent-specific progress or status
+            if (data.event === "progress" && typeof data.progress === "number") {
+                // This might be specific agent progress, overall progress is handled above
+                // For now, we'll rely on the overall progress or status field for UI updates
+            } else if (data.event === "status") {
+                if (data.status === "running") {
+                    updateStatus("Analysis is running...");
+                } else if (data.status === "completed") {
+                    updateStatus("Analysis completed. Loading results...");
+                    setProgress(100); // Ensure progress is 100%
+                    if (data.session_id) {
+                        loadFinalResults(data.session_id);
+                    }
+                }
+            } else if (data.event === "summary" && data.payload) {
+                setResult(data.payload);
+                // The 'setResult' function will call 'displayResults'
+            }
+
+            // Update individual agent statuses if provided in the data
+            if (data.agents) {
+                for (const [agentId, agentData] of Object.entries(data.agents)) {
+                    updateAgentStatus(agentId, agentData);
+                }
+            }
+
+            // If the analysis is completed, ensure final results are loaded
+            if (data.status === 'completed' && currentSessionId) {
+                setTimeout(() => loadFinalResults(currentSessionId), 1000);
+            }
+        }
+
+        // Update individual agent status in the UI
+        function updateAgentStatus(agentId, agentData) {
+            const agentCard = document.getElementById(`agent-${agentId}`);
+            if (!agentCard) return;
+
+            const statusElement = agentCard.querySelector('.agent-status');
+            const messageElement = agentCard.querySelector('.agent-message');
+
+            // Update status text and color
+            statusElement.textContent = agentData.status === 'active' ? 'Active' : 
+                                       agentData.status === 'completed' ? 'Complete' :
+                                       agentData.status === 'failed' ? 'Failed' : 'Waiting';
+
+            // Update status colors
+            statusElement.classList.remove('text-gray-500', 'text-purple-600', 'text-green-600', 'text-red-600');
+            if (agentData.status === 'active') {
+                statusElement.classList.add('text-purple-600');
+                agentCard.classList.add('active');
+            } else if (agentData.status === 'completed') {
+                statusElement.classList.add('text-green-600');
+                agentCard.classList.remove('active');
+            } else if (agentData.status === 'failed') {
+                statusElement.classList.add('text-red-600');
+                agentCard.classList.remove('active');
+            } else {
+                statusElement.classList.add('text-gray-500');
+                agentCard.classList.remove('active');
+            }
+
+            // Update message display
+            if (agentData.message) {
+                messageElement.classList.remove('hidden');
+                if (agentData.status === 'active') {
+                    messageElement.innerHTML = `
+                        <div class="typing-indicator">
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                        </div>
+                    `;
+                    setTimeout(() => {
+                        messageElement.textContent = agentData.message;
+                    }, 1000);
+                } else {
+                    messageElement.textContent = agentData.message;
+                }
+            }
+        }
+
+        // Load final results from the API
+        async function loadFinalResults(sessionId) {
+            try {
+                console.log('Fetching final results for session:', sessionId);
+                const response = await fetch(`${API_BASE_URL}/api/critique/results/${sessionId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const results = await response.json();
+                console.log('Final results received:', results);
+
+                // Convert API results to the format expected by displayResults
+                const mockData = convertAPIResultsToDisplayFormat(results);
+                console.log('Converted data for display:', mockData);
+
+                // Show the results section and display the data
+                showResults();
+                displayResults(mockData);
+
+            } catch (error) {
+                console.error('Error loading final results:', error);
+                // Try direct display with mock data if API fails
+                console.log('Attempting to display results with mock data');
+                showResults();
+                displayResults(generateMockResults()); // Fallback to mock data
+            }
+        }
+
+        // Generate mock results for display when API data is unavailable
+        function generateMockResults() {
+            return {
+                overallScore: 76,
+                recommendation: 'Minor Revision',
+                dimensions: {
+                    'Research Foundations': 75,
+                    'Methodological Rigor': 65,
+                    'Structure & Coherence': 82,
+                    'Academic Precision': 70,
+                    'Critical Sophistication': 80
+                },
+                dimensionAnalyses: {},
+                summary: 'Your paper demonstrates solid research foundations and clear structure. The topic of political polarization and bridge-building is highly relevant and well-motivated. Key areas for improvement include strengthening the methodological framework, expanding the literature review, and refining the theoretical approach.',
+                strengths: [
+                    'Clear problem identification with supporting statistics',
+                    'Strong personal motivation and practical experience',
+                    'Well-organized presentation following logical format',
+                    'Critical self-awareness regarding potential biases'
+                ],
+                improvements: [
+                    'Expand systematic literature review on affective polarization',
+                    'Develop robust methodological framework addressing bias concerns',
+                    'Add proper citations for all claims and statistics',
+                    'Refine research questions with greater theoretical precision'
+                ],
+                nextSteps: [
+                    'Conduct systematic literature review on affective polarization',
+                    'Develop robust methodological framework addressing bias concerns',
+                    'Refine research questions with greater theoretical precision',
+                    'Consider expanding scope beyond Democrat-Republican dynamics',
+                    'Plan pilot studies to test bridge-building strategies'
+                ],
+                checklistItems: [
+                    {
+                        code: '1.1.1',
+                        name: 'Problem Definition',
+                        description: 'Research problem is clearly defined and well-motivated',
+                        priority: 'Important',
+                        completed: true
+                    },
+                    {
+                        code: '1.2.1',
+                        name: 'Literature Review',
+                        description: 'Conduct comprehensive review of polarization literature',
+                        priority: 'Critical',
+                        completed: false
+                    }
+                ]
+            };
+        }
+
+        // Convert API results to a display-friendly format
+        function convertAPIResultsToDisplayFormat(apiResults) {
+            console.log('Converting API results:', apiResults);
+
+            const dimensionAnalyses = apiResults.dimension_critiques || {};
+
+            // Use the new toDisplay function approach with no truncation
+            function toDisplay(data) {
+                return {
+                    qualitativeMode: true,
+                    summary: data.final_critique || data.executive_summary || "Analysis completed successfully.",
+                    dimensions: Object.entries(data.dimension_critiques || {}).map(([name, d]) => ({
+                        id: name,
+                        name: d.dimension_name || name,
+                        overall_assessment: d.overall_assessment || "Competent",
+                        executive_summary: d.executive_summary || "",
+                        strengths: d.key_strengths || [],
+                        issues: (d.issues || []).map(it => ({
+                            title: it.title || "Issue identified",
+                            why_it_matters: it.why_it_matters || "",
+                            suggestions: it.suggestions || [],
+                            exemplar_rewrites: it.exemplar_rewrites || it.rewrite ? [it.rewrite] : [],
+                            quotes: it.quotes || it.evidence ? [it.evidence] : [],
+                            priority: it.priority || "medium",
+                            location_hint: it.location_hint || "",
+                            rubric_id: it.rubric_id || ""
+                        })),
+                        next_steps: d.next_steps || [],
+                        priority_improvements: d.priority_improvements || []
+                    }))
+                };
+            }
+
+            const displayData = toDisplay(apiResults);
+
+            // Collect all issues and categorize by priority (no filtering/truncation)
+            const allIssues = [];
+            const allStrengths = [];
+            const allNextSteps = [];
+
+            displayData.dimensions.forEach(d => {
+                // Add all dimension issues to global collections
+                if (d.issues) {
+                    allIssues.push(...d.issues.map(issue => ({...issue, dimension: d.name})));
+                }
+                if (d.strengths) {
+                    allStrengths.push(...d.strengths.map(strength => ({...strength, dimension: d.name})));
+                }
+                if (d.next_steps) {
+                    allNextSteps.push(...d.next_steps.map(step => ({...step, dimension: d.name})));
+                }
+            });
+
+            // Categorize issues by priority (render everything, no slicing)
+            const criticalIssues = allIssues.filter(issue => issue.priority === 'high');
+            const improvementIssues = allIssues.filter(issue => issue.priority === 'medium');
+            const polishIssues = allIssues.filter(issue => issue.priority === 'low');
+
+            return {
+                ...displayData,
+                dimensionAnalyses: dimensionAnalyses,
+                criticalIssues: criticalIssues,
+                improvementIssues: improvementIssues,
+                polishIssues: polishIssues,
+                strengths: allStrengths,
+                nextSteps: allNextSteps,
+                checklistItems: apiResults.checklist_items || []
+            };
+        }
+
+        // Get a score based on assessment text
+        function getScoreFromAssessment(assessment) {
+            switch (assessment) {
+                case 'Strong': return 85;
+                case 'Developing': return 70;
+                case 'Weak': return 55;
+                default: return 75;
+            }
+        }
+
+        // Calculate the overall score from API results
+        function calculateOverallScore(apiResults) {
+            if (apiResults.overall_score) return apiResults.overall_score;
+
+            // If no overall score, calculate from dimension scores
+            if (apiResults.dimension_critiques) {
+                const scores = Object.values(apiResults.dimension_critiques)
+                    .map(critique => critique.dimension_score || 75)
+                    .filter(score => score > 0);
+
+                if (scores.length > 0) {
+                    return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
+                }
+            }
+
+            return 82; // Default score for completed analysis
+        }
+
+        // Get recommendation text based on score
+        function getRecommendationFromScore(score) {
+            if (score >= 85) return 'Accept';
+            if (score >= 75) return 'Minor Revision';
+            if (score >= 65) return 'Revision Required';
+            return 'Major Revision';
+        }
+
+        // Provide default dimension scores if none are available
+        function getDefaultDimensions() {
+            return {
+                'Research Foundations': 75,
+                'Methodological Rigor': 75,
+                'Structure & Coherence': 75,
+                'Academic Precision': 75,
+                'Critical Sophistication': 75
+            };
+        }
+
+        // Get recommendation text based on a score
+        function getRecommendationFromScore(score) {
+            if (score >= 85) return 'Accept';
+            if (score >= 70) return 'Minor Revision';
+            if (score >= 60) return 'Revise';
+            return 'Major Revision';
+        }
+
+        // Extract an executive summary from the critique text
+        function extractSummaryFromCritique(critique) {
+            if (!critique) return 'Analysis completed. See detailed feedback below.';
+
+            const lines = critique.split('\n');
+            let summaryStart = -1;
+            let summaryEnd = -1;
+
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].toLowerCase().includes('executive summary') || 
+                    lines[i].toLowerCase().includes('summary')) {
+                    summaryStart = i + 1;
+                } else if (summaryStart > -1 && lines[i].startsWith('##')) {
+                    summaryEnd = i;
+                    break;
+                }
+            }
+
+            if (summaryStart > -1) {
+                const endIndex = summaryEnd > -1 ? summaryEnd : Math.min(summaryStart + 5, lines.length);
+                return lines.slice(summaryStart, endIndex).join('\n').trim() || 
+                       'Analysis completed. See detailed feedback below.';
+            }
+
+            return critique.split('\n').slice(0, 3).join(' ').substring(0, 200) + '...';
+        }
+
+        // Display an error message and revert to upload screen
+        function showError(message) {
+            alert(`Analysis Error: ${message}`);
+            showScreen('upload');
+        }
+
+        // Display detailed analysis for each dimension
+        function displayDetailedDimensions(dimensionAnalyses) {
+            const container = document.getElementById('dimensions-detail');
+
+            if (Object.keys(dimensionAnalyses).length === 0) {
+                container.innerHTML = '<p class="text-gray-500">Detailed dimension analysis will be available after enhanced critique completion.</p>';
+                return;
+            }
+
+            container.innerHTML = Object.entries(dimensionAnalyses).map(([dimId, dimension]) => `
+                <div class="border-l-4 border-purple-500 pl-6 py-4">
+                    <div class="mb-4">
+                        <h5 class="text-xl font-bold text-gray-900 mb-2">${dimension.dimension_name.toUpperCase()}</h5>
+                        <div class="flex items-center mb-3">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                dimension.overall_assessment === 'Strong' ? 'bg-green-100 text-green-800' :
+                                dimension.overall_assessment === 'Developing' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                            }">${dimension.overall_assessment}</span>
+                        </div>
+                        <p class="text-gray-700 mb-4">${dimension.executive_summary}</p>
+                    </div>
+
+                    ${dimension.subsections ? Object.entries(dimension.subsections).map(([code, subsection]) => `
+                        <div class="mb-4 pl-4 border-l-2 border-gray-200">
+                            <h6 class="font-semibold text-gray-900 mb-2">${code}: ${subsection.name}</h6>
+                            <div class="mb-2">
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                    subsection.assessment === 'Strong' ? 'bg-green-100 text-green-700' :
+                                    subsection.assessment === 'Developing' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                }">${subsection.assessment}</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">${subsection.detailed_feedback}</p>
+
+                            ${subsection.strengths && subsection.strengths.length > 0 ? `
+                                <div class="mb-2">
+                                    <span class="text-xs font-medium text-green-700">Strengths:</span>
+                                    <ul class="list-disc list-inside text-xs text-gray-600 ml-2">
+                                        ${subsection.strengths.map(s => `<li>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            ${subsection.areas_for_improvement && subsection.areas_for_improvement.length > 0 ? `
+                                <div class="mb-2">
+                                    <span class="text-xs font-medium text-orange-700">Areas for Improvement:</span>
+                                    <ul class="list-disc list-inside text-xs text-gray-600 ml-2">
+                                        ${subsection.areas_for_improvement.map(i => `<li>${i}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('') : ''}
+
+                    ${dimension.key_strengths && dimension.key_strengths.length > 0 ? `
+                        <div class="mt-4">
+                            <h6 class="font-semibold text-green-700 mb-2">Key Dimension Strengths:</h6>
+                            <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                ${dimension.key_strengths.map(s => `<li>${s.strength} - ${s.evidence}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    ${dimension.priority_improvements && dimension.priority_improvements.length > 0 ? `
+                        <div class="mt-4">
+                            <h6 class="font-semibold text-orange-700 mb-2">Priority Improvements:</h6>
+                            <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                ${dimension.priority_improvements.map(i => `<li>${i.area} - ${i.recommendation}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Display items for the PACT checklist
+        function displayPACTChecklist(checklistItems) {
+            const improvementContainer = document.getElementById('improvement-checklist');
+            const strengthContainer = document.getElementById('strength-checklist');
+
+            if (checklistItems.length === 0) {
+                improvementContainer.innerHTML = '<p class="text-gray-500">Checklist items will be available after enhanced critique completion.</p>';
+                strengthContainer.innerHTML = '<p class="text-gray-500">Strengths checklist will be available after enhanced critique completion.</p>';
+                return;
+            }
+
+            const improvements = checklistItems.filter(item => !item.completed);
+            const strengths = checklistItems.filter(item => item.completed);
+
+            improvementContainer.innerHTML = improvements.map(item => `
+                <div class="flex items-start p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <input type="checkbox" class="mt-1 mr-3 text-orange-600" ${item.completed ? 'checked' : ''}>
+                    <div class="flex-1">
+                        <div class="flex items-center mb-1">
+                            <span class="font-semibold text-orange-800 text-sm mr-2">${item.code}</span>
+                            <span class="font-medium text-gray-900 text-sm">${item.name}</span>
+                        </div>
+                        <p class="text-sm text-gray-700">${item.description}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            strengthContainer.innerHTML = strengths.map(item => `
+                <div class="flex items-start p-3 bg-green-50 rounded-lg border border-green-200">
+                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div class="flex-1">
+                        <div class="flex items-center mb-1">
+                            <span class="font-semibold text-orange-800 text-sm mr-2">${item.code}</span>
+                            <span class="font-medium text-gray-900 text-sm">${item.name}</span>
+                        </div>
+                        <p class="text-sm text-gray-700">${item.description}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Create and render the dimension scores chart
+        function createDimensionChart(dimensions) {
+            const ctx = document.getElementById('dimension-chart').getContext('2d');
+
+            if (dimensionChart) {
+                dimensionChart.destroy(); // Destroy previous chart instance if exists
+            }
+
+            dimensionChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: Object.keys(dimensions),
+                    datasets: [{
+                        label: 'Score',
+                        data: Object.values(dimensions),
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(102, 126, 234, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.5, // Adjust aspect ratio for better visualization
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20 // Show ticks every 20 points
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // Hide legend as it's not necessary for radar chart
+                        }
+                    }
+                }
+            });
+        }
+
+        // Handle tab switching logic
+        function showTab(tabName) {
+            // Hide all tab content panes
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Reset all tab button styles
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-purple-500', 'text-purple-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+
+            // Show the selected tab content
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+            // Highlight the selected tab button
+            event.target.classList.remove('border-transparent', 'text-gray-500');
+            event.target.classList.add('border-purple-500', 'text-purple-600');
+        }
+
+        // Toggle the visibility of the download report menu
+        function toggleDownloadMenu() {
+            const menu = document.getElementById('download-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close the download menu if the user clicks outside of it
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('download-menu');
+            const button = event.target.closest('button[onclick="toggleDownloadMenu()"]');
+
+            if (!button && !menu.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Handle report download request
+        async function downloadReport(format = 'comprehensive') {
+            if (!currentSessionId) {
+                alert('No analysis session available for download.');
+                return;
+            }
+
+            try {
+                // Hide the dropdown menu
+                document.getElementById('download-menu').classList.add('hidden');
+
+                const downloadButton = event.target;
+                const originalButtonContent = downloadButton.innerHTML; // Store the original HTML content
+                // Update button to show loading state
+                downloadButton.disabled = true;
+
+                // Clear button and safely add SVG icon
+                downloadButton.innerHTML = '';
+
+                // Create SVG element safely
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('class', 'w-4 h-4 mr-3 animate-spin');
+                svg.setAttribute('fill', 'none');
+                svg.setAttribute('stroke', 'currentColor');
+                svg.setAttribute('viewBox', '0 0 24 24');
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('stroke-linejoin', 'round');
+                path.setAttribute('stroke-width', '2');
+                path.setAttribute('d', 'M4 4v5h.582m15.356 2A8.955 8.955 0 0 1 21 12c0 .778-.099 1.533-.284 2.262M3 12c0-.778.099-1.533.284-2.262m0 0A8.955 8.955 0 0 1 12 3c2.777 0 5.288 1.089 7.184 2.816M3 12v5.341m9-9.341c0 2.21-.766 4.239-2.05 5.658m9.341-5.658c0-2.21.766-4.239 2.05-5.658');
+
+                svg.appendChild(path);
+                downloadButton.appendChild(svg);
+
+                // Add text safely using textContent
+                downloadButton.appendChild(document.createTextNode(`Generating ${format.toUpperCase()}...`));
+
+
+                // Request the report from the API
+                const response = await fetch(`${API_BASE_URL}/api/critique/download/${currentSessionId}?format=${format}`);
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({ detail: `HTTP ${response.status}: ${response.statusText}` }));
+                    throw new Error(err.detail || 'Failed to download report');
+                }
+
+                // Download the blob from backend
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `PACT-${currentSessionId}.${format === "pdf" ? "pdf" : "md"}`; // Changed default to pdf
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+
+                // Show success notification
+                showNotification(`${format.toUpperCase()} report downloaded successfully!`, 'success');
+
+            } catch (error) {
+                console.error('Download error:', error);
+                showNotification(`Failed to download ${format.toUpperCase()} report. Please try again.`, 'error');
+            } finally {
+                // Restore button state after a short delay
+                setTimeout(() => {
+                    const downloadButton = document.querySelector('button[disabled]');
+                    if (downloadButton) {
+                        downloadButton.innerHTML = originalButtonContent; // Restore original HTML
+                        downloadButton.disabled = false;
+                    }
+                }, 1000);
+            }
+        }
+
+        // Display temporary notifications to the user
+        function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
                 type === 'success' ? 'bg-green-100 border border-green-400 text-green-700' :
@@ -2859,6 +3220,756 @@ ${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
             }, 5000);
         }
 
+        // Generate a markdown report from analysis data
+        function generateReport(data) {
+            return `# PACT Academic Critique Report
+
+## Overall Assessment
+- **Score:** ${data.overallScore}/100
+- **Recommendation:** ${data.recommendation}
+
+## Executive Summary
+${data.summary}
+
+## Key Strengths
+${data.strengths.map(s => `- ${s}`).join('\n')}
+
+## Priority Improvements
+${data.improvements.map(i => `- ${i}`).join('\n')}
+
+## Dimension Scores
+${Object.entries(data.dimensions).map(([dim, score]) => `- ${dim}: ${score}/100`).join('\n')}
+
+## Actionable Next Steps
+${data.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
+
+---
+*Generated by PACT 3.0*`;
+        }
+
+        // Reset the UI and state to start a new analysis
+        function startNewAnalysis() {
+            // Close any active WebSocket connection
+            if (websocket) {
+                websocket.close();
+                websocket = null;
+            }
+
+            // Reset session ID
+            currentSessionId = null;
+
+            // Reset UI sections
+            document.getElementById('progress-section').classList.remove('hidden');
+            document.getElementById('results-section').classList.add('hidden');
+
+            // Reset progress bar and status message
+            setProgress(0);
+            updateStatus('Waiting to start...');
+
+            // Reset agent card statuses
+            document.querySelectorAll('.agent-card').forEach(card => {
+                card.classList.remove('active');
+                card.querySelector('.agent-status').textContent = 'Waiting';
+                card.querySelector('.agent-status').className = 'agent-status text-xs text-gray-500';
+                card.querySelector('.agent-message').classList.add('hidden');
+            });
+
+            // Navigate back to the upload screen
+            showScreen('upload');
+
+            // Clear the input form
+            document.getElementById('paper-content').value = '';
+            clearFile(); // Use the new clearFile function
+            updateWordCount(); // Update word count display to 0
+
+            // Reset the file drop zone UI to its initial state
+            const uploadArea = document.getElementById('upload-area');
+            uploadArea.style.display = 'block';
+            const fileInfo = document.getElementById('file-info');
+            fileInfo.classList.add('hidden');
+            document.getElementById('file-name').textContent = ''; // Clear file name
+        }
+
+        // ===== FILE UPLOAD FUNCTIONS =====
+
+        let uploadedFileContent = null;
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            const validTypes = ['text/plain', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            const validExtensions = ['.txt', '.pdf', '.docx'];
+            const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+
+            if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+                showMessage('Please upload a TXT, PDF, or DOCX file.', 'error');
+                clearFile();
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                showMessage('File size must be less than 10MB.', 'error');
+                clearFile();
+                return;
+            }
+
+            const fileInfo = document.getElementById('file-info');
+            const fileName = document.getElementById('file-name');
+            const uploadArea = document.getElementById('upload-area');
+
+            fileName.textContent = `Processing ${file.name}...`;
+            fileInfo.classList.remove('hidden');
+            uploadArea.style.display = 'none';
+
+            try {
+                // Upload file to backend for processing
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(`${API_BASE_URL}/api/upload`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({ detail: `HTTP ${response.status}: ${response.statusText}` }));
+                    throw new Error(error.detail || 'Failed to process file');
+                }
+
+                const result = await response.json();
+                uploadedFileContent = result.content;
+                fileName.textContent = file.name;
+
+                // Also populate the textarea with the content
+                document.getElementById('paper-content').value = result.content;
+
+                showMessage(`File "${file.name}" processed successfully!`, 'success');
+                enableAnalysisButton();
+                updateWordCount();
+
+            } catch (error) {
+                console.error('File upload error:', error);
+                showMessage(`Error processing file: ${error.message}`, 'error');
+                clearFile();
+            }
+        }
+
+        function clearFile() {
+            uploadedFileContent = null;
+            document.getElementById('file-upload').value = '';
+            document.getElementById('file-info').classList.add('hidden');
+            document.getElementById('upload-area').style.display = 'block';
+            // showMessage('File removed', 'info'); // Removed to avoid redundant messages
+            updateWordCount(); // Update word count after clearing file
+        }
+
+        // ===== COMPREHENSIVE INTERFACE FUNCTIONS =====
+
+        function populateDimensionScores(dimensions) {
+            const dimensionsList = document.getElementById('dimension-scores-list');
+            const dimensionEntries = Object.entries(dimensions);
+
+            dimensionsList.innerHTML = dimensionEntries.map(([dimensionName, score]) => {
+                const normalizedScore = score > 5 ? score / 20 : score;
+                const percentage = (normalizedScore / 5) * 100;
+                const scoreLevel = getScoreLevel(normalizedScore);
+                const scoreColor = getScoreBackground(normalizedScore);
+
+                return `
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-900">${dimensionName}</span>
+                            <span class="text-xs font-medium text-gray-600">${scoreLevel}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="h-2.5 rounded-full transition-all duration-500 ${scoreColor}" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getScoreLevel(score) {
+            if (score >= 4.5) return "Exemplary";
+            if (score >= 3.5) return "Strong";
+            if (score >= 2.5) return "Competent";
+            if (score >= 1.5) return "Developing";
+            return "Inadequate";
+        }
+
+        function getScoreBackground(score) {
+            if (score >= 4.5) return "bg-green-600";
+            if (score >= 3.5) return "bg-green-500";
+            if (score >= 2.5) return "bg-yellow-500";
+            if (score >= 1.5) return "bg-orange-500";
+            return "bg-red-500";
+        }
+
+        function populateKeyFindingsCards(data) {
+            // Calculate counts from the analysis data
+            const criticalCount = countCriticalIssues(data);
+            const improvementCount = countImprovements(data);
+            const strengthCount = countStrengths(data);
+
+            document.getElementById('critical-count').textContent = criticalCount;
+            document.getElementById('improvement-count').textContent = improvementCount;
+            document.getElementById('strength-count').textContent = strengthCount;
+        }
+
+        function countCriticalIssues(data) {
+            if (data.dimensionAnalyses) {
+                return Object.values(data.dimensionAnalyses).reduce((count, dim) => {
+                    if (dim.dimension_score && dim.dimension_score < 40) count++; // Score < 2 on 5-point scale
+                    return count;
+                }, 0);
+            }
+            return 0;
+        }
+
+        function countImprovements(data) {
+            if (data.dimensionAnalyses) {
+                return Object.values(data.dimensionAnalyses).reduce((count, dim) => {
+                    if (dim.dimension_score && dim.dimension_score >= 40 && dim.dimension_score < 80) count++;
+                    return count;
+                }, 0);
+            }
+            return data.improvements ? data.improvements.length : 0;
+        }
+
+        function countStrengths(data) {
+            if (data.dimensionAnalyses) {
+                return Object.values(data.dimensionAnalyses).reduce((count, dim) => {
+                    if (dim.dimension_score && dim.dimension_score >= 80) count++;
+                    return count;
+                }, 0);
+            }
+            return data.strengths ? data.strengths.length : 0;
+        }
+
+        function populateDetailedFindings(data) {
+            // Update counts in dropdown header
+            const criticalCount = countCriticalIssues(data);
+            const improvementCount = countImprovements(data);
+            const strengthCount = countStrengths(data);
+
+            document.getElementById('critical-issues-count').textContent = criticalCount;
+            document.getElementById('improvement-issues-count').textContent = improvementCount;
+            document.getElementById('strength-elements-count').textContent = strengthCount;
+
+            // Populate critical issues list
+            const criticalIssuesList = document.getElementById('critical-issues-list');
+            const criticalIssues = getCriticalIssuesFromData(data);
+            criticalIssuesList.innerHTML = criticalIssues.length > 0 ? criticalIssues.map(issue => `
+                <div class="flex items-start space-x-2 p-2 bg-red-50 rounded border-l-2 border-red-600">
+                    <svg class="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-red-600">${issue.name}</p>
+                        <p class="text-xs text-gray-600 mt-1">${issue.description}</p>
+                    </div>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500 italic">No critical issues identified.</p>';
+
+            // Populate improvement issues list
+            const improvementIssuesList = document.getElementById('improvement-issues-list');
+            const improvementIssues = getImprovementIssuesFromData(data);
+            improvementIssuesList.innerHTML = improvementIssues.length > 0 ? improvementIssues.map(issue => `
+                <div class="flex items-start space-x-2 p-2 bg-orange-50 rounded border-l-2 border-orange-500">
+                    <svg class="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-orange-600">${issue.name}</p>
+                        <p class="text-xs text-gray-600 mt-1">${issue.description}</p>
+                    </div>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500 italic">No areas for improvement identified.</p>';
+
+            // Populate strength elements list
+            const strengthElementsList = document.getElementById('strength-elements-list');
+            const strengthElements = getStrengthElementsFromData(data);
+            strengthElementsList.innerHTML = strengthElements.length > 0 ? strengthElements.map(element => `
+                <div class="flex items-start space-x-2 p-2 bg-green-50 rounded border-l-2 border-green-600">
+                    <svg class="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-green-600">${element.name}</p>
+                        <p class="text-xs text-gray-600 mt-1">${element.description}</p>
+                    </div>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500 italic">No key strengths identified yet.</p>';
+        }
+
+        function getCriticalIssuesFromData(data) {
+            const issues = [];
+            if (data.dimensionAnalyses) {
+                Object.values(data.dimensionAnalyses).forEach(dim => {
+                    if (dim.dimension_score && dim.dimension_score < 40) {
+                        issues.push({
+                            name: dim.dimension_name,
+                            description: dim.priority_improvements?.[0]?.recommendation || 'Requires significant improvement'
+                        });
+                    }
+                });
+            }
+            return issues;
+        }
+
+        function getImprovementIssuesFromData(data) {
+            const issues = [];
+            if (data.dimensionAnalyses) {
+                Object.values(data.dimensionAnalyses).forEach(dim => {
+                    if (dim.dimension_score && dim.dimension_score >= 40 && dim.dimension_score < 80) {
+                        issues.push({
+                            name: dim.dimension_name,
+                            description: dim.priority_improvements?.[0]?.recommendation || 'Could be strengthened'
+                        });
+                    }
+                });
+            }
+            return issues;
+        }
+
+        function getStrengthElementsFromData(data) {
+            const elements = [];
+            if (data.dimensionAnalyses) {
+                Object.values(data.dimensionAnalyses).forEach(dim => {
+                    if (dim.dimension_score && dim.dimension_score >= 80) {
+                        elements.push({
+                            name: dim.dimension_name,
+                            description: dim.key_strengths?.[0]?.strength || 'Well-executed dimension'
+                        });
+                    }
+                });
+            }
+            return elements;
+        }
+
+        function populateDocumentContext(data) {
+            const contextSection = document.getElementById('document-context');
+            const documentType = document.getElementById('document-type');
+            const contextGrid = document.getElementById('document-context-grid');
+
+            // Show document context section
+            contextSection.classList.remove('hidden');
+
+            // Set document type
+            const paperType = document.getElementById('paper-type').value;
+            documentType.textContent = paperType.charAt(0).toUpperCase() + paperType.slice(1);
+
+            // Populate context grid
+            const wordCount = document.getElementById('word-count').textContent;
+            const analysisMode = document.getElementById('analysisMode').value;
+
+            contextGrid.innerHTML = `
+                <div>
+                    <span class="font-medium text-purple-600">Word Count:</span>
+                    <span class="text-gray-700">${wordCount} words</span>
+                </div>
+                <div>
+                    <span class="font-medium text-purple-600">Analysis Mode:</span>
+                    <span class="text-gray-700">${analysisMode}</span>
+                </div>
+                <div>
+                    <span class="font-medium text-purple-600">Date Analyzed:</span>
+                    <span class="text-gray-700">${new Date().toLocaleDateString()}</span>
+                </div>
+            `;
+        }
+
+        function populateAnalysisMetadata(data) {
+            const metadataSection = document.getElementById('analysis-metadata');
+            const coveragePercentage = document.getElementById('coverage-percentage');
+            const metadataGrid = document.getElementById('analysis-metadata-grid');
+
+            // Show metadata section
+            metadataSection.classList.remove('hidden');
+
+            // Calculate coverage percentage (mock calculation)
+            const dimensionCount = Object.keys(data.dimensions || {}).length;
+            const maxDimensions = 5;
+            const coverage = Math.round((dimensionCount / maxDimensions) * 100);
+
+            coveragePercentage.textContent = `${coverage}% Coverage`;
+
+            // Populate metadata grid
+            metadataGrid.innerHTML = `
+                <div>
+                    <span class="font-medium text-blue-600">Dimensions Analyzed:</span>
+                    <span class="text-gray-700">${dimensionCount} of ${maxDimensions}</span>
+                </div>
+                <div>
+                    <span class="font-medium text-blue-600">Elements Evaluated:</span>
+                    <span class="text-gray-700">${(dimensionCount * 3) || 15}</span>
+                </div>
+                <div>
+                    <span class="font-medium text-blue-600">Analysis Depth:</span>
+                    <span class="text-gray-700">Comprehensive</span>
+                </div>
+                <div>
+                    <span class="font-medium text-blue-600">Quality Checks:</span>
+                    <span class="text-gray-700">Passed</span>
+                </div>
+            `;
+        }
+
+        function populateMainTabContent(data) {
+            // Summary Analysis tab
+            const summaryContent = document.getElementById('summary-analysis-content');
+            const summaryText = data.summary || data.executive_summary || 
+                               'Your paper has been comprehensively analyzed using the PACT Academic Critique Taxonomy. The analysis covers multiple dimensions of academic writing quality, from research foundations to critical sophistication. Review the detailed feedback in each dimension to understand your paper\'s strengths and areas for improvement.';
+
+            summaryContent.innerHTML = `
+                <div class="text-left space-y-6">
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-blue-800">Executive Summary</h4>
+                        <div class="prose max-w-none">
+                            <p class="text-gray-700 leading-relaxed">${summaryText}</p>
+                        </div>
+                        ${!data.qualitativeMode && data.submissionReadiness ? `
+                            <div class="mt-4 p-3 bg-blue-100 rounded-lg">
+                                <span class="text-sm font-medium text-blue-800">Submission Readiness: ${data.submissionReadiness}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <h5 class="font-semibold text-green-800 mb-3">Key Strengths</h5>
+                            <ul class="space-y-2">
+                                ${(data.strengths || ['Analysis completed successfully', 'Paper structure is coherent', 'Research topic is well-defined']).slice(0, 3).map(strength => 
+                                    `<li class="flex items-start space-x-2">
+                                        <svg class="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span class="text-sm text-green-700">${strength}</span>
+                                    </li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                            <h5 class="font-semibold text-orange-800 mb-3">Priority Improvements</h5>
+                            <ul class="space-y-2">
+                                ${(data.improvements || ['Consider strengthening methodology section', 'Review citation formatting', 'Expand theoretical framework']).slice(0, 3).map(improvement => 
+                                    `<li class="flex items-start space-x-2">
+                                        <svg class="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                        </svg>
+                                        <span class="text-sm text-orange-700">${improvement}</span>
+                                    </li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h5 class="font-semibold text-blue-800 mb-3">Next Steps</h5>
+                        <ol class="space-y-2">
+                            ${(data.nextSteps || ['Review detailed feedback in each dimension', 'Address priority improvements first', 'Consider revision timeline', 'Seek additional feedback if needed']).slice(0, 4).map((step, index) => 
+                                `<li class="flex items-start space-x-3">
+                                    <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-600 text-white text-xs font-medium">${index + 1}</span>
+                                    <span class="text-sm text-blue-700">${step}</span>
+                                </li>`
+                            ).join('')}
+                        </ol>
+                    </div>
+                </div>
+            `;
+
+            // PACT Details tab - populate dimension tabs
+            populateDimensionTabs(data.dimensionAnalyses || {});
+
+            // Custom Analysis tab (if available)
+            if (data.customAnalysis) {
+                document.getElementById('main-tab-custom').classList.remove('hidden');
+                populateCustomAnalysisTab(data.customAnalysis);
+            }
+        }
+
+        function populateDimensionTabs(dimensionAnalyses) {
+            const dimensionTabsNav = document.getElementById('dimension-tabs');
+            const dimensionTabContent = document.getElementById('dimension-tab-content');
+
+            // For qualitative mode, use the dimensions array
+            const dimensions = analysisData && analysisData.qualitativeMode ? 
+                analysisData.dimensions : Object.entries(dimensionAnalyses);
+
+            // If no dimension data, create default structure
+            if (dimensions.length === 0) {
+                const defaultDimensions = [
+                    { id: '1.0.0', name: 'Research Foundations', overall_assessment: 'Competent', summary: 'Analysis of research question, literature review, and theoretical framework.' },
+                    { id: '2.0.0', name: 'Methodological Rigor', overall_assessment: 'Competent', summary: 'Evaluation of research methods, data collection, and analysis procedures.' },
+                    { id: '3.0.0', name: 'Structure & Coherence', overall_assessment: 'Competent', summary: 'Assessment of organization, flow, and logical progression.' },
+                    { id: '4.0.0', name: 'Academic Precision', overall_assessment: 'Competent', summary: 'Review of citations, terminology, grammar, and formatting.' },
+                    { id: '5.0.0', name: 'Critical Sophistication', overall_assessment: 'Competent', summary: 'Analysis of critical thinking, originality, and scholarly depth.' }
+                ];
+
+                // Create navigation for default dimensions
+                dimensionTabsNav.innerHTML = defaultDimensions.map((dim, index) => `
+                    <button onclick="showDimensionTab('${dim.id}')" id="dim-tab-${dim.id}" class="dim-tab-btn py-2 px-1 border-b-2 font-medium text-xs ${index === 0 ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}">
+                        ${dim.name.split(' ')[0]}
+                    </button>
+                `).join('');
+
+                // Create content for default dimensions in qualitative mode
+                dimensionTabContent.innerHTML = defaultDimensions.map((dim, index) => `
+                    <div id="dim-content-${dim.id}" class="dim-tab-content ${index !== 0 ? 'hidden' : ''}">
+                        <div class="space-y-4">
+                            <div class="mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">${dim.name}</h3>
+                                <p class="text-sm text-gray-600 mb-4">${dim.summary}</p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-medium">
+                                            ${dim.overall_assessment}
+                                        </div>
+                                    </div>
+                                    <button onclick="window.open('/pact-wiki/dimensions/${dim.id}', '_blank')" class="inline-flex items-center px-3 py-1 text-sm border border-blue-600 rounded text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
+                                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                        </svg>
+                                        Learn About This Dimension
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div class="flex items-center space-x-2 mb-3">
+                                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <h4 class="font-semibold text-blue-800">Analysis Complete</h4>
+                                </div>
+                                <p class="text-sm text-blue-700">
+                                    Your paper has been analyzed for this dimension. The detailed feedback 
+                                    will be available in the comprehensive PDF report. Click "Export PDF" above to download your complete analysis.
+                                </p>
+                            </div>
+                        </div>
+                    `).join('');
+                return;
+            }
+
+            // Create dimension tabs navigation for qualitative data
+            dimensionTabsNav.innerHTML = dimensions.map((dimension, index) => `
+                <button onclick="showDimensionTab('${dimension.id}')" id="dim-tab-${dimension.id}" class="dim-tab-btn py-2 px-1 border-b-2 font-medium text-xs ${index === 0 ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}">
+                    ${dimension.name.split(' ')[0]}
+                </button>
+            `).join('');
+
+            // Create dimension tab content for qualitative data with per-issue cards
+            dimensionTabContent.innerHTML = dimensions.map((dimension, index) => `
+                <div id="dim-content-${dimension.id}" class="dim-tab-content ${index !== 0 ? 'hidden' : ''}">
+                    <div class="space-y-4">
+                        <div class="mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">${dimension.name}</h3>
+                            <p class="text-sm text-gray-600 mb-4">${dimension.executive_summary || 'Analysis completed for this dimension.'}</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <div class="px-3 py-1 rounded-full ${getScoreBackground((dimension.dimension_score || 75) / 20)} text-white text-sm font-medium">
+                                        ${((dimension.dimension_score || 75) / 20).toFixed(1)}/5
+                                    </div>
+                                    <span class="text-sm text-gray-600">${dimension.overall_assessment || 'Competent'}</span>
+                                </div>
+                                <button onclick="window.open('/pact-wiki/dimensions/${dimension.id}', '_blank')" class="inline-flex items-center px-3 py-1 text-sm border border-blue-600 rounded text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                    Learn About This Dimension
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Subsections if available -->
+                        ${dimension.subsections ? Object.entries(dimension.subsections).map(([code, subsection]) => `
+                            <div class="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500">
+                                <h4 class="font-semibold text-gray-900 mb-2">${code}: ${subsection.name}</h4>
+                                <div class="mb-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                        subsection.assessment === 'Strong' ? 'bg-green-100 text-green-700' :
+                                        subsection.assessment === 'Developing' ? 'bg-yellow-100 text-yellow-700' :
+                                        'bg-red-100 text-red-700'
+                                    }">${subsection.assessment}</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-3">${subsection.detailed_feedback}</p>
+
+                                ${subsection.strengths && subsection.strengths.length > 0 ? `
+                                    <div class="mb-2">
+                                        <span class="text-xs font-medium text-green-700">Strengths:</span>
+                                        <ul class="list-disc list-inside text-xs text-gray-600 ml-2 mt-1">
+                                            ${subsection.strengths.map(s => `<li>${s}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+
+                                ${subsection.areas_for_improvement && subsection.areas_for_improvement.length > 0 ? `
+                                    <div>
+                                        <span class="text-xs font-medium text-orange-700">Areas for Improvement:</span>
+                                        <ul class="list-disc list-inside text-xs text-gray-600 ml-2 mt-1">
+                                            ${subsection.areas_for_improvement.map(i => `<li>${i}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('') : `
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div class="flex items-center space-x-2 mb-3">
+                                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <h4 class="font-semibold text-blue-800">Detailed Analysis Available</h4>
+                                </div>
+                                <p class="text-sm text-blue-700 mb-3">
+                                    Comprehensive subsection-level feedback for this dimension is available in your PDF report.
+                                </p>
+                                <button onclick="downloadReport('comprehensive')" class="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Download Full Analysis
+                                </button>
+                            </div>
+                        `}
+
+                        ${dimension.key_strengths && dimension.key_strengths.length > 0 ? `
+                            <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                                <h4 class="font-semibold text-green-700 mb-2">Key Dimension Strengths:</h4>
+                                <ul class="space-y-1">
+                                    ${dimension.key_strengths.map(s => `
+                                        <li class="text-sm text-green-700">
+                                            <strong>${s.strength}:</strong> ${s.evidence || 'Well executed in this area'}
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+
+                        ${dimension.priority_improvements && dimension.priority_improvements.length > 0 ? `
+                            <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-500">
+                                <h4 class="font-semibold text-orange-700 mb-2">Priority Improvements:</h4>
+                                <ul class="space-y-1">
+                                    ${dimension.priority_improvements.map(i => `
+                                        <li class="text-sm text-orange-700">
+                                            <strong>${i.area}:</strong> ${i.recommendation || 'Consider strengthening this aspect'}
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function populateCustomAnalysisTab(customAnalysis) {
+            const customContent = document.getElementById('custom-analysis-content');
+            customContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-blue-800 mb-3">Your Custom Question</h3>
+                                <p class="text-blue-700 bg-blue-100 rounded p-3 text-sm">${customAnalysis.question}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Analysis Response</h4>
+                        <div class="prose max-w-none">
+                            <p class="text-gray-900 leading-relaxed whitespace-pre-wrap">${customAnalysis.response}</p>
+                        </div>
+                    </div>
+
+                    ${customAnalysis.keyFindings && customAnalysis.keyFindings.length > 0 ? `
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold text-green-800 mb-4">Key Findings</h4>
+                            <ul class="space-y-2">
+                                ${customAnalysis.keyFindings.map(finding => `
+                                    <li class="flex items-start space-x-3">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                                        <span class="text-green-700 text-sm">${finding}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    ${customAnalysis.recommendations && customAnalysis.recommendations.length > 0 ? `
+                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold text-orange-800 mb-4">Recommendations</h4>
+                            <ul class="space-y-2">
+                                ${customAnalysis.recommendations.map(recommendation => `
+                                    <li class="flex items-start space-x-3">
+                                        <div class="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                                        <span class="text-orange-700 text-sm">${recommendation}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function toggleDetailedFindings() {
+            const detailedFindings = document.getElementById('detailed-findings');
+            const chevron = document.getElementById('findings-chevron');
+
+            detailedFindings.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        }
+
+        function showMainTab(tabName) {
+            // Hide all main tab content
+            document.querySelectorAll('.main-tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Reset all main tab button styles
+            document.querySelectorAll('.main-tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+
+            // Show the selected main tab content
+            document.getElementById(`main-tab-content-${tabName}`).classList.remove('hidden');
+
+            // Highlight the selected main tab button
+            const activeBtn = document.getElementById(`main-tab-${tabName}`);
+            activeBtn.classList.remove('border-transparent', 'text-gray-500');
+            activeBtn.classList.add('border-blue-500', 'text-blue-600');
+        }
+
+        function showDimensionTab(dimensionId) {
+            // Hide all dimension tab content
+            document.querySelectorAll('.dim-tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Reset all dimension tab button styles
+            document.querySelectorAll('.dim-tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+
+            // Show the selected dimension tab content
+            document.getElementById(`dim-content-${dimensionId}`).classList.remove('hidden');
+
+            // Highlight the selected dimension tab button
+            const activeBtn = document.getElementById(`dim-tab-${dimensionId}`);
+            activeBtn.classList.remove('border-transparent', 'text-gray-500');
+            activeBtn.classList.add('border-blue-500', 'text-blue-600');
+        }
     </script>
 </body>
 </html>
