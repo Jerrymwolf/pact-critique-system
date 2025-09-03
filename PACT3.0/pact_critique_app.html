@@ -1118,6 +1118,7 @@
             try {
                 const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/critique/live/${sessionId}`;
                 websocket = new WebSocket(wsUrl);
+                let hasSummary = false;
 
                 websocket.onopen = function(event) {
                     console.log('WebSocket connected');
@@ -1127,7 +1128,27 @@
                 websocket.onmessage = function(event) {
                     const data = JSON.parse(event.data);
                     console.log('Received WebSocket message:', data);
-                    updateProgressFromAPI(data);
+                    
+                    // Front-end guard: ignore late errors after summary is received
+                    if (data.event === "summary") {
+                        hasSummary = true;
+                        updateProgressFromAPI(data);
+                    } else if (data.event === "status") {
+                        if (data.status === "error" && hasSummary) {
+                            // Downgrade to warning; don't flip the UI to failed
+                            console.warn("Ignoring late error after summary:", data.message);
+                            return;
+                        }
+                        if (data.status === "completed") {
+                            setProgress(100);
+                        }
+                        updateProgressFromAPI(data);
+                    } else if (data.event === "progress") {
+                        setProgress(data.progress || 0);
+                    } else {
+                        // Handle other events normally
+                        updateProgressFromAPI(data);
+                    }
                 };
 
                 websocket.onclose = function(event) {
