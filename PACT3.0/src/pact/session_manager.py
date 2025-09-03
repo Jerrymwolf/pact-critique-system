@@ -16,6 +16,25 @@ import logging
 
 from .utils.enum_safety import enum_value, safe_status_value
 
+def _coerce_enums(obj):
+    """
+    Recursively coerce Enums to strings for safe JSON serialization.
+    
+    Args:
+        obj: Any object that may contain Enums
+        
+    Returns:
+        Object with all Enums converted to strings
+    """
+    if isinstance(obj, Enum):
+        # choose .value if defined, otherwise name
+        return getattr(obj, "value", obj.name)
+    if isinstance(obj, dict):
+        return {k: _coerce_enums(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_coerce_enums(v) for v in obj]
+    return obj
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -260,8 +279,8 @@ class SessionManager:
         if not session:
             raise KeyError(f"Unknown session_id: {session_id}")
 
-        # Store the complete result
-        session.result = result
+        # Store the complete result with enums coerced to strings
+        session.result = _coerce_enums(result)
         
         # Update individual result fields for backward compatibility
         if 'overall_score' in result:
