@@ -1,0 +1,75 @@
+{
+  "session_id": "98bc9a4a-e648-4f1d-bc3e-0378ba4f3b25",
+  "status": "processing",
+  "paper_content": "",
+  "created_at": "2025-09-03T16:48:55.195426",
+  "updated_at": "2025-09-03T16:48:55.196691",
+  "paper_title": "Pre-Work  - Brief Topic Description",
+  "paper_type": "research",
+  "mode": "STANDARD",
+  "overall_progress": 1,
+  "agents": {
+    "supervisor": {
+      "agent_id": "supervisor",
+      "agent_name": "Supervisor",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "1": {
+      "agent_id": "1",
+      "agent_name": "Research Foundations",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "2": {
+      "agent_id": "2",
+      "agent_name": "Methodological Rigor",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "3": {
+      "agent_id": "3",
+      "agent_name": "Structure & Coherence",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "4": {
+      "agent_id": "4",
+      "agent_name": "Academic Precision",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    },
+    "5": {
+      "agent_id": "5",
+      "agent_name": "Critical Sophistication",
+      "status": "waiting",
+      "message": "",
+      "progress": 0.0,
+      "start_time": null,
+      "end_time": null
+    }
+  },
+  "current_stage": "",
+  "dimension_critiques": {},
+  "final_critique": null,
+  "overall_score": null,
+  "result": null,
+  "original_text": null,
+  "error_message": null,
+  "retry_count": 0
+}
